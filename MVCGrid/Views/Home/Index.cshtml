@@ -1,0 +1,130 @@
+﻿@{
+    ViewData["Title"] = "Home Page";
+}
+
+<div class="page-title">
+    <h3>
+        <i class="fas fa-home"></i> Welcome to MVC Grid Demo
+    </h3>
+    <p class="mb-0 mt-2">A complete demonstration of grid functionality with CRUD operations</p>
+</div>
+
+<div class="row">
+    <div class="col-md-4 mb-4">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <i class="fas fa-users fa-3x text-primary mb-3"></i>
+                <h5 class="card-title">People Management</h5>
+                <p class="card-text">
+                    Complete CRUD system with advanced grid features including sorting, filtering, and pagination.
+                </p>
+                <a asp-controller="Person" asp-action="Index" class="btn btn-primary">
+                    <i class="fas fa-arrow-right"></i> Go to People
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4 mb-4">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <i class="fas fa-th fa-3x text-success mb-3"></i>
+                <h5 class="card-title">Grid Features</h5>
+                <p class="card-text">
+                    Sort columns, filter data, paginate results, and perform bulk operations with ease.
+                </p>
+                <ul class="list-unstyled text-start">
+                    <li><i class="fas fa-check text-success"></i> Sortable columns</li>
+                    <li><i class="fas fa-check text-success"></i> Header filtering</li>
+                    <li><i class="fas fa-check text-success"></i> Pagination controls</li>
+                    <li><i class="fas fa-check text-success"></i> Responsive design</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4 mb-4">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <i class="fas fa-cogs fa-3x text-info mb-3"></i>
+                <h5 class="card-title">CRUD Operations</h5>
+                <p class="card-text">
+                    Full Create, Read, Update, and Delete functionality with form validation.
+                </p>
+                <ul class="list-unstyled text-start">
+                    <li><i class="fas fa-plus text-success"></i> Create new records</li>
+                    <li><i class="fas fa-eye text-info"></i> View details in popup</li>
+                    <li><i class="fas fa-edit text-primary"></i> Edit existing data</li>
+                    <li><i class="fas fa-trash text-danger"></i> Delete with confirmation</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-info-circle"></i> Quick Start Guide
+                </h5>
+            </div>
+            <div class="card-body">
+                <h6 class="fw-bold">Getting Started:</h6>
+                <ol>
+                    <li>Click on <strong>"People"</strong> in the navigation menu or the button above</li>
+                    <li>View the grid with 10 sample people records</li>
+                    <li>Try sorting by clicking column headers</li>
+                    <li>Filter data by typing in the column filter boxes</li>
+                    <li>Change page size using the dropdown (5, 10, 15, 20 rows)</li>
+                    <li>Click action buttons to Create, View, Edit, or Delete records</li>
+                </ol>
+
+                <h6 class="fw-bold mt-3">Features:</h6>
+                <div class="row">
+                    <div class="col-md-6">
+                        <ul>
+                            <li><strong>Sorting:</strong> Click column headers to sort ascending/descending</li>
+                            <li><strong>Filtering:</strong> Type in header filters to search data</li>
+                            <li><strong>Pagination:</strong> Navigate pages and adjust rows per page</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <ul>
+                            <li><strong>Add:</strong> Create new person with validation</li>
+                            <li><strong>Edit:</strong> Update existing person details</li>
+                            <li><strong>Delete:</strong> Remove with confirmation</li>
+                            <li><strong>Details:</strong> View in popup modal</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="alert alert-info mt-3">
+                    <i class="fas fa-lightbulb"></i> 
+                    <strong>Tip:</strong> This demo uses in-memory storage. Data will reset when you restart the application.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-book"></i> Documentation
+                </h5>
+            </div>
+            <div class="card-body">
+                <p>Complete documentation is available in the following files:</p>
+                <ul>
+                    <li><strong>IMPLEMENTATION_SUMMARY.md</strong> - Complete implementation details</li>
+                    <li><strong>PEOPLE_MANAGEMENT_GUIDE.md</strong> - User guide for the People system</li>
+                    <li><strong>CLEANUP_SUMMARY.md</strong> - What was removed from the original project</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>

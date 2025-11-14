@@ -1,0 +1,93 @@
+﻿<div class="modal fade alert-popup" tabindex="-1" role="dialog" aria-labelledby="mySmallModalLabel" aria-hidden="true" id="mi-modal">
+    <div class="modal-dialog" style="width:45%;">
+        <div class="modal-content">
+            <div class="modal-body">
+                <i class="alert-icon fas fa-exclamation-triangle"></i>
+                <h3 data-role="confirm-text" class="alert-text">Are you sure you want to proceed ?</h3>
+            </div>
+            <div class="modal-footer alert-btn">
+                <button type="button" class="btn btn-primary" id="modal-btn-yes">Yes</button>
+                <button type="button" class="btn btn-default" id="modal-btn-no">No</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    $("#modal-btn-no").on("click", function () {
+     
+        $("#mi-modal").modal('hide');
+    });
+    var modalConfirm = function (callback, beforeShow) {
+        if (beforeShow) beforeShow();
+
+        $("#mi-modal").modal('show');
+
+        $("#modal-btn-yes").off("click");
+        $("#modal-btn-yes").on("click", function () {
+            callback(true);
+            $("#mi-modal").modal('hide');
+        });
+
+        $("#modal-btn-no").on("click", function () {
+            callback(false);
+            $("#mi-modal").modal('hide');
+        });
+    };
+
+    var windowEvent;
+
+    function codeAddress(e) {
+        windowEvent = e;
+    }
+    var target;
+    window.onload = codeAddress;
+    $(function () {
+
+        var confirmBootstrapSkip = false;
+        window.confirm = function(message, callback, caption) {
+            var ev;
+            if (typeof event == 'undefined') {
+                ev = windowEvent;
+            } else {
+                ev = event;
+            }
+
+            target = ev.currentTarget === document ? ev.target : ev.currentTarget;
+            var form = $(target).parents('form:first');
+            if (form && form.length !== 0 && form.valid && !form.valid())
+                return false;
+            if (confirmBootstrapSkip) {
+                confirmBootstrapSkip = false;
+                return true;
+            }
+            //const decodedMessage = $('<div/>').html(message).text();
+            if (message) {
+                $('[data-role="confirm-text"]').html(message);
+            }
+            $("#mi-modal").modal('show');
+
+
+            $("#modal-btn-yes").off("click");
+            $("#modal-btn-yes").on("click", function () {
+                if (callback) callback();
+                confirmBootstrapSkip = true;
+                if ($(target).is('a') && !$(target).attr('data-ajax')) {
+                    window.location = $(target).attr('href');
+                } else {
+                    $(target).click();
+
+                }
+
+                $("#mi-modal").modal('hide');
+            });
+
+            return false;
+        };
+
+
+    });
+
+
+    
+</script>

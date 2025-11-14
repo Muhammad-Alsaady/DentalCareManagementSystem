@@ -1,0 +1,89 @@
+@model Person
+
+<div class="alert alert-warning" role="alert">
+    <h4 class="alert-heading">
+        <i class="fas fa-exclamation-triangle"></i> Confirm Delete
+    </h4>
+    <p>Are you sure you want to delete this person? This action cannot be undone.</p>
+</div>
+
+<div class="row mb-3">
+    <div class="col-md-3 fw-bold">ID:</div>
+    <div class="col-md-9">@Model.Id</div>
+</div>
+
+<div class="row mb-3">
+    <div class="col-md-3 fw-bold">Full Name:</div>
+    <div class="col-md-9">@Model.FullName</div>
+</div>
+
+<div class="row mb-3">
+    <div class="col-md-3 fw-bold">Email:</div>
+    <div class="col-md-9">@Model.Email</div>
+</div>
+
+<div class="row mb-3">
+    <div class="col-md-3 fw-bold">Phone:</div>
+    <div class="col-md-9">@Model.Phone</div>
+</div>
+
+<div class="row mb-3">
+    <div class="col-md-3 fw-bold">Department:</div>
+    <div class="col-md-9">@Model.Department</div>
+</div>
+
+<div class="row mb-3">
+    <div class="col-md-3 fw-bold">Date of Birth:</div>
+    <div class="col-md-9">@Model.DateOfBirth.ToString("MM/dd/yyyy")</div>
+</div>
+
+<div class="row mb-3">
+    <div class="col-md-3 fw-bold">Status:</div>
+    <div class="col-md-9">
+        @if (Model.IsActive)
+        {
+            <span class="badge bg-success">Active</span>
+        }
+        else
+        {
+            <span class="badge bg-danger">Inactive</span>
+        }
+    </div>
+</div>
+
+<form id="deleteForm" onsubmit="return submitDeleteForm(@Model.Id)">
+    @Html.AntiForgeryToken()
+    
+    <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+            <i class="fas fa-times"></i> Cancel
+        </button>
+        <button type="submit" class="btn btn-danger">
+            <i class="fas fa-trash"></i> Delete Person
+        </button>
+    </div>
+</form>
+
+<script>
+    function submitDeleteForm(id) {
+        $.ajax({
+            url: '@Url.Action("DeleteConfirmed")/' + id,
+            type: 'POST',
+            data: $('#deleteForm').serialize(),
+            success: function(result) {
+                if (result.success) {
+                    crudModal.hide();
+                    showAlert(result.message, 'success');
+                    refreshGrid();
+                } else {
+                    showAlert(result.message, 'error');
+                }
+            },
+            error: function() {
+                showAlert('An error occurred while deleting the person', 'error');
+            }
+        });
+        
+        return false;
+    }
+</script>

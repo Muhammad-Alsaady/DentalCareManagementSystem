@@ -1,0 +1,478 @@
+@model List<Person>
+@using NonFactors.Mvc.Grid
+
+@{
+    ViewData["Title"] = "People Management";
+    
+    var grid = new Grid<Person>(Model)
+    {
+        Name = "PersonGrid",
+        Id = "PersonGrid",
+        EmptyText = "No people found",
+        FilterMode = GridFilterMode.Header,
+        Url = Url.Action("GetGridData")
+    };
+
+    // ID Column - 5% width
+    grid.Columns.Add(model => model.Id)
+        .Titled("ID")
+        .Css("text-center col-id")
+        .Filterable(true)
+        .Sortable(true);
+
+    // First Name - 15% width
+    grid.Columns.Add(model => model.FirstName)
+        .Titled("First Name")
+        .Css("col-firstname")
+        .Filterable(true)
+        .Sortable(true);
+
+    // Last Name - 15% width
+    grid.Columns.Add(model => model.LastName)
+        .Titled("Last Name")
+        .Css("col-lastname")
+        .Filterable(true)
+        .Sortable(true);
+
+    // Email - 20% width
+    grid.Columns.Add(model => model.Email)
+        .Titled("Email")
+        .Css("col-email")
+        .Filterable(true)
+        .Sortable(true);
+
+    // Phone - 12% width
+    grid.Columns.Add(model => model.Phone)
+        .Titled("Phone")
+        .Css("col-phone")
+        .Filterable(true)
+        .Sortable(true);
+
+    // Department - 12% width
+    grid.Columns.Add(model => model.Department)
+        .Titled("Department")
+        .Css("col-department")
+        .Filterable(true)
+        .Sortable(true);
+
+    // Date of Birth - 12% width
+    grid.Columns.Add(model => model.DateOfBirth)
+        .Titled("Date of Birth")
+        .Formatted("{0:MM/dd/yyyy}")
+        .Css("text-center col-dob")
+        .Filterable(false)
+        .Sortable(true);
+
+    // Status - 8% width
+    grid.Columns.Add(model => model.IsActive)
+        .Titled("Status")
+        .Css("text-center col-status")
+        .RenderedAs(model => model.IsActive 
+            ? "<span class='badge bg-success'>Active</span>" 
+            : "<span class='badge bg-danger'>Inactive</span>")
+        .Filterable(true)
+        .Sortable(true);
+
+    // Actions - 11% width (auto-size)
+    grid.Columns.Add(model => model.Id)
+        .Titled("Actions")
+        .Css("text-center col-actions")
+        .Encoded(false)
+        .RenderedAs(model => $@"
+            <div class='btn-group btn-group-sm' role='group'>
+                <button type='button' onclick='showDetails({model.Id})' class='btn btn-info' title='View Details'>
+                    <i class='fas fa-eye'></i>
+                </button>
+                <button type='button' onclick='showEdit({model.Id})' class='btn btn-primary' title='Edit'>
+                    <i class='fas fa-edit'></i>
+                </button>
+                <button type='button' onclick='showDelete({model.Id})' class='btn btn-danger' title='Delete'>
+                    <i class='fas fa-trash'></i>
+                </button>
+            </div>
+        ")
+        .Filterable(false)
+        .Sortable(false);
+
+    grid.Pager = new GridPager<Person>(grid)
+    {
+        PartialViewName = "MvcGrid/_Pager",
+        PageSizes = new Dictionary<int, string> { 
+            { 5, "5 rows" }, 
+            { 10, "10 rows" }, 
+            { 15, "15 rows" }, 
+            { 20, "20 rows" },
+            { 50, "50 rows" }
+        },
+        ShowPageSizes = true,
+        RowsPerPage = 10,
+        PagesToDisplay = 5
+    };
+}
+
+<div class="page-title">
+    <div class="d-flex justify-content-between align-items-center">
+        <h3>
+            <i class="fas fa-users"></i> People Management
+        </h3>
+        <button onclick="showCreate()" class="btn btn-success">
+            <i class="fas fa-plus"></i> Add New Person
+        </button>
+    </div>
+</div>
+
+<!-- Alert Container -->
+<div id="alertContainer"></div>
+
+<div class="card">
+    <div class="card-body">
+        <h5 class="table-main-title">
+            <i class="fas fa-list"></i> All People
+        </h5>
+        
+        <div id="gridContainer">
+            @await Html.PartialAsync("MvcGrid/_Grid", grid)
+        </div>
+    </div>
+</div>
+
+<!-- Modal for CRUD Operations -->
+<div class="modal fade" id="crudModal" tabindex="-1" aria-labelledby="crudModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="crudModalLabel">Modal Title</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="crudModalBody">
+                <!-- Content will be loaded here -->
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <style>
+        /* Column Width Distribution */
+        .mvc-grid table {
+            table-layout: fixed;
+            width: 100%;
+        }
+
+        .col-id { width: 5%; }
+        .col-firstname { width: 15%; }
+        .col-lastname { width: 15%; }
+        .col-email { width: 20%; }
+        .col-phone { width: 12%; }
+        .col-department { width: 12%; }
+        .col-dob { width: 12%; }
+        .col-status { width: 8%; }
+        .col-actions { width: 11%; }
+
+        /* Text Overflow Handling */
+        .mvc-grid table td {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .mvc-grid table td:hover {
+            overflow: visible;
+            white-space: normal;
+            word-wrap: break-word;
+        }
+
+        /* Enhanced Table Styling */
+        .mvc-grid table {
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+
+        .mvc-grid table thead th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-weight: 600;
+            padding: 12px 8px;
+            border: none;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .mvc-grid table tbody tr {
+            transition: all 0.2s ease;
+        }
+
+        .mvc-grid table tbody tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+
+        .mvc-grid table tbody tr:hover {
+            background-color: #e3f2fd;
+            transform: scale(1.01);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .mvc-grid table tbody td {
+            padding: 10px 8px;
+            border-bottom: 1px solid #e9ecef;
+            vertical-align: middle;
+        }
+
+        /* Button Group Styling */
+        .btn-group-sm .btn {
+            padding: 4px 8px;
+            font-size: 0.875rem;
+        }
+
+        /* Badge Styling */
+        .badge {
+            font-size: 0.75rem;
+            padding: 4px 10px;
+            font-weight: 600;
+        }
+
+        /* Pagination Enhanced Styling */
+        .mvc-grid-pager {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 0;
+            margin-top: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .mvc-grid-pager button {
+            min-width: 36px;
+            height: 36px;
+            border: 1px solid #dee2e6;
+            background: white;
+            color: #667eea;
+            border-radius: 6px;
+            margin: 0 2px;
+            transition: all 0.2s ease;
+            font-weight: 500;
+        }
+
+        .mvc-grid-pager button:hover:not(:disabled) {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: #667eea;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
+        }
+
+        .mvc-grid-pager button.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: #667eea;
+            font-weight: 700;
+        }
+
+        .mvc-grid-pager button:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .mvc-grid-page-sizes {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .mvc-grid-page-sizes::before {
+            content: "Show:";
+            color: #6c757d;
+            font-weight: 500;
+        }
+
+        .mvc-grid-pager-rows {
+            padding: 6px 12px;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            background: white;
+            color: #495057;
+            font-size: 0.9rem;
+            min-width: 100px;
+        }
+
+        .mvc-grid-pager-rows:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        /* Responsive adjustments */
+        @@media (max-width: 768px) {
+            .mvc-grid table {
+                table-layout: auto;
+            }
+
+            .col-id, .col-firstname, .col-lastname, 
+            .col-email, .col-phone, .col-department, 
+            .col-dob, .col-status, .col-actions {
+                width: auto !important;
+            }
+
+            .mvc-grid-pager {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .mvc-grid-page-sizes {
+                justify-content: center;
+            }
+        }
+    </style>
+}
+
+@section Scripts {
+    <script>
+        var crudModal;
+        
+        $(document).ready(function() {
+            crudModal = new bootstrap.Modal(document.getElementById('crudModal'));
+        });
+
+        // Show Create Form
+        function showCreate() {
+            $.ajax({
+                url: '@Url.Action("Create")',
+                type: 'GET',
+                success: function(result) {
+                    $('#crudModalLabel').html('<i class="fas fa-user-plus"></i> Create New Person');
+                    $('#crudModalBody').html(result);
+                    crudModal.show();
+                },
+                error: function() {
+                    showAlert('Failed to load create form', 'error');
+                }
+            });
+        }
+
+        // Show Edit Form
+        function showEdit(id) {
+            $.ajax({
+                url: '@Url.Action("Edit")/' + id,
+                type: 'GET',
+                success: function(result) {
+                    if (result.success === false) {
+                        showAlert(result.message, 'error');
+                        return;
+                    }
+                    $('#crudModalLabel').html('<i class="fas fa-user-edit"></i> Edit Person');
+                    $('#crudModalBody').html(result);
+                    crudModal.show();
+                },
+                error: function() {
+                    showAlert('Failed to load edit form', 'error');
+                }
+            });
+        }
+
+        // Show Delete Confirmation
+        function showDelete(id) {
+            $.ajax({
+                url: '@Url.Action("Delete")/' + id,
+                type: 'GET',
+                success: function(result) {
+                    if (result.success === false) {
+                        showAlert(result.message, 'error');
+                        return;
+                    }
+                    $('#crudModalLabel').html('<i class="fas fa-user-times"></i> Delete Person');
+                    $('#crudModalBody').html(result);
+                    crudModal.show();
+                },
+                error: function() {
+                    showAlert('Failed to load delete confirmation', 'error');
+                }
+            });
+        }
+
+        // Show Details
+        function showDetails(id) {
+            $.ajax({
+                url: '@Url.Action("Details")/' + id,
+                type: 'GET',
+                success: function(result) {
+                    if (result.success === false) {
+                        showAlert(result.message, 'error');
+                        return;
+                    }
+                    $('#crudModalLabel').html('<i class="fas fa-user"></i> Person Details');
+                    $('#crudModalBody').html(result);
+                    crudModal.show();
+                },
+                error: function() {
+                    showAlert('Failed to load details', 'error');
+                }
+            });
+        }
+
+        // Submit Form via AJAX
+        function submitForm(formId, url) {
+            var form = $('#' + formId);
+            
+            $.ajax({
+                url: url,
+                type: 'POST',
+                data: form.serialize(),
+                success: function(result) {
+                    if (result.success) {
+                        crudModal.hide();
+                        showAlert(result.message, 'success');
+                        refreshGrid();
+                    } else {
+                        // If validation failed, replace form with errors
+                        $('#crudModalBody').html(result);
+                    }
+                },
+                error: function() {
+                    showAlert('An error occurred while processing your request', 'error');
+                }
+            });
+            
+            return false;
+        }
+
+        // Refresh Grid
+        function refreshGrid() {
+            $.ajax({
+                url: '@Url.Action("GetGridData")',
+                type: 'GET',
+                success: function(result) {
+                    $('#gridContainer').html(result);
+                    // Reinitialize MVC Grid
+                    document.querySelectorAll(".mvc-grid").forEach(el => new MvcGrid(el));
+                },
+                error: function() {
+                    showAlert('Failed to refresh grid', 'error');
+                }
+            });
+        }
+
+        // Show Alert
+        function showAlert(message, type) {
+            var alertClass = type === 'success' ? 'alert-info' : 'alert-error';
+            var alertHtml = `
+                <div class="alert ${alertClass} alert-dismissible" role="alert">
+                    <button style="color:black" type="button" class="close" data-bs-dismiss="alert" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                    <h5>${message}</h5>
+                </div>
+            `;
+            
+            $('#alertContainer').html(alertHtml);
+            
+            // Auto-hide after 5 seconds
+            setTimeout(function() {
+                $('#alertContainer .alert').fadeOut(function() {
+                    $(this).remove();
+                });
+            }, 5000);
+        }
+    </script>
+}

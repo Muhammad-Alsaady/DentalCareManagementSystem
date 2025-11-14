@@ -1,0 +1,420 @@
+﻿@using MVCGrid.Models
+@{
+    var menuItems = new List<MenuItem>
+    {
+        MenuItem.Create("Home", Url.Action("Index", "Home") ?? "/", "fas fa-home"),
+        MenuItem.Create("People", Url.Action("Index", "Person") ?? "/Person", "fas fa-users", isNew: true),
+        MenuItem.CreateWithSubmenu("Reports", "fas fa-chart-bar",
+            MenuItem.Create("Dashboard", "#", "fas fa-tachometer-alt"),
+            MenuItem.Create("Analytics", "#", "fas fa-chart-line")
+        ),
+        MenuItem.CreateWithSubmenu("Settings", "fas fa-cog",
+            MenuItem.Create("Profile", "#", "fas fa-user"),
+            MenuItem.Create("Preferences", "#", "fas fa-sliders-h")
+        )
+    };
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - MVC Grid Demo</title>
+
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+
+    <!-- Font Awesome 6 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
+    <!-- MVC Grid CSS -->
+    <link rel="stylesheet" href="~/css/mvc-grid/mvc-grid.css" />
+
+    <!-- Footable CSS (for mobile) -->
+    <link rel="stylesheet" href="~/css/footable.standalone.min.css" />
+
+    <!-- Custom Styles -->
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #f1f5f9;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow-x: hidden;
+        }
+
+        /* Main content wrapper */
+        .main-wrapper {
+            margin-left: 260px;
+            min-height: 100vh;
+            transition: margin-left 0.3s ease;
+        }
+
+        .main-content {
+            padding: 30px;
+            max-width: 100%;
+        }
+
+        .page-title {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem;
+            border-radius: 12px;
+            margin-bottom: 2rem;
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+        }
+
+        .page-title h3 {
+            margin: 0;
+            font-weight: 600;
+            font-size: 1.75rem;
+        }
+
+        .table-main-title {
+            color: #667eea;
+            font-size: 1.2rem;
+            margin-bottom: 1.5rem;
+            font-weight: 600;
+        }
+
+        .mvc-grid {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            padding: 10px 20px;
+            font-weight: 600;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+        }
+
+        .card {
+            border: none;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            margin-bottom: 2rem;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .alert-info {
+            background-color: #dbeafe;
+            border-color: #bfdbfe;
+            color: #1e40af;
+            border-radius: 8px;
+        }
+
+        .alert-error {
+            background-color: #fee2e2;
+            border-color: #fecaca;
+            color: #991b1b;
+            border-radius: 8px;
+        }
+
+        /* Mobile menu toggle button */
+        .menu-toggle {
+            display: none;
+            position: fixed;
+            top: 15px;
+            left: 15px;
+            z-index: 1050;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+            transition: transform 0.2s;
+        }
+
+        .menu-toggle:hover {
+            transform: scale(1.05);
+        }
+
+        .menu-toggle i {
+            font-size: 1.2rem;
+        }
+
+        /* Mobile Responsive */
+        @@media (max-width: 768px) {
+            .main-wrapper {
+                margin-left: 0;
+            }
+
+            .menu-toggle {
+                display: block;
+            }
+
+            .main-content {
+                padding: 20px 15px;
+                padding-top: 70px;
+            }
+        }
+
+        /* Modal improvements */
+        .modal-content {
+            border-radius: 12px;
+            border: none;
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 12px 12px 0 0;
+            padding: 1.25rem 1.5rem;
+        }
+
+        .modal-header .btn-close {
+            filter: brightness(0) invert(1);
+        }
+
+        .modal-footer {
+            border-top: 1px solid #e5e7eb;
+            padding: 1.25rem 1.5rem;
+        }
+    </style>
+
+    @await RenderSectionAsync("Styles", required: false)
+</head>
+<body>
+    <!-- Mobile Menu Toggle -->
+    <button class="menu-toggle" onclick="toggleSidebar()">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- Left Sidebar Menu -->
+    @await Html.PartialAsync("_LeftMenu", menuItems)
+
+    <!-- Main Content Wrapper -->
+    <div class="main-wrapper">
+        <div class="main-content">
+            @RenderBody()
+        </div>
+    </div>
+
+    <!-- jQuery (required for MVC Grid) -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+
+    <!-- Bootstrap 5 -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- MVC Grid JavaScript -->
+    <script src="~/js/mvc-grid/mvc-grid.js"></script>
+
+    <!-- Footable JavaScript -->
+    <script src="~/js/footable.min.js"></script>
+
+    <!-- Sidebar Toggle Script -->
+    <script>
+        function toggleSidebar() {
+            $('#sidebar').toggleClass('open');
+            $('#sidebarOverlay').toggleClass('show');
+        }
+
+        // Close sidebar when clicking outside on mobile
+        $(document).click(function(event) {
+            if (window.innerWidth <= 768) {
+                if (!$(event.target).closest('#sidebar, .menu-toggle').length) {
+                    $('#sidebar').removeClass('open');
+                    $('#sidebarOverlay').removeClass('show');
+                }
+            }
+        });
+    </script>
+
+    <!-- MVC Grid Initialization with Footable Integration -->
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            // Initialize MVC Grid
+            document.querySelectorAll(".mvc-grid").forEach(el => new MvcGrid(el));
+
+            // Initialize Footable for mobile responsiveness
+            toggleTable();
+        });
+
+        // Footable mobile toggle
+        function toggleTable() {
+            if (window.innerWidth < 768) {
+                if (!$('.mvc-grid table').hasClass('footable-loaded')) {
+                    $('.mvc-grid table').footable();
+                    $('.mvc-grid table').addClass('footable-loaded');
+                    setTimeout(() => {
+                        enableGridFeatures();
+                        activateSortingForFootable();
+                    }, 200);
+                }
+                activateFilterForFootable();
+            } else {
+                if ($('.mvc-grid table').hasClass('footable-loaded')) {
+                    $('.mvc-grid table').footable('destroy');
+                    $('.mvc-grid table').removeClass('footable-loaded');
+                    refreshGrid($('.mvc-grid')[0]);
+                    setTimeout(() => {
+                        enableGridFeatures();
+                        activateSortingForFootable();
+                    }, 200);
+                }
+            }
+        }
+
+        function activateFilterForFootable() {
+            const filterButtons = $('.mvc-grid-filter');
+            filterButtons.off('click').on('click', openFilterPopup);
+        }
+
+        function openFilterPopup(event) {
+            const filterButton = $(event.target);
+            const columnHeader = filterButton.closest('th');
+            const gridElement = columnHeader.closest('.mvc-grid');
+
+            if (!gridElement.length) return;
+
+            const grid = new MvcGrid(gridElement[0]);
+            const headerText = columnHeader.find('.mvc-grid-title').text().trim();
+            const columnName = columnHeader.attr('data-name');
+
+            const column = grid.columns.find(col =>
+                col.name === columnName ||
+                col.header.querySelector('.mvc-grid-title')?.innerText.trim() === headerText
+            );
+
+            if (column?.filter?.instance) {
+                column.filter.instance.show();
+                const popup = $('.mvc-grid-popup')[0];
+                if (popup) updatePopupPosition(popup, filterButton[0]);
+            }
+        }
+
+        function updatePopupPosition(popup, filterButton) {
+            const filterPos = $(filterButton).offset();
+            const arrow = $(popup).find('.popup-arrow');
+            const top = filterPos.top + $(filterButton).outerHeight() * 0.6 + arrow.outerHeight();
+            const left = filterPos.left - 8;
+            const arrowLeft = $(filterButton).outerWidth() / 2;
+
+            if (left + $(popup).outerWidth() + 8 > $(window).width()) {
+                const offset = $(popup).outerWidth() - $(filterButton).outerWidth() - 16;
+                $(popup).css({ left: (left - offset) + 'px', top: top + 'px' });
+                arrow.css('left', (arrowLeft + offset) + 'px');
+            } else {
+                $(popup).css({ left: left + 'px', top: top + 'px' });
+                arrow.css('left', arrowLeft + 'px');
+            }
+        }
+
+        function activateSortingForFootable() {
+            const sortButtons = $('.mvc-grid-sort');
+            sortButtons.off('click').on('click', applySorting);
+        }
+
+        function applySorting(event) {
+            const sortButton = $(event.target);
+            const columnHeader = sortButton.closest('th');
+            const gridElement = columnHeader.closest('.mvc-grid');
+
+            if (!gridElement.length) return;
+
+            const grid = new MvcGrid(gridElement[0]);
+            const headerText = columnHeader.find('.mvc-grid-title').text().trim();
+            const columnName = columnHeader.attr('data-name');
+
+            const column = grid.columns.find(col =>
+                col.name === columnName ||
+                col.header.querySelector('.mvc-grid-title')?.innerText.trim() === headerText
+            );
+
+            if (column?.sort) {
+                column.applySort();
+            }
+        }
+
+        function enableGridFeatures() {
+            const grids = $('.mvc-grid');
+            grids.each(function () {
+                const grid = new MvcGrid(this);
+                grid.scriptParsed = false;
+
+                grid.columns.forEach(column => {
+                    if (column.filter?.instance) {
+                        column.filter.instance.init();
+                        column.filter.instance.bindValues = function () {
+                            const popup = $('.mvc-grid-popup')[0];
+                            const valueInput = $(popup).find('.mvc-grid-value');
+                            valueInput.on('input', function () {
+                                column.filter.instance.apply();
+                            });
+                        };
+                    }
+
+                    if (column.filter?.button) {
+                        $(column.filter.button).on('click', function () {
+                            column.filter.instance.show();
+                        });
+                    }
+
+                    if (column.sort?.button) {
+                        column.bindSort();
+                    }
+                });
+            });
+        }
+
+        // Refresh grid helper
+        function refreshGrid(gridElement) {
+            if (!gridElement) {
+                const grids = document.getElementsByClassName('mvc-grid');
+                if (grids && grids.length > 0) {
+                    for (let i = 0; i < grids.length; i++) {
+                        const grid = new MvcGrid(grids[i]);
+                        grid.scriptParsed = false;
+                        grid.reload();
+                    }
+                }
+            } else {
+                const grid = new MvcGrid(gridElement);
+                grid.scriptParsed = false;
+                grid.reload();
+            }
+        }
+
+        // Handle grid reload events
+        $(document).on('reloadend', function () {
+            if (window.innerWidth < 768) {
+                setTimeout(function () {
+                    if ($('.mvc-grid table').hasClass('footable-loaded')) {
+                        $('.mvc-grid table').footable('destroy');
+                        $('.mvc-grid table').removeClass('footable-loaded');
+                    }
+                    $('.mvc-grid table').footable();
+                    $('.mvc-grid table').addClass('footable-loaded');
+                    setTimeout(() => {
+                        enableGridFeatures();
+                        activateSortingForFootable();
+                    }, 200);
+                }, 200);
+            }
+
+            activateFilterForFootable();
+            activateSortingForFootable();
+        });
+
+        $(window).on('resize', toggleTable);
+    </script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

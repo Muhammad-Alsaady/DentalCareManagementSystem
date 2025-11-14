@@ -1,0 +1,21 @@
+﻿@model (string popUpId, string titleId, string contentId,string htmlContent)
+@{
+    var modalId=Model.popUpId??"form";
+}
+<div class="modal fade" id="@(modalId)" role="dialog" >
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" onclick="$('#@modalId').modal('hide')">&times;</button>
+                <h4 id="@(Model.titleId??"modalTitle")" class="modal-title"></h4>
+            </div>
+            <div class="modal-body" id="@(Model.contentId??"details-form")">
+                @Html.Raw(Model.htmlContent??"")
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" onclick="$('#@modalId').modal('hide')">Close</button>
+            </div>
+
+        </div>
+    </div>
+</div>

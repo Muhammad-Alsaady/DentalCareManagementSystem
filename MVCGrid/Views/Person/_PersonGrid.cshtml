@@ -1,0 +1,110 @@
+@model List<Person>
+@using NonFactors.Mvc.Grid
+
+@{
+    var grid = new Grid<Person>(Model)
+    {
+        Name = "PersonGrid",
+        Id = "PersonGrid",
+        EmptyText = "No people found",
+        FilterMode = GridFilterMode.Header
+    };
+
+    // ID Column - 5% width
+    grid.Columns.Add(model => model.Id)
+        .Titled("ID")
+        .Css("text-center col-id")
+        .Filterable(true)
+        .Sortable(true);
+
+    // First Name - 15% width
+    grid.Columns.Add(model => model.FirstName)
+        .Titled("First Name")
+        .Css("col-firstname")
+        .Filterable(true)
+        .Sortable(true);
+
+    // Last Name - 15% width
+    grid.Columns.Add(model => model.LastName)
+        .Titled("Last Name")
+        .Css("col-lastname")
+        .Filterable(true)
+        .Sortable(true);
+
+    // Email - 20% width
+    grid.Columns.Add(model => model.Email)
+        .Titled("Email")
+        .Css("col-email")
+        .Filterable(true)
+        .Sortable(true);
+
+    // Phone - 12% width
+    grid.Columns.Add(model => model.Phone)
+        .Titled("Phone")
+        .Css("col-phone")
+        .Filterable(true)
+        .Sortable(true);
+
+    // Department - 12% width
+    grid.Columns.Add(model => model.Department)
+        .Titled("Department")
+        .Css("col-department")
+        .Filterable(true)
+        .Sortable(true);
+
+    // Date of Birth - 12% width
+    grid.Columns.Add(model => model.DateOfBirth)
+        .Titled("Date of Birth")
+        .Formatted("{0:MM/dd/yyyy}")
+        .Css("text-center col-dob")
+        .Filterable(false)
+        .Sortable(true);
+
+    // Status - 8% width
+    grid.Columns.Add(model => model.IsActive)
+        .Titled("Status")
+        .Css("text-center col-status")
+        .RenderedAs(model => model.IsActive 
+            ? "<span class='badge bg-success'>Active</span>" 
+            : "<span class='badge bg-danger'>Inactive</span>")
+        .Filterable(true)
+        .Sortable(true);
+
+    // Actions - 11% width
+    grid.Columns.Add(model => model.Id)
+        .Titled("Actions")
+        .Css("text-center col-actions")
+        .Encoded(false)
+        .RenderedAs(model => $@"
+            <div class='btn-group btn-group-sm' role='group'>
+                <button type='button' onclick='showDetails({model.Id})' class='btn btn-info' title='View Details'>
+                    <i class='fas fa-eye'></i>
+                </button>
+                <button type='button' onclick='showEdit({model.Id})' class='btn btn-primary' title='Edit'>
+                    <i class='fas fa-edit'></i>
+                </button>
+                <button type='button' onclick='showDelete({model.Id})' class='btn btn-danger' title='Delete'>
+                    <i class='fas fa-trash'></i>
+                </button>
+            </div>
+        ")
+        .Filterable(false)
+        .Sortable(false);
+
+    grid.Pager = new GridPager<Person>(grid)
+    {
+        PartialViewName = "MvcGrid/_Pager",
+        PageSizes = new Dictionary<int, string> { 
+            { 5, "5 rows" }, 
+            { 10, "10 rows" }, 
+            { 15, "15 rows" }, 
+            { 20, "20 rows" },
+            { 50, "50 rows" }
+        },
+        ShowPageSizes = true,
+        RowsPerPage = 10,
+        PagesToDisplay = 5
+    };
+}
+
+@await Html.PartialAsync("MvcGrid/_Grid", grid)
