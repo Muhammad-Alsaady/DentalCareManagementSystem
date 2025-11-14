@@ -1,32 +1,65 @@
-using System.Diagnostics;
+﻿using DentalCareManagmentSystem.Application.Interfaces;
+using DentalCareManagmentSystem.Web.Models;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Localization;
 using Microsoft.AspNetCore.Mvc;
-using MVCGrid.Models;
 
-namespace MVCGrid.Controllers
+namespace DentalCareManagmentSystem.Web.Controllers;
+
+[Authorize]
+public class HomeController : Controller
 {
-    public class HomeController : Controller
+    private readonly IPatientService _patientService;
+    private readonly IAppointmentService _appointmentService;
+    private readonly INotificationService _notificationService;
+
+    public HomeController(IPatientService patientService, IAppointmentService appointmentService, INotificationService notificationService)
     {
-        private readonly ILogger<HomeController> _logger;
+        _patientService = patientService;
+        _appointmentService = appointmentService;
+        _notificationService = notificationService;
+    }
 
-        public HomeController(ILogger<HomeController> logger)
+    public IActionResult Index()
+    {
+        var viewModel = new DashboardViewModel
         {
-            _logger = logger;
-        }
+            TotalPatients = _patientService.GetAll().Count(),
+            TodayAppointments = _appointmentService.GetTodaysAppointments().Count(),
+            PendingAppointments = _appointmentService.GetPendingAppointments().Count(),
+            RecentPatients = _patientService.GetRecentPatients(),
+            TodayAppointmentsList = _appointmentService.GetTodaysAppointments()
+        };
 
-        public IActionResult Index()
-        {
-            return View();
-        }
+        return View(viewModel);
+    }
 
-        public IActionResult Privacy()
-        {
-            return View();
-        }
+    public IActionResult Privacy()
+    {
+        return View();
+    }
+   
+   [HttpPost]
+    public IActionResult SetLanguage(string culture, string returnUrl)
+    {
+        Response.Cookies.Append(
+            CookieRequestCultureProvider.DefaultCookieName,
+            CookieRequestCultureProvider.MakeCookieValue(new RequestCulture(culture)),
+            new CookieOptions
+            {
+                Expires = DateTimeOffset.UtcNow.AddYears(1),
+                IsEssential = true,
+                SameSite = SameSiteMode.Lax
+            });
 
-        [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
-        public IActionResult Error()
-        {
-            return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
-        }
+        if (string.IsNullOrEmpty(returnUrl))
+            returnUrl = Url.Action("Index", "Home") ?? "/";
+
+        return LocalRedirect(returnUrl);
+    }
+    [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
+    public IActionResult Error()
+    {
+        return View();
     }
 }
