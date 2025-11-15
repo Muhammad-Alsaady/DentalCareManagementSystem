@@ -359,4 +359,33 @@ public class NotificationsController : Controller
             return Json(new { success = false, message = $"Error: {ex.Message}" });
         }
     }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public IActionResult UpdatePaidAmount(Guid appointmentId, decimal paidAmount)
+    {
+        try
+        {
+            if (paidAmount < 0)
+            {
+                return Json(new { success = false, message = "Paid amount cannot be negative" });
+            }
+
+            _appointmentService.UpdatePaidAmount(appointmentId, paidAmount);
+            
+            var appointment = _appointmentService.GetById(appointmentId);
+            
+            return Json(new
+            {
+                success = true,
+                message = "Paid amount updated successfully",
+                paidAmount = appointment?.PaidAmount ?? 0,
+                remainder = appointment?.Remainder ?? 0
+            });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = ex.Message });
+        }
+    }
 }

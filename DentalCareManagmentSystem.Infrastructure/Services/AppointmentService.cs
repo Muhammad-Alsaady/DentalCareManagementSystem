@@ -44,6 +44,8 @@ public class AppointmentService : IAppointmentService
     {
         return _context.Appointments
             .Include(a => a.Patient)
+                .ThenInclude(p => p.TreatmentPlans)
+                    .ThenInclude(tp => tp.Items)
             .Select(a => new AppointmentDto
             {
                 Id = a.Id,
@@ -52,9 +54,16 @@ public class AppointmentService : IAppointmentService
                 PatientPhone = a.Patient != null ? a.Patient.Phone : null,
                 Date = a.Date,
                 StartTime = a.StartTime,
-                EndTime = a.EndTime, // Added
+                EndTime = a.EndTime,
                 Status = a.Status.ToString(),
-                Notes = a.Notes // Added
+                Notes = a.Notes,
+                PaidAmount = a.PaidAmount,
+                TotalCost = a.Patient != null 
+                    ? a.Patient.TreatmentPlans
+                        .Where(tp => !tp.IsCompleted)
+                        .SelectMany(tp => tp.Items)
+                        .Sum(i => i.PriceSnapshot * i.Quantity)
+                    : 0
             });
     }
 
@@ -185,6 +194,16 @@ public class AppointmentService : IAppointmentService
                 appointment.Status = Enum.Parse<AppointmentStatus>(appointmentDto.Status);
             }
             appointment.Notes = appointmentDto.Notes; // Added
+            _context.SaveChanges();
+        }
+    }
+
+    public void UpdatePaidAmount(Guid id, decimal paidAmount)
+    {
+        var appointment = _context.Appointments.Find(id);
+        if (appointment != null)
+        {
+            appointment.PaidAmount = paidAmount;
             _context.SaveChanges();
         }
     }

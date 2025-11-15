@@ -115,14 +115,16 @@
             width: 100%;
         }
 
-        .col-patient-name { width: 20%; }
-        .col-phone { width: 15%; }
-        .col-date { width: 12%; }
-        .col-start-time { width: 10%; }
-        .col-end-time { width: 10%; }
-        .col-status { width: 12%; }
-        .col-notes { width: 16%; }
-        .col-actions { width: 15%; }
+        .col-patient-name { width: 18%; }
+        .col-phone { width: 12%; }
+        .col-date { width: 10%; }
+        .col-start-time { width: 8%; }
+        .col-end-time { width: 8%; }
+        .col-status { width: 10%; }
+        .col-paid-amount { width: 8%; }
+        .col-remainder { width: 8%; }
+        .col-notes { width: 10%; }
+        .col-actions { width: 10%; }
 
         /* Text Overflow Handling */
         .mvc-grid table td {
@@ -169,11 +171,70 @@
         #appointmentDate {
             max-width: 300px;
         }
+
+        /* Paid Amount Input Styling */
+        .paid-amount-input {
+            font-size: 0.875rem;
+        }
+
+        .paid-amount-input:focus {
+            border-color: #28a745;
+            box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
+        }
+
+        /* Remainder Display Styling */
+        .text-danger {
+            color: #dc3545 !important;
+        }
+
+        .text-success {
+            color: #28a745 !important;
+        }
     </style>
 }
 
 @section Scripts {
     <script>
+        // Update Paid Amount
+        function updatePaidAmount(appointmentId, paidAmount) {
+            if (!paidAmount || paidAmount < 0) {
+                showAlert('Invalid paid amount', 'error');
+                return;
+            }
+
+            $.ajax({
+                url: '@Url.Action("UpdatePaidAmount")',
+                type: 'POST',
+                data: {
+                    appointmentId: appointmentId,
+                    paidAmount: parseFloat(paidAmount),
+                    __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                },
+                success: function(response) {
+                    if (response.success) {
+                        showAlert(response.message, 'success');
+                        // Update the remainder display
+                        $('#remainder-' + appointmentId).text('$' + response.remainder.toFixed(2));
+                        
+                        // Update color based on remainder
+                        var remainderElement = $('#remainder-' + appointmentId);
+                        remainderElement.removeClass('text-danger text-success fw-bold');
+                        if (response.remainder > 0) {
+                            remainderElement.addClass('text-danger fw-bold');
+                        } else {
+                            remainderElement.addClass('text-success');
+                        }
+                    } else {
+                        showAlert(response.message, 'error');
+                    }
+                },
+                error: function(xhr) {
+                    console.error('Error updating paid amount:', xhr);
+                    showAlert('Failed to update paid amount', 'error');
+                }
+            });
+        }
+
         // Filter appointments by date
         function filterByDate(date) {
             if (!date) {

@@ -5,27 +5,27 @@
 @{
     var grid = new Grid<DentalCareManagmentSystem.Application.DTOs.AppointmentDto>(Model)
     {
-        Name = "NotificationsGrid",
-        Id = "NotificationsGrid",
-        EmptyText = "No appointments found for today",
+        Name = "appointments-grid",
+        Id = "appointments-grid",
+        EmptyText = "No appointments found",
         FilterMode = GridFilterMode.Header
     };
-
-    // Patient Name - 20% width
+    
+    // Patient Name - 18% width
     grid.Columns.Add(model => model.PatientName)
         .Titled("Patient Name")
         .Css("col-patient-name")
         .Filterable(true)
         .Sortable(true);
 
-    // Phone - 15% width
+    // Phone - 12% width
     grid.Columns.Add(model => model.PatientPhone)
         .Titled("Phone")
         .Css("col-phone")
         .Filterable(true)
         .Sortable(true);
 
-    // Date - 12% width
+    // Date - 10% width
     grid.Columns.Add(model => model.Date)
         .Titled("Date")
         .Formatted("{0:yyyy-MM-dd}")
@@ -33,7 +33,7 @@
         .Filterable(false)
         .Sortable(true);
 
-    // Start Time - 10% width
+    // Start Time - 8% width
     grid.Columns.Add(model => model.StartTime)
         .Titled("Start Time")
         .Formatted("{0:hh\\:mm}")
@@ -41,7 +41,7 @@
         .Filterable(false)
         .Sortable(true);
 
-    // End Time - 10% width
+    // End Time - 8% width
     grid.Columns.Add(model => model.EndTime)
         .Titled("End Time")
         .Formatted("{0:hh\\:mm}")
@@ -49,7 +49,7 @@
         .Filterable(false)
         .Sortable(true);
 
-    // Status - 12% width
+    // Status - 10% width
     grid.Columns.Add(model => model.Status)
         .Titled("Status")
         .Css("text-center col-status")
@@ -57,14 +57,32 @@
         .Filterable(true)
         .Sortable(true);
 
-    // Notes - 16% width
+    // Paid Amount - 8% width (Editable)
+    grid.Columns.Add(model => model.PaidAmount)
+        .Titled("Paid Amount")
+        .Css("text-center col-paid-amount")
+        .Encoded(false)
+        .RenderedAs(model => GetPaidAmountInput(model))
+        .Filterable(false)
+        .Sortable(true);
+
+    // Remainder - 8% width (Calculated)
+    grid.Columns.Add(model => model.Remainder)
+        .Titled("Remainder")
+        .Css("text-center col-remainder")
+        .Encoded(false)
+        .RenderedAs(model => GetRemainderDisplay(model))
+        .Filterable(false)
+        .Sortable(true);
+
+    // Notes - 10% width
     grid.Columns.Add(model => model.Notes)
         .Titled("Notes")
         .Css("col-notes")
         .Filterable(false)
         .Sortable(false);
 
-    // Actions - 15% width
+    // Actions - 10% width
     grid.Columns.Add(model => model.Id)
         .Titled("Actions")
         .Css("text-center col-actions")
@@ -102,6 +120,31 @@
         return $"<span class='badge {badgeClass}'>{status}</span>";
     }
 
+    string GetPaidAmountInput(DentalCareManagmentSystem.Application.DTOs.AppointmentDto model)
+    {
+        var sb = new StringBuilder();
+        sb.Append("<div class='input-group input-group-sm' style='max-width: 150px; margin: 0 auto;'>");
+        sb.Append("<span class='input-group-text'>$</span>");
+        sb.Append("<input type='number' ");
+        sb.Append("class='form-control paid-amount-input' ");
+        sb.Append($"value='{model.PaidAmount}' ");
+        sb.Append($"data-appointment-id='{model.Id}' ");
+        sb.Append("min='0' ");
+        sb.Append("step='0.01' ");
+        sb.Append($"onchange='updatePaidAmount(\"{model.Id}\", this.value)' ");
+        sb.Append("style='text-align: right;' />");
+        sb.Append("</div>");
+        return sb.ToString();
+    }
+
+    string GetRemainderDisplay(DentalCareManagmentSystem.Application.DTOs.AppointmentDto model)
+    {
+        var remainder = model.Remainder;
+        var colorClass = remainder > 0 ? "text-danger" : "text-success";
+        var fontWeight = remainder > 0 ? "fw-bold" : "";
+        return $"<span class='{colorClass} {fontWeight}' id='remainder-{model.Id}'>${remainder:N2}</span>";
+    }
+
     string GetActionButtons(DentalCareManagmentSystem.Application.DTOs.AppointmentDto model)
     {
         var sb = new StringBuilder();
@@ -134,3 +177,16 @@
 }
 
 @await Html.PartialAsync("MvcGrid/_Grid", grid)
+
+<style>
+    .col-patient-name { width: 18%; }
+    .col-phone { width: 12%; }
+    .col-date { width: 10%; }
+    .col-start-time { width: 8%; }
+    .col-end-time { width: 8%; }
+    .col-status { width: 10%; }
+    .col-paid-amount { width: 8%; }
+    .col-remainder { width: 8%; }
+    .col-notes { width: 10%; }
+    .col-actions { width: 10%; }
+</style>

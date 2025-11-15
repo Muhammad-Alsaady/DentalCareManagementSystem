@@ -1,5 +1,4 @@
-﻿
-using DentalCareManagmentSystem.Application.DTOs;
+﻿using DentalCareManagmentSystem.Application.DTOs;
 using DentalCareManagmentSystem.Application.Interfaces;
 using DentalCareManagmentSystem.Domain.Enums;
 using DentalCareManagmentSystem.Infrastructure.Data;
@@ -62,6 +61,8 @@ public class NotificationService : INotificationService
         var today = DateTime.Today;
         var appointments = await _context.Appointments
             .Include(a => a.Patient)
+                .ThenInclude(p => p.TreatmentPlans)
+                    .ThenInclude(tp => tp.Items)
             .Where(a => a.Date.Date == today.Date &&
                        a.Status != AppointmentStatus.Cancelled)
             .OrderBy(a => a.StartTime)
@@ -77,7 +78,12 @@ public class NotificationService : INotificationService
             StartTime = a.StartTime,
             EndTime = a.EndTime,
             Status = a.Status.ToString(),
-            Notes = a.Notes
+            Notes = a.Notes,
+            PaidAmount = a.PaidAmount,
+            TotalCost = a.Patient?.TreatmentPlans
+                .Where(tp => !tp.IsCompleted)
+                .SelectMany(tp => tp.Items)
+                .Sum(i => i.PriceSnapshot * i.Quantity) ?? 0
         }).ToList();
     }
 
@@ -87,6 +93,8 @@ public class NotificationService : INotificationService
         {
             var appointments = await _context.Appointments
                 .Include(a => a.Patient)
+                    .ThenInclude(p => p.TreatmentPlans)
+                        .ThenInclude(tp => tp.Items)
                 .Where(a => a.Date.Date == targetDate.Date &&
                            a.Status != AppointmentStatus.Cancelled)
                 .OrderBy(a => a.StartTime)
@@ -102,7 +110,12 @@ public class NotificationService : INotificationService
                 StartTime = a.StartTime,
                 EndTime = a.EndTime,
                 Status = a.Status.ToString(),
-                Notes = a.Notes
+                Notes = a.Notes,
+                PaidAmount = a.PaidAmount,
+                TotalCost = a.Patient?.TreatmentPlans
+                    .Where(tp => !tp.IsCompleted)
+                    .SelectMany(tp => tp.Items)
+                    .Sum(i => i.PriceSnapshot * i.Quantity) ?? 0
             }).ToList();
         }
 
