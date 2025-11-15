@@ -1,12 +1,11 @@
-﻿using DentalCareManagmentSystem.Application.DTOs;
-using DentalCareManagmentSystem.Application.Interfaces;
-using DentalCareManagmentSystem.Infrastructure.Data;
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
+using DentalCareManagmentSystem.Application.Interfaces;
+using DentalCareManagmentSystem.Application.DTOs;
+using DentalCareManagmentSystem.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 
-namespace DentalCareManagmentSystem.Web.Controllers;
+namespace DentalManagementSystem.Controllers;
 
 [Authorize(Roles = "Doctor,SystemAdmin")]
 public class TreatmentPlansController : Controller

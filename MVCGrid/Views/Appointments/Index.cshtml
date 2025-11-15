@@ -1,0 +1,323 @@
+@model List<DentalCareManagmentSystem.Application.DTOs.AppointmentDto>
+
+@{
+    ViewData["Title"] = "Appointments Management";
+}
+
+<div class="page-title">
+    <div class="d-flex justify-content-between align-items-center">
+        <h3>
+            <i class="fas fa-calendar-alt"></i> Appointments Management
+        </h3>
+        <div>
+            <a href="@Url.Action("Calendar")" class="btn btn-info">
+                <i class="fas fa-calendar"></i> Calendar View
+            </a>
+            <button onclick="showCreate()" class="btn btn-success">
+                <i class="fas fa-calendar-plus"></i> New Appointment
+            </button>
+            <button onclick="refreshGrid()" class="btn btn-secondary">
+                <i class="fas fa-sync"></i> Refresh
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Alert Container -->
+<div id="alertContainer"></div>
+
+<!-- Quick Stats -->
+<div class="row mb-3">
+    <div class="col-md-3">
+        <div class="card text-white bg-info">
+            <div class="card-body text-center">
+                <h3>@Model.Count(a => a.Status == "Scheduled")</h3>
+                <p>Scheduled</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-warning">
+            <div class="card-body text-center">
+                <h3>@Model.Count(a => a.Status == "Notified")</h3>
+                <p>In Queue</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-success">
+            <div class="card-body text-center">
+                <h3>@Model.Count(a => a.Status == "Completed")</h3>
+                <p>Completed</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-danger">
+            <div class="card-body text-center">
+                <h3>@Model.Count(a => a.Status == "Cancelled")</h3>
+                <p>Cancelled</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filter Options -->
+<div class="card mb-3">
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-3">
+                <label class="form-label">Filter by Date:</label>
+                <input type="date" id="filterDate" class="form-control" value="@DateTime.Today.ToString("yyyy-MM-dd")" />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Filter by Status:</label>
+                <select id="filterStatus" class="form-control">
+                    <option value="">All Statuses</option>
+                    <option value="Scheduled">Scheduled</option>
+                    <option value="Notified">Notified</option>
+                    <option value="Completed">Completed</option>
+                    <option value="Cancelled">Cancelled</option>
+                </select>
+            </div>
+            <div class="col-md-3 d-flex align-items-end">
+                <button onclick="applyFilters()" class="btn btn-primary w-100">
+                    <i class="fas fa-filter"></i> Apply Filters
+                </button>
+            </div>
+            <div class="col-md-3 d-flex align-items-end">
+                <button onclick="clearFilters()" class="btn btn-secondary w-100">
+                    <i class="fas fa-times"></i> Clear Filters
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <h5 class="table-main-title">
+            <i class="fas fa-list"></i> All Appointments
+        </h5>
+        
+        <div id="gridContainer">
+            @await Html.PartialAsync("_AppointmentsGrid", Model)
+        </div>
+    </div>
+</div>
+
+<!-- Modal for CRUD Operations -->
+<div class="modal fade" id="crudModal" tabindex="-1" aria-labelledby="crudModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="crudModalLabel">Modal Title</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="crudModalBody">
+                <!-- Content will be loaded here -->
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        var crudModal;
+        
+        $(document).ready(function() {
+            crudModal = new bootstrap.Modal(document.getElementById('crudModal'));
+        });
+
+        // Show Create Form
+        function showCreate() {
+            $.ajax({
+                url: '@Url.Action("Create")',
+                type: 'GET',
+                success: function(result) {
+                    $('#crudModalLabel').html('<i class="fas fa-calendar-plus"></i> New Appointment');
+                    $('#crudModalBody').html(result);
+                    crudModal.show();
+                },
+                error: function() {
+                    showAlert('Failed to load create form', 'error');
+                }
+            });
+        }
+
+        // Show Edit Form
+        function showEdit(id) {
+            $.ajax({
+                url: '@Url.Action("Edit")/' + id,
+                type: 'GET',
+                success: function(result) {
+                    if (typeof result === 'object' && result.success === false) {
+                        showAlert(result.message, 'error');
+                        return;
+                    }
+                    $('#crudModalLabel').html('<i class="fas fa-calendar-edit"></i> Edit Appointment');
+                    $('#crudModalBody').html(result);
+                    crudModal.show();
+                },
+                error: function() {
+                    showAlert('Failed to load edit form', 'error');
+                }
+            });
+        }
+
+        // Show Delete Confirmation
+        function showDelete(id) {
+            $.ajax({
+                url: '@Url.Action("Delete")/' + id,
+                type: 'GET',
+                success: function(result) {
+                    if (typeof result === 'object' && result.success === false) {
+                        showAlert(result.message, 'error');
+                        return;
+                    }
+                    $('#crudModalLabel').html('<i class="fas fa-calendar-times"></i> Delete Appointment');
+                    $('#crudModalBody').html(result);
+                    crudModal.show();
+                },
+                error: function() {
+                    showAlert('Failed to load delete confirmation', 'error');
+                }
+            });
+        }
+
+        // Show Details
+        function showDetails(id) {
+            $.ajax({
+                url: '@Url.Action("Details")/' + id,
+                type: 'GET',
+                success: function(result) {
+                    if (typeof result === 'object' && result.success === false) {
+                        showAlert(result.message, 'error');
+                        return;
+                    }
+                    $('#crudModalLabel').html('<i class="fas fa-calendar-check"></i> Appointment Details');
+                    $('#crudModalBody').html(result);
+                    crudModal.show();
+                },
+                error: function() {
+                    showAlert('Failed to load details', 'error');
+                }
+            });
+        }
+
+        // Update Status
+        function updateStatus(id, status) {
+            if (!confirm(`Change status to ${status}?`)) {
+                return;
+            }
+
+            $.ajax({
+                url: '@Url.Action("UpdateStatus")',
+                type: 'POST',
+                data: { 
+                    id: id, 
+                    status: status,
+                    __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                },
+                success: function() {
+                    showAlert(`Status updated to ${status}`, 'success');
+                    refreshGrid();
+                },
+                error: function() {
+                    showAlert('Failed to update status', 'error');
+                }
+            });
+        }
+
+        // Submit Form via AJAX
+        function submitForm(formId, url) {
+            var form = $('#' + formId);
+            
+            $.ajax({
+                url: url,
+                type: 'POST',
+                data: form.serialize(),
+                success: function(result) {
+                    if (result.success) {
+                        crudModal.hide();
+                        showAlert(result.message, 'success');
+                        refreshGrid();
+                    } else {
+                        // If validation failed, replace form with errors
+                        $('#crudModalBody').html(result);
+                    }
+                },
+                error: function() {
+                    showAlert('An error occurred while processing your request', 'error');
+                }
+            });
+            
+            return false;
+        }
+
+        // Apply Filters
+        function applyFilters() {
+            var date = $('#filterDate').val();
+            var status = $('#filterStatus').val();
+            
+            var url = '@Url.Action("Index")';
+            var params = [];
+            
+            if (date) params.push('date=' + encodeURIComponent(date));
+            if (status) params.push('status=' + encodeURIComponent(status));
+            
+            if (params.length > 0) {
+                url += '?' + params.join('&');
+            }
+            
+            window.location.href = url;
+        }
+
+        // Clear Filters
+        function clearFilters() {
+            $('#filterDate').val('@DateTime.Today.ToString("yyyy-MM-dd")');
+            $('#filterStatus').val('');
+            window.location.href = '@Url.Action("Index")';
+        }
+
+        // Refresh Grid
+        function refreshGrid() {
+            $.ajax({
+                url: '@Url.Action("GetAppointmentsGrid")',
+                type: 'GET',
+                success: function(result) {
+                    $('#gridContainer').html(result);
+                    // Reinitialize MVC Grid if needed
+                    if (typeof MvcGrid !== 'undefined') {
+                        document.querySelectorAll(".mvc-grid").forEach(el => new MvcGrid(el));
+                    }
+                },
+                error: function() {
+                    showAlert('Failed to refresh grid', 'error');
+                }
+            });
+        }
+
+        // Show Alert
+        function showAlert(message, type) {
+            var alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+            var iconClass = type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle';
+            var alertHtml = `
+                <div class="alert ${alertClass} alert-dismissible fade show" role="alert">
+                    <i class="fas ${iconClass}"></i> ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            `;
+            
+            $('#alertContainer').html(alertHtml);
+            
+            // Auto-hide after 5 seconds
+            setTimeout(function() {
+                $('#alertContainer .alert').fadeOut(function() {
+                    $(this).remove();
+                });
+            }, 5000);
+        }
+    </script>
+    @Html.AntiForgeryToken()
+}

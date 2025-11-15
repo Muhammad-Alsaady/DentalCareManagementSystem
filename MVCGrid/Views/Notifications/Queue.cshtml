@@ -1,0 +1,258 @@
+@model List<DentalCareManagmentSystem.Application.DTOs.AppointmentDto>
+
+@{
+    ViewData["Title"] = "Doctor's Queue";
+}
+
+<div class="page-title">
+    <div class="d-flex justify-content-between align-items-center">
+        <h3>
+            <i class="fas fa-stethoscope"></i> Doctor's Queue
+        </h3>
+        <div>
+            <span class="badge bg-primary" id="queueCount">@Model.Count() in Queue</span>
+            <button onclick="refreshQueue()" class="btn btn-secondary">
+                <i class="fas fa-sync"></i> Refresh
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Alert Container -->
+<div id="alertContainer"></div>
+
+<div class="row">
+    <!-- Current Patient Card -->
+    <div class="col-md-4">
+        <div class="card border-success">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-user-md"></i> Current Patient
+                </h5>
+            </div>
+            <div class="card-body" id="currentPatientCard">
+                @if (Model.Any())
+                {
+                    var firstPatient = Model.First();
+                    <div class="text-center">
+                        <div class="patient-avatar mb-3">
+                            <i class="fas fa-user-circle fa-5x text-success"></i>
+                        </div>
+                        <h4>@firstPatient.PatientName</h4>
+                        <p class="text-muted">
+                            <i class="fas fa-phone"></i> @firstPatient.PatientPhone
+                        </p>
+                        <p>
+                            <i class="fas fa-clock"></i> @firstPatient.StartTime.ToString(@"hh\:mm") - @firstPatient.EndTime.ToString(@"hh\:mm")
+                        </p>
+                        @if (!string.IsNullOrEmpty(firstPatient.Notes))
+                        {
+                            <div class="alert alert-info">
+                                <small><strong>Notes:</strong> @firstPatient.Notes</small>
+                            </div>
+                        }
+                        <button onclick="completeCurrentPatient('@firstPatient.Id', '@firstPatient.PatientName')" 
+                                class="btn btn-success btn-lg w-100 mt-3">
+                            <i class="fas fa-check-circle"></i> Complete Session
+                        </button>
+                    </div>
+                }
+                else
+                {
+                    <div class="text-center text-muted py-5">
+                        <i class="fas fa-inbox fa-4x mb-3"></i>
+                        <p>No patients in queue</p>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Queue List -->
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-list"></i> Waiting List
+                </h5>
+            </div>
+            <div class="card-body">
+                <div id="waitingList">
+                    @if (Model.Count() > 1)
+                    {
+                        var waitingPatients = Model.Skip(1).ToList();
+                        <div class="list-group">
+                            @for (int i = 0; i < waitingPatients.Count(); i++)
+                            {
+                                var patient = waitingPatients[i];
+                                <div class="list-group-item list-group-item-action" id="waiting-@patient.Id">
+                                    <div class="d-flex w-100 justify-content-between align-items-center">
+                                        <div>
+                                            <span class="badge bg-secondary me-2">@(i + 2)</span>
+                                            <strong>@patient.PatientName</strong>
+                                            <br>
+                                            <small class="text-muted">
+                                                <i class="fas fa-phone"></i> @patient.PatientPhone | 
+                                                <i class="fas fa-clock"></i> @patient.StartTime.ToString(@"hh\:mm")
+                                            </small>
+                                            @if (!string.IsNullOrEmpty(patient.Notes))
+                                            {
+                                                <br>
+                                                <small class="text-muted">
+                                                    <i class="fas fa-sticky-note"></i> @patient.Notes
+                                                </small>
+                                            }
+                                        </div>
+                                        <div>
+                                            <span class="badge bg-warning">Waiting</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center text-muted py-4">
+                            <i class="fas fa-check-circle fa-3x mb-3"></i>
+                            <p>No more patients waiting</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <style>
+        .patient-avatar {
+            animation: pulse 2s infinite;
+        }
+
+        @@keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.7;
+            }
+        }
+
+        .list-group-item {
+            transition: all 0.3s ease;
+        }
+
+        .list-group-item:hover {
+            background-color: #f8f9fa;
+            transform: translateX(5px);
+        }
+
+        #queueCount {
+            font-size: 1rem;
+            padding: 8px 15px;
+        }
+    </style>
+}
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/@@microsoft/signalr@latest/dist/browser/signalr.min.js"></script>
+    <script>
+        var connection;
+        
+        $(document).ready(function() {
+            // Initialize SignalR connection
+            initializeSignalR();
+        });
+
+        // Initialize SignalR for real-time updates
+        function initializeSignalR() {
+            connection = new signalR.HubConnectionBuilder()
+                .withUrl("/notificationHub")
+                .withAutomaticReconnect()
+                .build();
+
+            connection.on("PatientSentToDoctor", function (queueData) {
+                console.log("New patient sent to doctor", queueData);
+                showAlert("New patient added to queue!", "success");
+                refreshQueue();
+            });
+
+            connection.on("PatientCompleted", function (appointmentId, patientName, queueData) {
+                console.log("Patient completed", patientName);
+                showAlert(`Session with ${patientName} completed!`, "success");
+                refreshQueue();
+            });
+
+            connection.start()
+                .then(() => {
+                    console.log("SignalR Connected - Listening for queue updates");
+                })
+                .catch(err => {
+                    console.error("SignalR Connection Error: ", err);
+                    showAlert("Real-time updates may not work. Please refresh the page.", "error");
+                });
+        }
+
+        function completeCurrentPatient(appointmentId, patientName) {
+            if (!confirm(`Mark session with ${patientName} as completed?`)) {
+                return;
+            }
+
+            $.ajax({
+                url: '@Url.Action("CompletePatient")',
+                type: 'POST',
+                data: { 
+                    appointmentId: appointmentId,
+                    __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                },
+                success: function(result) {
+                    if (result.success) {
+                        showAlert(result.message, 'success');
+                        // Refresh after a short delay to show the completion message
+                        setTimeout(function() {
+                            refreshQueue();
+                        }, 1000);
+                    } else {
+                        showAlert(result.message, 'error');
+                    }
+                },
+                error: function(xhr) {
+                    console.error('Error completing appointment:', xhr);
+                    showAlert('Failed to complete appointment', 'error');
+                }
+            });
+        }
+
+        function refreshQueue() {
+            location.reload();
+        }
+
+        // Show Alert
+        function showAlert(message, type) {
+            var alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+            var iconClass = type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle';
+            var alertHtml = `
+                <div class="alert ${alertClass} alert-dismissible fade show" role="alert">
+                    <i class="fas ${iconClass}"></i> ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            `;
+            
+            $('#alertContainer').html(alertHtml);
+            
+            // Auto-hide after 5 seconds
+            setTimeout(function() {
+                $('#alertContainer .alert').fadeOut(function() {
+                    $(this).remove();
+                });
+            }, 5000);
+        }
+
+        // Auto-refresh every 30 seconds
+        setInterval(function() {
+            refreshQueue();
+        }, 30000);
+    </script>
+    @Html.AntiForgeryToken()
+}

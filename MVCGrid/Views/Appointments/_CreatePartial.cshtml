@@ -1,0 +1,79 @@
+@model DentalCareManagmentSystem.Application.DTOs.AppointmentDto
+
+<form id="createForm" onsubmit="return submitForm('createForm', '@Url.Action("Create")')">
+    @Html.AntiForgeryToken()
+    
+    <div class="row">
+        <div class="col-md-6">
+            <div class="form-group mb-3">
+                <label asp-for="PatientId" class="form-label">Patient <span class="text-danger">*</span></label>
+                <select asp-for="PatientId" class="form-control" asp-items="ViewBag.Patients" required>
+                    <option value="">-- Select Patient --</option>
+                </select>
+                <span asp-validation-for="PatientId" class="text-danger"></span>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="form-group mb-3">
+                <label asp-for="Date" class="form-label">Appointment Date <span class="text-danger">*</span></label>
+                <input asp-for="Date" type="date" class="form-control" required />
+                <span asp-validation-for="Date" class="text-danger"></span>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6">
+            <div class="form-group mb-3">
+                <label asp-for="StartTime" class="form-label">Start Time <span class="text-danger">*</span></label>
+                <input asp-for="StartTime" type="time" class="form-control" required />
+                <span asp-validation-for="StartTime" class="text-danger"></span>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="form-group mb-3">
+                <label asp-for="EndTime" class="form-label">End Time <span class="text-danger">*</span></label>
+                <input asp-for="EndTime" type="time" class="form-control" required />
+                <span asp-validation-for="EndTime" class="text-danger"></span>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6">
+            <div class="form-group mb-3">
+                <label asp-for="Status" class="form-label">Status <span class="text-danger">*</span></label>
+                <select asp-for="Status" class="form-control" asp-items="ViewBag.StatusOptions" required>
+                    <option value="">-- Select Status --</option>
+                </select>
+                <span asp-validation-for="Status" class="text-danger"></span>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-12">
+            <div class="form-group mb-3">
+                <label asp-for="Notes" class="form-label">Notes</label>
+                <textarea asp-for="Notes" class="form-control" rows="3" placeholder="Enter any additional notes"></textarea>
+                <span asp-validation-for="Notes" class="text-danger"></span>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+            <i class="fas fa-times"></i> Cancel
+        </button>
+        <button type="submit" class="btn btn-success">
+            <i class="fas fa-calendar-plus"></i> Create Appointment
+        </button>
+    </div>
+</form>
+
+<script>
+    // Enable client-side validation
+    $.validator.unobtrusive.parse('#createForm');
+</script>

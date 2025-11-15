@@ -1,0 +1,115 @@
+@model List<DentalCareManagmentSystem.Application.DTOs.AppointmentDto>
+
+@{
+    ViewData["Title"] = "Search Appointments";
+}
+
+<div class="page-title">
+    <h3>
+        <i class="fas fa-search"></i> Search Appointments
+    </h3>
+</div>
+
+<div class="card mb-3">
+    <div class="card-body">
+        <form id="searchForm" method="get" action="@Url.Action("Search")">
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label for="searchDate" class="form-label">Select Date</label>
+                        <input type="date" 
+                               id="searchDate" 
+                               name="date" 
+                               class="form-control" 
+                               value="@DateTime.Today.ToString("yyyy-MM-dd")" />
+                    </div>
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-search"></i> Search
+                    </button>
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <a href="@Url.Action("Index")" class="btn btn-secondary w-100">
+                        <i class="fas fa-times"></i> Clear
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <h5 class="table-main-title">
+            <i class="fas fa-list"></i> Search Results
+        </h5>
+        
+        <div id="searchResults">
+            @if (Model == null || !Model.Any())
+            {
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> No appointments found for the selected date.
+                </div>
+            }
+            else
+            {
+                @await Html.PartialAsync("_NotificationsGrid", Model)
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Modal for Details -->
+<div class="modal fade" id="detailsModal" tabindex="-1" aria-labelledby="detailsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="detailsModalLabel">Appointment Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="detailsModalBody">
+                <!-- Content will be loaded here -->
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        var detailsModal;
+        
+        $(document).ready(function() {
+            detailsModal = new bootstrap.Modal(document.getElementById('detailsModal'));
+        });
+
+        // Show appointment details
+        function showDetails(id) {
+            $.ajax({
+                url: '@Url.Action("Details")/' + id,
+                type: 'GET',
+                success: function(result) {
+                    if (typeof result === 'object' && result.success === false) {
+                        alert(result.message);
+                        return;
+                    }
+                    $('#detailsModalLabel').html('<i class="fas fa-calendar-check"></i> Appointment Details');
+                    $('#detailsModalBody').html(result);
+                    detailsModal.show();
+                },
+                error: function() {
+                    alert('Failed to load appointment details');
+                }
+            });
+        }
+
+        function sendToDoctor(appointmentId, patientName) {
+            alert('This action is only available from the Today\'s Appointments page');
+        }
+
+        function completeAppointment(appointmentId, patientName) {
+            alert('This action is only available from the Today\'s Appointments page');
+        }
+    </script>
+    @Html.AntiForgeryToken()
+}

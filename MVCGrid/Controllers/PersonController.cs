@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using MVCGrid.Models;
 
-namespace MVCGrid.Controllers
+namespace DentalManagementSystem.Controllers
 {
     public class PersonController : Controller
     {

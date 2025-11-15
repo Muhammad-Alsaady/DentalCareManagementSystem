@@ -1,18 +1,35 @@
+using DentalCareManagmentSystem.Application.Interfaces;
+using DentalCareManagmentSystem.Infrastructure.Data;
+using DentalCareManagmentSystem.Infrastructure.Services;
+using DentalCareManagmentSystem.Domain.Entities;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using MVCGrid.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
+builder.Services.AddDbContext<ClinicDbContext>(options =>
     options.UseSqlServer(connectionString));
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
-builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = true)
-    .AddEntityFrameworkStores<ApplicationDbContext>();
+builder.Services.AddDefaultIdentity<User>(options => options.SignIn.RequireConfirmedAccount = true)
+    .AddRoles<IdentityRole>()
+    .AddEntityFrameworkStores<ClinicDbContext>();
 builder.Services.AddControllersWithViews();
+
+// Register Application Services
+builder.Services.AddScoped<IPatientService, PatientService>();
+builder.Services.AddScoped<IAppointmentService, AppointmentService>();
+builder.Services.AddScoped<IDiagnosisService, DiagnosisService>();
+builder.Services.AddScoped<IImageService, ImageService>();
+builder.Services.AddScoped<IPriceListService, PriceListService>();
+builder.Services.AddScoped<ITreatmentPlanService, TreatmentPlanService>();
+builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
+
+// Add SignalR for real-time notifications
+builder.Services.AddSignalR();
 
 var app = builder.Build();
 
@@ -42,5 +59,8 @@ app.MapControllerRoute(
 
 app.MapRazorPages()
    .WithStaticAssets();
+
+// Map SignalR Hub
+app.MapHub<DentalManagementSystem.Controllers.NotificationHub>("/notificationHub");
 
 app.Run();

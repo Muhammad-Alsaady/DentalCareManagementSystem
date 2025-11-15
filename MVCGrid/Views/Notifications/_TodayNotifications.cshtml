@@ -1,0 +1,85 @@
+@model List<DentalCareManagmentSystem.Application.DTOs.NotificationDto>
+
+@if (Model == null || !Model.Any())
+{
+    <div class="alert alert-info text-center">
+        <i class="fas fa-info-circle"></i> No notifications for today
+    </div>
+}
+else
+{
+    <div class="list-group">
+        @foreach (var notification in Model.OrderByDescending(n => n.NotifiedAt))
+        {
+            <div class="list-group-item @(notification.IsDone ? "list-group-item-success" : "")">
+                <div class="d-flex w-100 justify-content-between align-items-start">
+                    <div>
+                        <h6 class="mb-1">
+                            <i class="fas fa-user-clock"></i> @notification.PatientName
+                        </h6>
+                        <p class="mb-1 text-muted">
+                            <small>
+                                <i class="fas fa-calendar"></i> @notification.AppointmentDate.ToString("MMM dd, yyyy") at @notification.AppointmentDate.ToString("hh:mm tt")
+                            </small>
+                        </p>
+                        @if (!string.IsNullOrEmpty(notification.Message))
+                        {
+                            <p class="mb-1">
+                                <small>@notification.Message</small>
+                            </p>
+                        }
+                    </div>
+                    <div class="text-end">
+                        <small class="text-muted d-block mb-2">
+                            <i class="fas fa-bell"></i> @notification.NotifiedAt.ToString("hh:mm tt")
+                        </small>
+                        @if (!notification.IsDone)
+                        {
+                            <button type="button" 
+                                    class="btn btn-sm btn-success" 
+                                    onclick="markAsDone('@notification.Id')">
+                                <i class="fas fa-check"></i> Mark Done
+                            </button>
+                        }
+                        else
+                        {
+                            <span class="badge bg-success">
+                                <i class="fas fa-check-circle"></i> Done
+                            </span>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+<script>
+    function markAsDone(notificationId) {
+        $.ajax({
+            url: '@Url.Action("MarkDone", "Notifications")',
+            type: 'POST',
+            data: { 
+                id: notificationId,
+                __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+            },
+            success: function() {
+                // Reload the notifications
+                loadTodayNotifications();
+            },
+            error: function() {
+                alert('Failed to mark notification as done');
+            }
+        });
+    }
+
+    function loadTodayNotifications() {
+        $.ajax({
+            url: '@Url.Action("Today", "Notifications")',
+            type: 'GET',
+            success: function(result) {
+                $('#todayNotificationsContainer').html(result);
+            }
+        });
+    }
+</script>

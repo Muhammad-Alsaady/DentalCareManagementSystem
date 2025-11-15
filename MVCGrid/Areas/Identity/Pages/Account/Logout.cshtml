@@ -1,0 +1,23 @@
+@page
+@using MVCGrid.Areas.Identity.Pages.Account
+@model LogoutModel
+@{
+    ViewData["Title"] = "Log out";
+}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow">
+                <div class="card-body text-center p-5">
+                    <i class="fas fa-sign-out-alt fa-4x text-muted mb-4"></i>
+                    <h2>@ViewData["Title"]</h2>
+                    <p class="lead">You have been successfully logged out.</p>
+                    <a asp-area="" asp-controller="Home" asp-action="Index" class="btn btn-primary mt-3">
+                        <i class="fas fa-home me-2"></i>Return to Home
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,9 +1,9 @@
-using DentalCareManagmentSystem.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using DentalCareManagmentSystem.Application.Interfaces;
 
-namespace DentalCareManagmentSystem.Web.Controllers;
+namespace DentalManagementSystem.Controllers;
 
 [Authorize(Roles = "Doctor,SystemAdmin")]
 public class DiagnosisController : Controller
@@ -39,7 +39,7 @@ public class DiagnosisController : Controller
             _diagnosisService.AddNote(patientId, userId, note);
             return RedirectToAction("Details", "Patients", new { id = patientId });
         }
-        
+
         ViewBag.Patients = new SelectList(_patientService.GetAll(), "Id", "FullName", patientId);
         ViewBag.Note = note;
         return View();
@@ -49,7 +49,7 @@ public class DiagnosisController : Controller
     {
         var diagnosisNote = _diagnosisService.GetById(id);
         if (diagnosisNote == null) return NotFound();
-        
+
         return View(diagnosisNote);
     }
 
@@ -64,7 +64,7 @@ public class DiagnosisController : Controller
             if (diagnosisNote == null) return NotFound();
             return RedirectToAction("Details", "Patients", new { id = diagnosisNote.PatientId });
         }
-        
+
         return View(_diagnosisService.GetById(id));
     }
 
@@ -72,13 +72,13 @@ public class DiagnosisController : Controller
     {
         var diagnosisNote = _diagnosisService.GetById(id);
         if (diagnosisNote == null) return NotFound();
-        
+
         return View(diagnosisNote);
     }
 
     [HttpPost, ActionName("Delete")]
     [ValidateAntiForgeryToken]
-       public IActionResult DeleteNoteConfirmed(Guid id)
+    public IActionResult DeleteNoteConfirmed(Guid id)
     {
         var note = _diagnosisService.GetById(id);
         if (note != null)
@@ -102,7 +102,7 @@ public class DiagnosisController : Controller
     public IActionResult GetNotesByPatient(Guid patientId)
     {
         var notes = _diagnosisService.GetNotesByPatientId(patientId);
-        ViewBag.PatientId = patientId; 
+        ViewBag.PatientId = patientId;
         return PartialView("~/Views/Patients/_DiagnosisNotes.cshtml", notes);
     }
     //[HttpPost]

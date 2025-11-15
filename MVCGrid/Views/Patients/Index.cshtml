@@ -1,0 +1,265 @@
+@model List<DentalCareManagmentSystem.Application.DTOs.PatientDto>
+
+@{
+    ViewData["Title"] = "Patients Management";
+}
+
+<div class="page-title">
+    <div class="d-flex justify-content-between align-items-center">
+        <h3>
+            <i class="fas fa-users"></i> Patients Management
+        </h3>
+        <div>
+            <button onclick="showCreate()" class="btn btn-success">
+                <i class="fas fa-user-plus"></i> Add New Patient
+            </button>
+            <button onclick="refreshGrid()" class="btn btn-secondary">
+                <i class="fas fa-sync"></i> Refresh
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Alert Container -->
+<div id="alertContainer"></div>
+
+<!-- Search Box -->
+<div class="card mb-3">
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="input-group">
+                    <span class="input-group-text"><i class="fas fa-search"></i></span>
+                    <input type="text" id="searchInput" class="form-control" placeholder="Search by name or phone..." />
+                    <button class="btn btn-primary" onclick="performSearch()">
+                        <i class="fas fa-search"></i> Search
+                    </button>
+                    <button class="btn btn-secondary" onclick="clearSearch()">
+                        <i class="fas fa-times"></i> Clear
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <h5 class="table-main-title">
+            <i class="fas fa-list"></i> All Patients
+        </h5>
+        
+        <div id="gridContainer">
+            @await Html.PartialAsync("_PatientsGrid", Model)
+        </div>
+    </div>
+</div>
+
+<!-- Modal for CRUD Operations -->
+<div class="modal fade" id="crudModal" tabindex="-1" aria-labelledby="crudModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="crudModalLabel">Modal Title</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="crudModalBody">
+                <!-- Content will be loaded here -->
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <style>
+        .patient-stats {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            flex: 1;
+            padding: 15px;
+            border-radius: 8px;
+            color: white;
+            text-align: center;
+        }
+
+        .stat-card i {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        .stat-card h3 {
+            margin: 0;
+            font-size: 1.5rem;
+        }
+
+        .stat-card p {
+            margin: 5px 0 0 0;
+            opacity: 0.9;
+        }
+    </style>
+}
+
+@section Scripts {
+    <script>
+        var crudModal;
+        
+        $(document).ready(function() {
+            crudModal = new bootstrap.Modal(document.getElementById('crudModal'));
+            
+            // Enable Enter key for search
+            $('#searchInput').on('keypress', function(e) {
+                if (e.which === 13) {
+                    performSearch();
+                }
+            });
+        });
+
+        // Show Create Form
+        function showCreate() {
+            $.ajax({
+                url: '@Url.Action("Create")',
+                type: 'GET',
+                success: function(result) {
+                    $('#crudModalLabel').html('<i class="fas fa-user-plus"></i> Add New Patient');
+                    $('#crudModalBody').html(result);
+                    crudModal.show();
+                },
+                error: function() {
+                    showAlert('Failed to load create form', 'error');
+                }
+            });
+        }
+
+        // Show Edit Form
+        function showEdit(id) {
+            $.ajax({
+                url: '@Url.Action("Edit")/' + id,
+                type: 'GET',
+                success: function(result) {
+                    if (typeof result === 'object' && result.success === false) {
+                        showAlert(result.message, 'error');
+                        return;
+                    }
+                    $('#crudModalLabel').html('<i class="fas fa-user-edit"></i> Edit Patient');
+                    $('#crudModalBody').html(result);
+                    crudModal.show();
+                },
+                error: function() {
+                    showAlert('Failed to load edit form', 'error');
+                }
+            });
+        }
+
+        // Show Delete Confirmation
+        function showDelete(id) {
+            $.ajax({
+                url: '@Url.Action("Delete")/' + id,
+                type: 'GET',
+                success: function(result) {
+                    if (typeof result === 'object' && result.success === false) {
+                        showAlert(result.message, 'error');
+                        return;
+                    }
+                    $('#crudModalLabel').html('<i class="fas fa-user-times"></i> Delete Patient');
+                    $('#crudModalBody').html(result);
+                    crudModal.show();
+                },
+                error: function() {
+                    showAlert('Failed to load delete confirmation', 'error');
+                }
+            });
+        }
+
+        // Show Details - Navigate to Details page
+        function showDetails(id) {
+            window.location.href = '@Url.Action("Details")/' + id;
+        }
+
+        // Create Appointment for Patient
+        function createAppointment(id, name) {
+            window.location.href = '@Url.Action("Create", "Appointments")?patientId=' + id;
+        }
+
+        // Submit Form via AJAX
+        function submitForm(formId, url) {
+            var form = $('#' + formId);
+            
+            $.ajax({
+                url: url,
+                type: 'POST',
+                data: form.serialize(),
+                success: function(result) {
+                    if (result.success) {
+                        crudModal.hide();
+                        showAlert(result.message, 'success');
+                        refreshGrid();
+                    } else {
+                        // If validation failed, replace form with errors
+                        $('#crudModalBody').html(result);
+                    }
+                },
+                error: function() {
+                    showAlert('An error occurred while processing your request', 'error');
+                }
+            });
+            
+            return false;
+        }
+
+        // Perform Search
+        function performSearch() {
+            var searchTerm = $('#searchInput').val();
+            window.location.href = '@Url.Action("Index")?searchString=' + encodeURIComponent(searchTerm);
+        }
+
+        // Clear Search
+        function clearSearch() {
+            $('#searchInput').val('');
+            window.location.href = '@Url.Action("Index")';
+        }
+
+        // Refresh Grid
+        function refreshGrid() {
+            $.ajax({
+                url: '@Url.Action("GetPatientsGrid")',
+                type: 'GET',
+                success: function(result) {
+                    $('#gridContainer').html(result);
+                    // Reinitialize MVC Grid if needed
+                    if (typeof MvcGrid !== 'undefined') {
+                        document.querySelectorAll(".mvc-grid").forEach(el => new MvcGrid(el));
+                    }
+                },
+                error: function() {
+                    showAlert('Failed to refresh grid', 'error');
+                }
+            });
+        }
+
+        // Show Alert
+        function showAlert(message, type) {
+            var alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+            var iconClass = type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle';
+            var alertHtml = `
+                <div class="alert ${alertClass} alert-dismissible fade show" role="alert">
+                    <i class="fas ${iconClass}"></i> ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            `;
+            
+            $('#alertContainer').html(alertHtml);
+            
+            // Auto-hide after 5 seconds
+            setTimeout(function() {
+                $('#alertContainer .alert').fadeOut(function() {
+                    $(this).remove();
+                });
+            }, 5000);
+        }
+    </script>
+    @Html.AntiForgeryToken()
+}

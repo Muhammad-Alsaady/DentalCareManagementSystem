@@ -1,8 +1,8 @@
-using DentalCareManagmentSystem.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using DentalCareManagmentSystem.Application.Interfaces;
 
-namespace DentalCareManagmentSystem.Web.Controllers;
+namespace DentalManagementSystem.Controllers;
 
 [Authorize(Roles = "Doctor,SystemAdmin")]
 public class ReportsController : Controller

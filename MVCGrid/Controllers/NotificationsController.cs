@@ -1,11 +1,10 @@
-﻿using DentalCareManagmentSystem.Application.Interfaces;
-using DentalCareManagmentSystem.Web.Hubs;
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using System.Security.Claims;
+using DentalCareManagmentSystem.Application.Interfaces;
 
-namespace DentalCareManagmentSystem.Web.Controllers;
+namespace DentalManagementSystem.Controllers;
 
 [Authorize(Roles = "Receptionist,Doctor,SystemAdmin")]
 public class NotificationsController : Controller
@@ -31,14 +30,9 @@ public class NotificationsController : Controller
 
             if (appointment == null)
                 return Json(new { success = false, message = "Appointment not found" });
-
-            // تحديث الحالة إلى Notified
             _appointmentService.UpdateStatus(appointmentId, "Notified");
 
-            // إرسال الإشعار للدكتور عبر SignalR
-            // هنا افترضنا أن الدكتور له ID ثابت أو يمكن جلبها من اليوزر
             var doctorId = User.FindFirst("DoctorId")?.Value ?? "default-doctor";
-
             await _hubContext.Clients.Group($"doctor-{doctorId}")
                 .SendAsync("ReceivePatient",
                     appointment.PatientName,
@@ -62,6 +56,13 @@ public class NotificationsController : Controller
     {
         var todayAppointments = await _notificationService.GetTodayAppointmentsAsync();
         return View(todayAppointments);
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> GetNotificationsGrid()
+    {
+        var todayAppointments = await _notificationService.GetTodayAppointmentsAsync();
+        return PartialView("_NotificationsGrid", todayAppointments);
     }
 
     [HttpGet]
@@ -120,9 +121,27 @@ public class NotificationsController : Controller
         var appointment = await _notificationService.GetAppointmentByIdAsync(id);
         if (appointment == null)
         {
-            return NotFound();
+            return Json(new { success = false, message = "Appointment not found" });
         }
-        return View(appointment);
+        return PartialView("_DetailsPartial", appointment);
+    }
+
+    [HttpGet]
+    public IActionResult Queue()
+    {
+        try
+        {
+            var notifiedAppointments = _appointmentService.GetAll()
+                .Where(a => a.Status == "Notified" && a.Date.Date == DateTime.Today)
+                .OrderBy(a => a.StartTime)
+                .ToList();
+            
+            return View(notifiedAppointments);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { success = false, message = ex.Message });
+        }
     }
 
     [HttpGet]

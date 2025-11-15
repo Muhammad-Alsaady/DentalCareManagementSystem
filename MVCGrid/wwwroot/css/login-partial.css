@@ -1,0 +1,40 @@
+.user-avatar {
+    color: #0d6efd;
+}
+
+.user-name {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: #333;
+}
+
+.user-role {
+    font-size: 0.75rem;
+    display: block;
+}
+
+.dropdown-menu {
+    min-width: 280px;
+    border: none;
+    border-radius: 0.5rem;
+}
+
+.dropdown-header {
+    padding: 1rem;
+    background-color: #f8f9fa;
+}
+
+.dropdown-item {
+    padding: 0.6rem 1rem;
+    transition: all 0.3s ease;
+}
+
+.dropdown-item:hover {
+    background-color: #f8f9fa;
+    padding-left: 1.5rem;
+}
+
+.dropdown-item i {
+    width: 20px;
+    text-align: center;
+}

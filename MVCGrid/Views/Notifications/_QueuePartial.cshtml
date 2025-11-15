@@ -1,0 +1,64 @@
+@model List<DentalCareManagmentSystem.Application.DTOs.AppointmentDto>
+
+@if (Model == null || !Model.Any())
+{
+    <p class="text-muted text-center py-4">
+        <i class="fas fa-inbox fa-3x mb-3"></i><br>
+        No patients in queue
+    </p>
+}
+else
+{
+    foreach (var appointment in Model)
+    {
+        <div class="queue-item" id="queue-item-@appointment.Id">
+            <div class="row align-items-center">
+                <div class="col-md-4">
+                    <strong><i class="fas fa-user"></i> @appointment.PatientName</strong><br>
+                    <small class="text-muted">
+                        <i class="fas fa-phone"></i> @appointment.PatientPhone
+                    </small>
+                </div>
+                <div class="col-md-3">
+                    <i class="fas fa-clock"></i> @appointment.StartTime.ToString(@"hh\:mm") - @appointment.EndTime.ToString(@"hh\:mm")
+                </div>
+                <div class="col-md-3">
+                    <span class="badge bg-warning">@appointment.Status</span>
+                </div>
+                <div class="col-md-2 text-end">
+                    <button onclick="completeAppointment('@appointment.Id', '@appointment.PatientName')" 
+                            class="btn btn-sm btn-success" 
+                            title="Mark as Completed">
+                        <i class="fas fa-check"></i> Complete
+                    </button>
+                </div>
+            </div>
+            @if (!string.IsNullOrEmpty(appointment.Notes))
+            {
+                <div class="row mt-2">
+                    <div class="col-12">
+                        <small class="text-muted">
+                            <i class="fas fa-sticky-note"></i> <strong>Notes:</strong> @appointment.Notes
+                        </small>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+}
+
+<style>
+    .queue-item {
+        padding: 15px;
+        margin-bottom: 10px;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        background: white;
+        transition: all 0.3s ease;
+    }
+
+    .queue-item:hover {
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        transform: translateY(-2px);
+    }
+</style>

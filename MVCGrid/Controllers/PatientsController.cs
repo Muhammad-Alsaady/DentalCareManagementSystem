@@ -1,11 +1,11 @@
-﻿using DentalCareManagmentSystem.Application.DTOs;
-using DentalCareManagmentSystem.Application.Interfaces;
-using DentalCareManagmentSystem.Domain.Entities;
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using DentalCareManagmentSystem.Application.DTOs;
+using DentalCareManagmentSystem.Application.Interfaces;
+using DentalCareManagmentSystem.Domain.Enums;
 
-namespace DentalCareManagmentSystem.Web.Controllers;
+namespace DentalManagementSystem.Controllers;
 
 [Authorize(Roles = "Receptionist,Doctor,SystemAdmin")]
 public class PatientsController : Controller
@@ -54,8 +54,8 @@ public class PatientsController : Controller
 
     public IActionResult Create()
     {
-        ViewBag.Genders = new SelectList(Enum.GetNames(typeof(Domain.Enums.Gender)));
-        return View();
+        ViewBag.Genders = new SelectList(Enum.GetNames(typeof(Gender)));
+        return PartialView("_CreatePartial", new PatientDto());
     }
 
     [HttpPost]
@@ -65,19 +65,25 @@ public class PatientsController : Controller
         if (ModelState.IsValid)
         {
             var patient = _patientService.Create(patientDto);
-            return RedirectToAction("Create", "Appointments", new { patientId = patient.Id });
+            return Json(new { 
+                success = true, 
+                message = $"Patient '{patient.FullName}' has been created successfully!" 
+            });
         }
 
-        ViewBag.Genders = new SelectList(Enum.GetNames(typeof(Domain.Enums.Gender)));
-        return View(patientDto);
+        ViewBag.Genders = new SelectList(Enum.GetNames(typeof(Gender)));
+        return PartialView("_CreatePartial", patientDto);
     }
 
     public IActionResult Edit(Guid id)
     {
         var patient = _patientService.GetById(id);
-        if (patient == null) return NotFound();
-        ViewBag.Genders = new SelectList(Enum.GetNames(typeof(Domain.Enums.Gender)), patient.Gender);
-        return View(patient);
+        if (patient == null)
+        {
+            return Json(new { success = false, message = "Patient not found." });
+        }
+        ViewBag.Genders = new SelectList(Enum.GetNames(typeof(Gender)), patient.Gender);
+        return PartialView("_EditPartial", patient);
     }
 
     [HttpPost]
@@ -87,25 +93,39 @@ public class PatientsController : Controller
         if (ModelState.IsValid)
         {
             _patientService.Update(patientDto);
-            return RedirectToAction(nameof(Index));
+            return Json(new { 
+                success = true, 
+                message = $"Patient '{patientDto.FullName}' has been updated successfully!" 
+            });
         }
-        ViewBag.Genders = new SelectList(Enum.GetNames(typeof(Domain.Enums.Gender)), patientDto.Gender);
-        return View(patientDto);
+        ViewBag.Genders = new SelectList(Enum.GetNames(typeof(Gender)), patientDto.Gender);
+        return PartialView("_EditPartial", patientDto);
     }
 
     public IActionResult Delete(Guid id)
     {
         var patient = _patientService.GetById(id);
-        if (patient == null) return NotFound();
-        return View(patient);
+        if (patient == null)
+        {
+            return Json(new { success = false, message = "Patient not found." });
+        }
+        return PartialView("_DeletePartial", patient);
     }
 
-    [HttpPost, ActionName("Delete")]
+    [HttpPost, ActionName("DeleteConfirmed")]
     [ValidateAntiForgeryToken]
     public IActionResult DeleteConfirmed(Guid id)
     {
-        _patientService.Delete(id);
-        return RedirectToAction(nameof(Index));
+        var patient = _patientService.GetById(id);
+        if (patient != null)
+        {
+            _patientService.Delete(id);
+            return Json(new { 
+                success = true, 
+                message = $"Patient '{patient.FullName}' has been deleted successfully!" 
+            });
+        }
+        return Json(new { success = false, message = "Patient not found." });
     }
 
     public IActionResult Details(Guid id)

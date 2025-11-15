@@ -1,0 +1,18 @@
+.main-wrapper {
+    margin-left: 260px;
+    transition: margin-left 0.3s ease;
+    margin-top: 20px;
+}
+.main-content {
+    padding: 30px;
+    max-width: 100%;
+}
+@@media (max-width: 768px) {
+    .main-wrapper {
+        margin-left: 0;
+    }
+    .main-content {
+        padding: 20px 15px;
+        padding-top: 70px;
+    }
+}

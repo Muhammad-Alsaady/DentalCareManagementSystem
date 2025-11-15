@@ -1,10 +1,11 @@
 ﻿using DentalCareManagmentSystem.Application.DTOs;
 using DentalCareManagmentSystem.Application.Interfaces;
+using DentalCareManagmentSystem.Domain.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 
-namespace DentalCareManagmentSystem.Web.Controllers;
+namespace DentalManagementSystem.Controllers;
 
 [Authorize(Roles = "Receptionist,Doctor,SystemAdmin")]
 public class AppointmentsController : Controller
@@ -66,7 +67,6 @@ public class AppointmentsController : Controller
     [HttpGet]
     public IActionResult Create(Guid? patientId)
     {
-
         var model = new AppointmentDto
         {
             Date = DateTime.Today,
@@ -81,9 +81,9 @@ public class AppointmentsController : Controller
         }
 
         ViewBag.Patients = new SelectList(_patientService.GetAll(), "Id", "FullName", patientId);
-        ViewBag.StatusOptions = new SelectList(Enum.GetNames(typeof(Domain.Enums.AppointmentStatus)));
+        ViewBag.StatusOptions = new SelectList(Enum.GetNames(typeof(AppointmentStatus)));
 
-        return View(model);
+        return PartialView("_CreatePartial", model);
     }
 
     [HttpPost]
@@ -93,20 +93,28 @@ public class AppointmentsController : Controller
         if (ModelState.IsValid)
         {
             _appointmentService.Create(appointmentDto);
-            return RedirectToAction(nameof(Index));
+            return Json(new
+            {
+                success = true,
+                message = $"Appointment for {appointmentDto.PatientName} has been created successfully!"
+            });
         }
 
         ViewBag.Patients = new SelectList(_patientService.GetAll(), "Id", "FullName", appointmentDto.PatientId);
-        ViewBag.StatusOptions = new SelectList(Enum.GetNames(typeof(Domain.Enums.AppointmentStatus)), appointmentDto.Status);
-        return View(appointmentDto);
+        ViewBag.StatusOptions = new SelectList(Enum.GetNames(typeof(AppointmentStatus)), appointmentDto.Status);
+        return PartialView("_CreatePartial", appointmentDto);
     }
+
     public IActionResult Edit(Guid id)
     {
         var appointment = _appointmentService.GetById(id);
-        if (appointment == null) return NotFound();
+        if (appointment == null)
+        {
+            return Json(new { success = false, message = "Appointment not found." });
+        }
         ViewBag.Patients = new SelectList(_patientService.GetAll(), "Id", "FullName", appointment.PatientId);
-        ViewBag.StatusOptions = new SelectList(Enum.GetNames(typeof(Domain.Enums.AppointmentStatus)), appointment.Status);
-        return View(appointment);
+        ViewBag.StatusOptions = new SelectList(Enum.GetNames(typeof(AppointmentStatus)), appointment.Status);
+        return PartialView("_EditPartial", appointment);
     }
 
     [HttpPost]
@@ -116,39 +124,58 @@ public class AppointmentsController : Controller
         if (ModelState.IsValid)
         {
             _appointmentService.Update(appointmentDto);
-            return RedirectToAction(nameof(Index));
+            return Json(new
+            {
+                success = true,
+                message = $"Appointment has been updated successfully!"
+            });
         }
         ViewBag.Patients = new SelectList(_patientService.GetAll(), "Id", "FullName", appointmentDto.PatientId);
-        ViewBag.StatusOptions = new SelectList(Enum.GetNames(typeof(Domain.Enums.AppointmentStatus)), appointmentDto.Status);
-        return View(appointmentDto);
+        ViewBag.StatusOptions = new SelectList(Enum.GetNames(typeof(AppointmentStatus)), appointmentDto.Status);
+        return PartialView("_EditPartial", appointmentDto);
     }
 
     public IActionResult Details(Guid id)
     {
         var appointment = _appointmentService.GetById(id);
-        if (appointment == null) return NotFound();
-        return View(appointment);
+        if (appointment == null)
+        {
+            return Json(new { success = false, message = "Appointment not found." });
+        }
+        return PartialView("_DetailsPartial", appointment);
     }
 
     public IActionResult Delete(Guid id)
     {
         var appointment = _appointmentService.GetById(id);
-        if (appointment == null) return NotFound();
-        return View(appointment);
+        if (appointment == null)
+        {
+            return Json(new { success = false, message = "Appointment not found." });
+        }
+        return PartialView("_DeletePartial", appointment);
     }
 
-    [HttpPost, ActionName("Delete")]
+    [HttpPost, ActionName("DeleteConfirmed")]
     [ValidateAntiForgeryToken]
     public IActionResult DeleteConfirmed(Guid id)
     {
-        _appointmentService.Delete(id);
-        return RedirectToAction(nameof(Index));
+        var appointment = _appointmentService.GetById(id);
+        if (appointment != null)
+        {
+            _appointmentService.Delete(id);
+            return Json(new
+            {
+                success = true,
+                message = $"Appointment has been deleted successfully!"
+            });
+        }
+        return Json(new { success = false, message = "Appointment not found." });
     }
 
     [HttpPost]
     public IActionResult UpdateStatus(Guid id, string status)
     {
-        if (Enum.TryParse<Domain.Enums.AppointmentStatus>(status, out var appointmentStatus))
+        if (Enum.TryParse<AppointmentStatus>(status, out var appointmentStatus))
         {
             _appointmentService.UpdateStatus(id, appointmentStatus.ToString());
             return Ok();

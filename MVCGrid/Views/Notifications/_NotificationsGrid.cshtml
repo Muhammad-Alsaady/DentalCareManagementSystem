@@ -1,0 +1,136 @@
+@model List<DentalCareManagmentSystem.Application.DTOs.AppointmentDto>
+@using NonFactors.Mvc.Grid
+@using System.Text
+
+@{
+    var grid = new Grid<DentalCareManagmentSystem.Application.DTOs.AppointmentDto>(Model)
+    {
+        Name = "NotificationsGrid",
+        Id = "NotificationsGrid",
+        EmptyText = "No appointments found for today",
+        FilterMode = GridFilterMode.Header
+    };
+
+    // Patient Name - 20% width
+    grid.Columns.Add(model => model.PatientName)
+        .Titled("Patient Name")
+        .Css("col-patient-name")
+        .Filterable(true)
+        .Sortable(true);
+
+    // Phone - 15% width
+    grid.Columns.Add(model => model.PatientPhone)
+        .Titled("Phone")
+        .Css("col-phone")
+        .Filterable(true)
+        .Sortable(true);
+
+    // Date - 12% width
+    grid.Columns.Add(model => model.Date)
+        .Titled("Date")
+        .Formatted("{0:yyyy-MM-dd}")
+        .Css("text-center col-date")
+        .Filterable(false)
+        .Sortable(true);
+
+    // Start Time - 10% width
+    grid.Columns.Add(model => model.StartTime)
+        .Titled("Start Time")
+        .Formatted("{0:hh\\:mm}")
+        .Css("text-center col-start-time")
+        .Filterable(false)
+        .Sortable(true);
+
+    // End Time - 10% width
+    grid.Columns.Add(model => model.EndTime)
+        .Titled("End Time")
+        .Formatted("{0:hh\\:mm}")
+        .Css("text-center col-end-time")
+        .Filterable(false)
+        .Sortable(true);
+
+    // Status - 12% width
+    grid.Columns.Add(model => model.Status)
+        .Titled("Status")
+        .Css("text-center col-status")
+        .RenderedAs(model => GetStatusBadge(model.Status))
+        .Filterable(true)
+        .Sortable(true);
+
+    // Notes - 16% width
+    grid.Columns.Add(model => model.Notes)
+        .Titled("Notes")
+        .Css("col-notes")
+        .Filterable(false)
+        .Sortable(false);
+
+    // Actions - 15% width
+    grid.Columns.Add(model => model.Id)
+        .Titled("Actions")
+        .Css("text-center col-actions")
+        .Encoded(false)
+        .RenderedAs(model => GetActionButtons(model))
+        .Filterable(false)
+        .Sortable(false);
+
+    grid.Pager = new GridPager<DentalCareManagmentSystem.Application.DTOs.AppointmentDto>(grid)
+    {
+        PartialViewName = "MvcGrid/_Pager",
+        PageSizes = new Dictionary<int, string> { 
+            { 10, "10 rows" }, 
+            { 20, "20 rows" }, 
+            { 50, "50 rows" }, 
+            { 100, "100 rows" }
+        },
+        ShowPageSizes = true,
+        RowsPerPage = 20,
+        PagesToDisplay = 5
+    };
+}
+
+@functions {
+    string GetStatusBadge(string status)
+    {
+        var badgeClass = status switch
+        {
+            "Scheduled" => "bg-info",
+            "Notified" => "bg-warning",
+            "Completed" => "bg-success",
+            "Cancelled" => "bg-danger",
+            _ => "bg-secondary"
+        };
+        return $"<span class='badge {badgeClass}'>{status}</span>";
+    }
+
+    string GetActionButtons(DentalCareManagmentSystem.Application.DTOs.AppointmentDto model)
+    {
+        var sb = new StringBuilder();
+        sb.Append("<div class='btn-group btn-group-sm' role='group'>");
+        
+        // Details button (always shown)
+        sb.Append($"<button type='button' onclick='showDetails(\"{model.Id}\")' class='btn btn-info btn-sm' title='View Details'>");
+        sb.Append("<i class='fas fa-eye'></i>");
+        sb.Append("</button>");
+        
+        // Send to Doctor button (only for Scheduled)
+        if (model.Status == "Scheduled")
+        {
+            sb.Append($"<button type='button' onclick='sendToDoctor(\"{model.Id}\", \"{model.PatientName}\")' class='btn btn-success btn-sm' title='Send to Doctor'>");
+            sb.Append("<i class='fas fa-paper-plane'></i>");
+            sb.Append("</button>");
+        }
+        
+        // Complete button (only for Notified)
+        if (model.Status == "Notified")
+        {
+            sb.Append($"<button type='button' onclick='completeAppointment(\"{model.Id}\", \"{model.PatientName}\")' class='btn btn-primary btn-sm' title='Complete'>");
+            sb.Append("<i class='fas fa-check'></i>");
+            sb.Append("</button>");
+        }
+        
+        sb.Append("</div>");
+        return sb.ToString();
+    }
+}
+
+@await Html.PartialAsync("MvcGrid/_Grid", grid)

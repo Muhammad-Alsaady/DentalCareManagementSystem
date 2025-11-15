@@ -1,0 +1,57 @@
+@page
+@using MVCGrid.Areas.Identity.Pages.Account.Manage
+@model IndexModel
+@{
+    ViewData["Title"] = "Profile";
+    ViewData["ActivePage"] = ManageNavPages.Index;
+}
+
+<div class="row">
+    <div class="col-md-3">
+        <partial name="_ManageNav" />
+    </div>
+    <div class="col-md-9">
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">
+                    <i class="fas fa-user-circle me-2"></i>Profile Information
+                </h4>
+            </div>
+            <div class="card-body">
+                <partial name="_StatusMessage" for="StatusMessage" />
+                
+                <form id="profile-form" method="post">
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label asp-for="Username" class="form-label">Username</label>
+                            <input asp-for="Username" class="form-control" disabled />
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="Input.FullName" class="form-label">Full Name</label>
+                            <input asp-for="Input.FullName" class="form-control" placeholder="Enter your full name" />
+                            <span asp-validation-for="Input.FullName" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Input.PhoneNumber" class="form-label">Phone number</label>
+                        <input asp-for="Input.PhoneNumber" class="form-control" placeholder="Enter phone number" />
+                        <span asp-validation-for="Input.PhoneNumber" class="text-danger"></span>
+                    </div>
+
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-2"></i>Save Changes
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
