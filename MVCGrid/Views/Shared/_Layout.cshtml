@@ -1,17 +1,13 @@
-@using MVCGrid.Models
+@using DentalManagementSystem.Models
 @{
     var menuItems = new List<MenuItem>
     {
-        MenuItem.Create("Home", Url.Action("Index", "Home") ?? "/", "fas fa-home"),
-        MenuItem.Create("People", Url.Action("Index", "Person") ?? "/Person", "fas fa-users", isNew: true),
-        MenuItem.CreateWithSubmenu("Reports", "fas fa-chart-bar",
-            MenuItem.Create("Dashboard", "#", "fas fa-tachometer-alt"),
-            MenuItem.Create("Analytics", "#", "fas fa-chart-line")
-        ),
-        MenuItem.CreateWithSubmenu("Settings", "fas fa-cog",
-            MenuItem.Create("Profile", "#", "fas fa-user"),
-            MenuItem.Create("Preferences", "#", "fas fa-sliders-h")
-        )
+        MenuItem.Create("Dashboard", Url.Action("Index", "Home"), "fas fa-home"),
+        MenuItem.Create("Patients", Url.Action("Index", "Patients"), "fas fa-users"),
+        MenuItem.Create("Appointments", Url.Action("Index", "Appointments"), "fas fa-calendar-alt"),
+        MenuItem.Create("Notifications", Url.Action("Index", "Notifications"), "fas fa-bell"),
+        MenuItem.Create("Treatment Plans", Url.Action("Index", "TreatmentPlans"), "fas fa-medkit"),
+        MenuItem.Create("Reports", Url.Action("Index", "Reports"), "fas fa-chart-line")
     };
 }
 
@@ -20,7 +16,7 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - MVC Grid Demo</title>
+    <title>@ViewData["Title"] - Dental Care Management</title>
     <link rel="stylesheet" href="https://bootswatch.com/5/cerulean/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <link rel="stylesheet" href="~/css/mvc-grid/mvc-grid.css" />
@@ -28,47 +24,35 @@
     <link rel="stylesheet" href="~/css/left-menu.css" />
     <link rel="stylesheet" href="~/css/login-partial.css" />
     <link rel="stylesheet" href="~/css/layout.css" />
-    
+    @await RenderSectionAsync("Styles", required: false)
 </head>
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
         <div class="container-fluid">
-            <a class="navbar-brand" href="#">Dental Care</a>
+            <a class="navbar-brand" asp-controller="Home" asp-action="Index">
+                <i class="fas fa-tooth me-2"></i>Dental Care
+            </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarColor01" aria-controls="navbarColor01" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarColor01">
                 <ul class="navbar-nav me-auto">
                     <li class="nav-item">
-                        <a class="nav-link active" href="#">
-                            Home
-                            <span class="visually-hidden">(current)</span>
+                        <a class="nav-link" asp-controller="Home" asp-action="Index">
+                            <i class="fas fa-home me-1"></i>Dashboard
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#">Features</a>
+                        <a class="nav-link" asp-controller="Patients" asp-action="Index">
+                            <i class="fas fa-users me-1"></i>Patients
+                        </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#">Pricing</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#">About</a>
-                    </li>
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false">Dropdown</a>
-                        <div class="dropdown-menu">
-                            <a class="dropdown-item" href="#">Action</a>
-                            <a class="dropdown-item" href="#">Another action</a>
-                            <a class="dropdown-item" href="#">Something else here</a>
-                            <div class="dropdown-divider"></div>
-                            <a class="dropdown-item" href="#">Separated link</a>
-                        </div>
+                        <a class="nav-link" asp-controller="Appointments" asp-action="Index">
+                            <i class="fas fa-calendar-alt me-1"></i>Appointments
+                        </a>
                     </li>
                 </ul>
-                <form class="d-flex">
-                    <input class="form-control me-sm-2" type="search" placeholder="Search">
-                    <button class="btn btn-secondary my-2 my-sm-0" type="submit">Search</button>
-                </form>
                 <partial name="_LoginPartial" />
             </div>
         </div>

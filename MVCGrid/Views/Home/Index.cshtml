@@ -1,130 +1,279 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
+﻿@model DentalManagementSystem.Models.DashboardViewModel
+@{
+    ViewData["Title"] = "Dashboard";
 }
 
-<div class="page-title">
-    <h3>
-        <i class="fas fa-home"></i> Welcome to MVC Grid Demo
-    </h3>
-    <p class="mb-0 mt-2">A complete demonstration of grid functionality with CRUD operations</p>
+<div class="row mb-4">
+    <div class="col-12">
+        <h1 class="display-4">
+            <i class="fas fa-tachometer-alt me-3"></i>Dashboard
+        </h1>
+        <p class="lead text-muted">Welcome to Dental Care Management System</p>
+    </div>
 </div>
 
-<div class="row">
-    <div class="col-md-4 mb-4">
-        <div class="card h-100">
-            <div class="card-body text-center">
-                <i class="fas fa-users fa-3x text-primary mb-3"></i>
-                <h5 class="card-title">People Management</h5>
-                <p class="card-text">
-                    Complete CRUD system with advanced grid features including sorting, filtering, and pagination.
-                </p>
-                <a asp-controller="Person" asp-action="Index" class="btn btn-primary">
-                    <i class="fas fa-arrow-right"></i> Go to People
+<!-- Statistics Cards -->
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card bg-primary text-white shadow">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="card-subtitle mb-2 opacity-75">Total Patients</h6>
+                        <h2 class="card-title mb-0">@Model.TotalPatients</h2>
+                    </div>
+                    <div>
+                        <i class="fas fa-users fa-3x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer bg-transparent border-0">
+                <a asp-controller="Patients" asp-action="Index" class="text-white text-decoration-none">
+                    View All Patients <i class="fas fa-arrow-right ms-1"></i>
                 </a>
             </div>
         </div>
     </div>
 
-    <div class="col-md-4 mb-4">
-        <div class="card h-100">
-            <div class="card-body text-center">
-                <i class="fas fa-th fa-3x text-success mb-3"></i>
-                <h5 class="card-title">Grid Features</h5>
-                <p class="card-text">
-                    Sort columns, filter data, paginate results, and perform bulk operations with ease.
-                </p>
-                <ul class="list-unstyled text-start">
-                    <li><i class="fas fa-check text-success"></i> Sortable columns</li>
-                    <li><i class="fas fa-check text-success"></i> Header filtering</li>
-                    <li><i class="fas fa-check text-success"></i> Pagination controls</li>
-                    <li><i class="fas fa-check text-success"></i> Responsive design</li>
-                </ul>
+    <div class="col-md-4">
+        <div class="card bg-success text-white shadow">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="card-subtitle mb-2 opacity-75">Today's Appointments</h6>
+                        <h2 class="card-title mb-0">@Model.TodayAppointments</h2>
+                    </div>
+                    <div>
+                        <i class="fas fa-calendar-check fa-3x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer bg-transparent border-0">
+                <a asp-controller="Appointments" asp-action="Index" class="text-white text-decoration-none">
+                    View Appointments <i class="fas fa-arrow-right ms-1"></i>
+                </a>
             </div>
         </div>
     </div>
 
-    <div class="col-md-4 mb-4">
-        <div class="card h-100">
-            <div class="card-body text-center">
-                <i class="fas fa-cogs fa-3x text-info mb-3"></i>
-                <h5 class="card-title">CRUD Operations</h5>
-                <p class="card-text">
-                    Full Create, Read, Update, and Delete functionality with form validation.
-                </p>
-                <ul class="list-unstyled text-start">
-                    <li><i class="fas fa-plus text-success"></i> Create new records</li>
-                    <li><i class="fas fa-eye text-info"></i> View details in popup</li>
-                    <li><i class="fas fa-edit text-primary"></i> Edit existing data</li>
-                    <li><i class="fas fa-trash text-danger"></i> Delete with confirmation</li>
-                </ul>
+    <div class="col-md-4">
+        <div class="card bg-warning text-white shadow">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="card-subtitle mb-2 opacity-75">Pending Appointments</h6>
+                        <h2 class="card-title mb-0">@Model.PendingAppointments</h2>
+                    </div>
+                    <div>
+                        <i class="fas fa-clock fa-3x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer bg-transparent border-0">
+                <a asp-controller="Notifications" asp-action="Index" class="text-white text-decoration-none">
+                    View Queue <i class="fas fa-arrow-right ms-1"></i>
+                </a>
             </div>
         </div>
     </div>
 </div>
 
-<div class="row mt-4">
-    <div class="col-md-12">
-        <div class="card">
+<!-- Quick Actions -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card shadow">
             <div class="card-header bg-primary text-white">
                 <h5 class="mb-0">
-                    <i class="fas fa-info-circle"></i> Quick Start Guide
+                    <i class="fas fa-bolt me-2"></i>Quick Actions
                 </h5>
             </div>
             <div class="card-body">
-                <h6 class="fw-bold">Getting Started:</h6>
-                <ol>
-                    <li>Click on <strong>"People"</strong> in the navigation menu or the button above</li>
-                    <li>View the grid with 10 sample people records</li>
-                    <li>Try sorting by clicking column headers</li>
-                    <li>Filter data by typing in the column filter boxes</li>
-                    <li>Change page size using the dropdown (5, 10, 15, 20 rows)</li>
-                    <li>Click action buttons to Create, View, Edit, or Delete records</li>
-                </ol>
-
-                <h6 class="fw-bold mt-3">Features:</h6>
                 <div class="row">
-                    <div class="col-md-6">
-                        <ul>
-                            <li><strong>Sorting:</strong> Click column headers to sort ascending/descending</li>
-                            <li><strong>Filtering:</strong> Type in header filters to search data</li>
-                            <li><strong>Pagination:</strong> Navigate pages and adjust rows per page</li>
-                        </ul>
+                    <div class="col-md-3 mb-3">
+                        <a asp-controller="Patients" asp-action="Index" class="btn btn-outline-primary btn-lg w-100">
+                            <i class="fas fa-user-plus fa-2x mb-2 d-block"></i>
+                            New Patient
+                        </a>
                     </div>
-                    <div class="col-md-6">
-                        <ul>
-                            <li><strong>Add:</strong> Create new person with validation</li>
-                            <li><strong>Edit:</strong> Update existing person details</li>
-                            <li><strong>Delete:</strong> Remove with confirmation</li>
-                            <li><strong>Details:</strong> View in popup modal</li>
-                        </ul>
+                    <div class="col-md-3 mb-3">
+                        <a asp-controller="Appointments" asp-action="Index" class="btn btn-outline-success btn-lg w-100">
+                            <i class="fas fa-calendar-plus fa-2x mb-2 d-block"></i>
+                            New Appointment
+                        </a>
                     </div>
-                </div>
-
-                <div class="alert alert-info mt-3">
-                    <i class="fas fa-lightbulb"></i> 
-                    <strong>Tip:</strong> This demo uses in-memory storage. Data will reset when you restart the application.
+                    <div class="col-md-3 mb-3">
+                        <a asp-controller="Notifications" asp-action="Queue" class="btn btn-outline-info btn-lg w-100">
+                            <i class="fas fa-bell fa-2x mb-2 d-block"></i>
+                            Patient Queue
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a asp-controller="Reports" asp-action="Index" class="btn btn-outline-warning btn-lg w-100">
+                            <i class="fas fa-chart-line fa-2x mb-2 d-block"></i>
+                            View Reports
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-<div class="row mt-4">
-    <div class="col-md-12">
-        <div class="card">
+<!-- Recent Patients & Today's Appointments -->
+<div class="row">
+    <!-- Recent Patients -->
+    <div class="col-md-6">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-users me-2"></i>Recent Patients
+                </h5>
+            </div>
+            <div class="card-body">
+                @if (Model.RecentPatients != null && Model.RecentPatients.Any())
+                {
+                    <div class="list-group list-group-flush">
+                        @foreach (var patient in Model.RecentPatients)
+                        {
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">
+                                        <i class="fas fa-user-circle text-primary me-2"></i>@patient.FullName
+                                    </h6>
+                                    <small class="text-muted">
+                                        <i class="fas fa-phone me-1"></i>@patient.Phone
+                                        <span class="ms-3">
+                                            <i class="fas fa-birthday-cake me-1"></i>Age: @patient.Age
+                                        </span>
+                                    </small>
+                                </div>
+                                <a asp-controller="Patients" asp-action="Details" asp-route-id="@patient.Id" 
+                                   class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                            </div>
+                        }
+                    </div>
+                    <div class="card-footer bg-light">
+                        <a asp-controller="Patients" asp-action="Index" class="btn btn-sm btn-primary w-100">
+                            View All Patients
+                        </a>
+                    </div>
+                }
+                else
+                {
+                    <div class="text-center py-4">
+                        <i class="fas fa-users fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">No patients yet</p>
+                        <a asp-controller="Patients" asp-action="Index" class="btn btn-primary">
+                            Add First Patient
+                        </a>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Today's Appointments -->
+    <div class="col-md-6">
+        <div class="card shadow">
             <div class="card-header bg-success text-white">
                 <h5 class="mb-0">
-                    <i class="fas fa-book"></i> Documentation
+                    <i class="fas fa-calendar-alt me-2"></i>Today's Appointments
                 </h5>
             </div>
             <div class="card-body">
-                <p>Complete documentation is available in the following files:</p>
-                <ul>
-                    <li><strong>IMPLEMENTATION_SUMMARY.md</strong> - Complete implementation details</li>
-                    <li><strong>PEOPLE_MANAGEMENT_GUIDE.md</strong> - User guide for the People system</li>
-                    <li><strong>CLEANUP_SUMMARY.md</strong> - What was removed from the original project</li>
-                </ul>
+                @if (Model.TodayAppointmentsList != null && Model.TodayAppointmentsList.Any())
+                {
+                    <div class="list-group list-group-flush">
+                        @foreach (var appointment in Model.TodayAppointmentsList.OrderBy(a => a.StartTime).Take(5))
+                        {
+                            <div class="list-group-item">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div class="flex-grow-1">
+                                        <h6 class="mb-1">
+                                            <i class="fas fa-user text-success me-2"></i>@appointment.PatientName
+                                        </h6>
+                                        <small class="text-muted">
+                                            <i class="fas fa-clock me-1"></i>@appointment.StartTime.ToString(@"hh\:mm")
+                                            @if (appointment.Status == "Scheduled")
+                                            {
+                                                <span class="badge bg-info ms-2">Scheduled</span>
+                                            }
+                                            else if (appointment.Status == "Completed")
+                                            {
+                                                <span class="badge bg-success ms-2">Completed</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-warning ms-2">@appointment.Status</span>
+                                            }
+                                        </small>
+                                    </div>
+                                    <a asp-controller="Appointments" asp-action="Index" 
+                                       class="btn btn-sm btn-outline-success">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                    <div class="card-footer bg-light">
+                        <a asp-controller="Appointments" asp-action="Index" class="btn btn-sm btn-success w-100">
+                            View All Appointments
+                        </a>
+                    </div>
+                }
+                else
+                {
+                    <div class="text-center py-4">
+                        <i class="fas fa-calendar-times fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">No appointments for today</p>
+                        <a asp-controller="Appointments" asp-action="Index" class="btn btn-success">
+                            Schedule Appointment
+                        </a>
+                    </div>
+                }
             </div>
         </div>
     </div>
 </div>
+
+<style>
+    .card {
+        border: none;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1) !important;
+    }
+
+    .btn-lg {
+        padding: 1.5rem 1rem;
+        border-width: 2px;
+    }
+
+    .btn-lg:hover {
+        transform: scale(1.05);
+        transition: transform 0.2s ease;
+    }
+
+    .list-group-item {
+        border-left: none;
+        border-right: none;
+    }
+
+    .list-group-item:first-child {
+        border-top: none;
+    }
+
+    .opacity-75 {
+        opacity: 0.75;
+    }
+
+    .opacity-50 {
+        opacity: 0.5;
+    }
+</style>
