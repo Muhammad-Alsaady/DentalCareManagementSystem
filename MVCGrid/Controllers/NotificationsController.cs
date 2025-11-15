@@ -52,17 +52,20 @@ public class NotificationsController : Controller
             return Json(new { success = false, message = ex.Message });
         }
     }
-    public async Task<IActionResult> Index()
+    public async Task<IActionResult> Index(DateTime? selectedDate)
     {
-        var todayAppointments = await _notificationService.GetTodayAppointmentsAsync();
-        return View(todayAppointments);
+        var date = selectedDate ?? DateTime.Today;
+        var appointments = await _notificationService.GetAppointmentsByDateAsync(date.ToString("yyyy-MM-dd"));
+        ViewBag.SelectedDate = date;
+        return View(appointments);
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetNotificationsGrid()
+    public async Task<IActionResult> GetNotificationsGrid(DateTime? selectedDate)
     {
-        var todayAppointments = await _notificationService.GetTodayAppointmentsAsync();
-        return PartialView("_NotificationsGrid", todayAppointments);
+        var date = selectedDate ?? DateTime.Today;
+        var appointments = await _notificationService.GetAppointmentsByDateAsync(date.ToString("yyyy-MM-dd"));
+        return PartialView("_NotificationsGrid", appointments);
     }
 
     [HttpGet]

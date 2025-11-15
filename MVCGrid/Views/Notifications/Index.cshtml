@@ -2,6 +2,7 @@
 
 @{
     ViewData["Title"] = "Today's Appointments";
+    var selectedDate = ViewBag.SelectedDate ?? DateTime.Today;
 }
 
 <div class="page-title">
@@ -23,6 +24,32 @@
 <!-- Alert Container -->
 <div id="alertContainer"></div>
 
+<!-- Date Filter and Action Buttons -->
+<div class="card mb-3">
+    <div class="card-body">
+        <div class="row align-items-center">
+            <div class="col-md-4">
+                <label for="appointmentDate" class="form-label fw-bold">
+                    <i class="fas fa-calendar"></i> Select Date:
+                </label>
+                <input type="date" 
+                       id="appointmentDate" 
+                       class="form-control" 
+                       value="@selectedDate.ToString("yyyy-MM-dd")" 
+                       onchange="filterByDate(this.value)">
+            </div>
+            <div class="col-md-8 text-end">
+                <button onclick="showAddPatientModal()" class="btn btn-primary me-2">
+                    <i class="fas fa-user-plus"></i> Add Patient
+                </button>
+                <button onclick="showAddAppointmentModal()" class="btn btn-success">
+                    <i class="fas fa-calendar-plus"></i> Add Appointment
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Queue Panel -->
 <div class="card mb-3" id="queuePanel" style="display: none;">
     <div class="card-header bg-warning text-dark">
@@ -41,7 +68,7 @@
 <div class="card">
     <div class="card-body">
         <h5 class="table-main-title">
-            <i class="fas fa-list"></i> All Appointments for Today
+            <i class="fas fa-list"></i> Appointments for @selectedDate.ToString("MMMM dd, yyyy")
         </h5>
         
         <div id="gridContainer">
@@ -59,6 +86,21 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body" id="detailsModalBody">
+                <!-- Content will be loaded here -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal for Add/Edit Actions -->
+<div class="modal fade" id="actionModal" tabindex="-1" aria-labelledby="actionModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="actionModalLabel">Action</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="actionModalBody">
                 <!-- Content will be loaded here -->
             </div>
         </div>
@@ -102,281 +144,151 @@
         }
 
         .mvc-grid table thead th {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            font-weight: 600;
-            padding: 12px 8px;
-            border: none;
-            position: sticky;
-            top: 0;
-            z-index: 10;
-        }
-
-        .mvc-grid table tbody tr {
-            transition: all 0.2s ease;
-        }
-
-        .mvc-grid table tbody tr:nth-child(even) {
             background-color: #f8f9fa;
+            font-weight: 600;
+            border-bottom: 2px solid #dee2e6;
+            padding: 12px 8px;
         }
 
         .mvc-grid table tbody tr:hover {
-            background-color: #e3f2fd;
-            transform: scale(1.01);
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        }
-
-        .mvc-grid table tbody td {
-            padding: 10px 8px;
-            border-bottom: 1px solid #e9ecef;
-            vertical-align: middle;
-        }
-
-        /* Button Group Styling */
-        .btn-group-sm .btn {
-            padding: 4px 8px;
-            font-size: 0.875rem;
-        }
-
-        /* Badge Styling */
-        .badge {
-            font-size: 0.75rem;
-            padding: 4px 10px;
-            font-weight: 600;
+            background-color: #f8f9fa;
         }
 
         /* Queue Item Styling */
         .queue-item {
-            padding: 15px;
-            margin-bottom: 10px;
-            border: 1px solid #dee2e6;
-            border-radius: 8px;
-            background: white;
+            border-left: 4px solid #ffc107;
             transition: all 0.3s ease;
         }
 
         .queue-item:hover {
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            transform: translateY(-2px);
+            background-color: #fff3cd;
+            transform: translateX(5px);
         }
 
-        /* Pagination Enhanced Styling */
-        .mvc-grid-pager {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 15px 0;
-            margin-top: 20px;
-            flex-wrap: wrap;
-            gap: 15px;
-        }
-
-        .mvc-grid-pager button {
-            min-width: 36px;
-            height: 36px;
-            border: 1px solid #dee2e6;
-            background: white;
-            color: #667eea;
-            border-radius: 6px;
-            margin: 0 2px;
-            transition: all 0.2s ease;
-            font-weight: 500;
-        }
-
-        .mvc-grid-pager button:hover:not(:disabled) {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border-color: #667eea;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
-        }
-
-        .mvc-grid-pager button.active {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border-color: #667eea;
-            font-weight: 700;
-        }
-
-        .mvc-grid-pager button:disabled {
-            opacity: 0.4;
-            cursor: not-allowed;
-        }
-
-        /* Responsive adjustments */
-        @@media (max-width: 768px) {
-            .mvc-grid table {
-                table-layout: auto;
-            }
-
-            .col-patient-name, .col-phone, .col-date, 
-            .col-start-time, .col-end-time, .col-status, 
-            .col-notes, .col-actions {
-                width: auto !important;
-            }
+        /* Date Input Styling */
+        #appointmentDate {
+            max-width: 300px;
         }
     </style>
 }
 
 @section Scripts {
-    <script src="https://cdn.jsdelivr.net/npm/@@microsoft/signalr@latest/dist/browser/signalr.min.js"></script>
     <script>
-        var detailsModal;
-        var connection;
-        
-        $(document).ready(function() {
-            detailsModal = new bootstrap.Modal(document.getElementById('detailsModal'));
+        // Filter appointments by date
+        function filterByDate(date) {
+            if (!date) {
+                date = '@DateTime.Today.ToString("yyyy-MM-dd")';
+            }
             
-            // Initialize SignalR connection
-            initializeSignalR();
-            
-            // Load queue on page load
-            loadQueue();
-        });
-
-        // Initialize SignalR for real-time updates
-        function initializeSignalR() {
-            connection = new signalR.HubConnectionBuilder()
-                .withUrl("/notificationHub")
-                .withAutomaticReconnect()
-                .build();
-
-            connection.on("PatientSentToDoctor", function (queueData) {
-                console.log("Patient sent to doctor - updating queue", queueData);
-                showAlert("Patient sent to doctor successfully!", "success");
-                refreshGrid();
-                if ($('#queuePanel').is(':visible')) {
-                    loadQueue();
+            $.ajax({
+                url: '@Url.Action("GetNotificationsGrid")',
+                type: 'GET',
+                data: { selectedDate: date },
+                success: function(result) {
+                    $('#gridContainer').html(result);
+                    // Reinitialize MVC Grid
+                    document.querySelectorAll(".mvc-grid").forEach(el => new MvcGrid(el));
+                    
+                    // Update the page title
+                    var dateObj = new Date(date);
+                    var formattedDate = dateObj.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+                    $('.table-main-title').html(`<i class="fas fa-list"></i> Appointments for ${formattedDate}`);
+                },
+                error: function(xhr) {
+                    console.error('Error filtering appointments:', xhr);
+                    showAlert('Failed to filter appointments', 'error');
                 }
-            });
-
-            connection.on("PatientCompleted", function (appointmentId, patientName, queueData) {
-                console.log("Patient completed", patientName);
-                showAlert(`Session with ${patientName} completed!`, "success");
-                refreshGrid();
-                if ($('#queuePanel').is(':visible')) {
-                    loadQueue();
-                }
-            });
-
-            connection.start()
-                .then(() => {
-                    console.log("SignalR Connected");
-                })
-                .catch(err => {
-                    console.error("SignalR Connection Error: ", err);
-                    showAlert("Real-time updates may not work. Please refresh the page.", "error");
-                });
-
-            // Handle reconnection
-            connection.onreconnected(() => {
-                console.log("SignalR Reconnected");
-                showAlert("Reconnected to real-time updates", "success");
-            });
-
-            connection.onreconnecting(() => {
-                console.log("SignalR Reconnecting...");
             });
         }
 
-        // Show appointment details
-        function showDetails(id) {
+        // Show Add Patient Modal
+        function showAddPatientModal() {
             $.ajax({
-                url: '@Url.Action("Details")/' + id,
+                url: '@Url.Action("Create", "Patients")',
                 type: 'GET',
                 success: function(result) {
-                    if (typeof result === 'object' && result.success === false) {
-                        showAlert(result.message, 'error');
-                        return;
-                    }
-                    $('#detailsModalLabel').html('<i class="fas fa-calendar-check"></i> Appointment Details');
-                    $('#detailsModalBody').html(result);
-                    detailsModal.show();
-                },
-                error: function() {
-                    showAlert('Failed to load appointment details', 'error');
-                }
-            });
-        }
-
-        // Send patient to doctor
-        function sendToDoctor(appointmentId, patientName) {
-            if (!confirm(`Send ${patientName} to the doctor?`)) {
-                return;
-            }
-
-            $.ajax({
-                url: '@Url.Action("AddToQueue")',
-                type: 'POST',
-                data: { 
-                    appointmentId: appointmentId,
-                    __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
-                },
-                success: function(result) {
-                    if (result.success) {
-                        showAlert(result.message, 'success');
-                        refreshGrid();
-                        // Automatically show queue after sending patient
-                        showQueue();
-                    } else {
-                        showAlert(result.message, 'error');
-                    }
+                    $('#actionModalLabel').text('Add New Patient');
+                    $('#actionModalBody').html(result);
+                    var modal = new bootstrap.Modal(document.getElementById('actionModal'));
+                    modal.show();
                 },
                 error: function(xhr) {
-                    console.error('Error sending patient to doctor:', xhr);
-                    showAlert('Failed to send patient to doctor', 'error');
+                    console.error('Error loading patient form:', xhr);
+                    showAlert('Failed to load patient form', 'error');
                 }
             });
         }
 
-        // Complete appointment
-        function completeAppointment(appointmentId, patientName) {
-            if (!confirm(`Mark session with ${patientName} as completed?`)) {
-                return;
-            }
-
+        // Show Add Appointment Modal
+        function showAddAppointmentModal() {
+            var selectedDate = $('#appointmentDate').val();
             $.ajax({
-                url: '@Url.Action("CompletePatient")',
-                type: 'POST',
-                data: { 
-                    appointmentId: appointmentId,
-                    __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
-                },
+                url: '@Url.Action("Create", "Appointments")',
+                type: 'GET',
                 success: function(result) {
-                    if (result.success) {
-                        showAlert(result.message, 'success');
-                        refreshGrid();
-                        loadQueue();
-                    } else {
-                        showAlert(result.message, 'error');
+                    $('#actionModalLabel').text('Add New Appointment');
+                    $('#actionModalBody').html(result);
+                    
+                    // Set the selected date in the appointment form
+                    if (selectedDate) {
+                        $('#actionModalBody input[name="Date"]').val(selectedDate);
                     }
+                    
+                    var modal = new bootstrap.Modal(document.getElementById('actionModal'));
+                    modal.show();
                 },
                 error: function(xhr) {
-                    console.error('Error completing appointment:', xhr);
-                    showAlert('Failed to complete appointment', 'error');
+                    console.error('Error loading appointment form:', xhr);
+                    showAlert('Failed to load appointment form', 'error');
                 }
             });
         }
 
-        // Show queue panel
+        // Show Queue
         function showQueue() {
             $('#queuePanel').slideDown();
             loadQueue();
         }
 
-        // Load queue
+        // Complete Appointment
+        function completeAppointment(appointmentId, patientName) {
+            if (confirm(`Mark appointment for ${patientName} as completed?`)) {
+                $.ajax({
+                    url: '@Url.Action("CompleteAppointment")',
+                    type: 'POST',
+                    data: {
+                        appointmentId: appointmentId,
+                        __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            showAlert(response.message, 'success');
+                            refreshGrid();
+                            loadQueue();
+                        } else {
+                            showAlert(response.message, 'error');
+                        }
+                    },
+                    error: function(xhr) {
+                        console.error('Error completing appointment:', xhr);
+                        showAlert('Failed to complete appointment', 'error');
+                    }
+                });
+            }
+        }
+
+        // Load Queue
         function loadQueue() {
             $.ajax({
-                url: '@Url.Action("GetQueue")',
+                url: '@Url.Action("Queue")',
                 type: 'GET',
-                success: function(appointments) {
-                    if (appointments.length === 0) {
-                        $('#queueList').html('<p class="text-muted text-center py-4"><i class="fas fa-inbox fa-2x mb-2"></i><br>No patients in queue</p>');
-                    } else {
+                success: function(result) {
+                    var appointments = result;
+                    if (appointments && appointments.length > 0) {
                         var html = '';
                         appointments.forEach(function(apt) {
                             html += `
-                                <div class="queue-item">
+                                <div class="queue-item p-3 mb-2 border rounded">
                                     <div class="row align-items-center">
                                         <div class="col-md-4">
                                             <strong><i class="fas fa-user"></i> ${apt.patientName}</strong><br>
@@ -421,9 +333,11 @@
 
         // Refresh Grid
         function refreshGrid() {
+            var selectedDate = $('#appointmentDate').val();
             $.ajax({
                 url: '@Url.Action("GetNotificationsGrid")',
                 type: 'GET',
+                data: { selectedDate: selectedDate },
                 success: function(result) {
                     $('#gridContainer').html(result);
                     // Reinitialize MVC Grid
@@ -456,6 +370,34 @@
                 });
             }, 5000);
         }
+
+        // Handle form submissions in modal
+        $(document).on('submit', '#actionModalBody form', function(e) {
+            e.preventDefault();
+            var form = $(this);
+            var formData = new FormData(this);
+            
+            $.ajax({
+                url: form.attr('action'),
+                type: form.attr('method'),
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function(response) {
+                    if (response.success) {
+                        showAlert(response.message, 'success');
+                        bootstrap.Modal.getInstance(document.getElementById('actionModal')).hide();
+                        refreshGrid();
+                    } else {
+                        $('#actionModalBody').html(response);
+                    }
+                },
+                error: function(xhr) {
+                    console.error('Error submitting form:', xhr);
+                    showAlert('Failed to submit form', 'error');
+                }
+            });
+        });
 
         // Auto-refresh every 30 seconds
         setInterval(function() {
