@@ -25,24 +25,13 @@ public class HomeController : Controller
         _paymentService = paymentService;
     }
 
+    /// <summary>
+    /// Default landing page - Redirects to Today's Patients
+    /// </summary>
     public IActionResult Index()
     {
-        var startOfMonth = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
-        var endOfMonth = startOfMonth.AddMonths(1).AddDays(-1);
-        
-        var viewModel = new DashboardViewModel
-        {
-            TotalPatients = _patientService.GetAll().Count(),
-            TodayAppointments = _appointmentService.GetTodaysAppointments().Count(),
-            PendingAppointments = _appointmentService.GetPendingAppointments().Count(),
-            RecentPatients = _patientService.GetRecentPatients(),
-            TodayAppointmentsList = _appointmentService.GetTodaysAppointments(),
-            TotalRevenueThisMonth = _paymentService.GetTotalRevenue(startOfMonth, endOfMonth),
-            OutstandingBalance = _paymentService.GetPatientsWithOutstandingBalance().Sum(p => p.RemainingBalance),
-            PatientsWithOutstandingBalance = _paymentService.GetPatientsWithOutstandingBalance().Count
-        };
-
-        return View(viewModel);
+        // Redirect to Today's Patients as the default landing page
+        return RedirectToAction("TodaysPatients", "Appointments");
     }
 
     public IActionResult Privacy()

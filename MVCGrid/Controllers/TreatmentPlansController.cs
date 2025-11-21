@@ -27,12 +27,20 @@ public class TreatmentPlansController : Controller
         _context = clinicDbContext;
     }
 
+    /// <summary>
+    /// Display all treatment plans
+    /// </summary>
+    [HttpGet]
     public IActionResult Index()
     {
         var treatmentPlans = _treatmentPlanService.GetAll().ToList();
         return View(treatmentPlans);
     }
 
+    /// <summary>
+    /// Treatment plan details with items
+    /// </summary>
+    [HttpGet]
     public IActionResult Details(Guid id)
     {
         var treatmentPlan = _treatmentPlanService.GetById(id);
@@ -44,6 +52,10 @@ public class TreatmentPlansController : Controller
         ViewBag.PriceListItems = _priceListService.GetAll()?.ToList() ?? new List<PriceListItemDto>();
         return View(treatmentPlan);
     }
+
+    /// <summary>
+    /// Create treatment plan - GET
+    /// </summary>
     [HttpGet]
     public IActionResult Create(Guid patientId)
     {
@@ -67,6 +79,9 @@ public class TreatmentPlansController : Controller
         return View(model);
     }
 
+    /// <summary>
+    /// Create treatment plan - POST
+    /// </summary>
     [HttpPost]
     [ValidateAntiForgeryToken]
     public IActionResult Create(TreatmentPlanDto treatmentPlanDto)
@@ -79,25 +94,28 @@ public class TreatmentPlansController : Controller
 
                 if (string.IsNullOrEmpty(userId))
                 {
-                    TempData["ErrorMessage"] = "User not authenticated!";
-                    return RedirectToAction("Details", "Patients", new { id = treatmentPlanDto.PatientId });
+                    return Json(new { success = false, message = "User not authenticated!" });
                 }
 
                 var planId = _treatmentPlanService.CreatePlan(treatmentPlanDto.PatientId, userId);
 
                 if (planId != Guid.Empty)
                 {
-                    TempData["SuccessMessage"] = "Treatment plan created successfully!";
-                    return RedirectToAction("Details", "Patients", new { id = treatmentPlanDto.PatientId });
+                    return Json(new
+                    {
+                        success = true,
+                        message = "Treatment plan created successfully!",
+                        redirectUrl = Url.Action("Details", "Patients", new { id = treatmentPlanDto.PatientId })
+                    });
                 }
                 else
                 {
-                    TempData["ErrorMessage"] = "Failed to create treatment plan!";
+                    return Json(new { success = false, message = "Failed to create treatment plan!" });
                 }
             }
             catch (Exception ex)
             {
-                TempData["ErrorMessage"] = $"Error creating treatment plan: {ex.Message}";
+                return Json(new { success = false, message = $"Error: {ex.Message}" });
             }
         }
 
@@ -110,55 +128,76 @@ public class TreatmentPlansController : Controller
 
         return View(treatmentPlanDto);
     }
-    //[HttpPost]
-    //[ValidateAntiForgeryToken]
-    //public IActionResult CreatePlan(Guid patientId)
-    //{
-    //    if (User.Identity?.IsAuthenticated == true)
-    //    {
-    //        return RedirectToAction("Create", "TreatmentPlans", new { patientId = patientId });
-    //    }
 
-    //    return Unauthorized();
-    //}
+    /// <summary>
+    /// Add item to treatment plan - POST (AJAX)
+    /// </summary>
     [HttpPost]
     [ValidateAntiForgeryToken]
     public IActionResult AddItem(Guid planId, Guid priceListItemId, int quantity)
     {
-        _treatmentPlanService.AddItemToPlan(planId, priceListItemId, quantity);
-        return RedirectToAction("Details", new { id = planId });
+        try
+        {
+            _treatmentPlanService.AddItemToPlan(planId, priceListItemId, quantity);
+            return Json(new
+            {
+                success = true,
+                message = "Item added to treatment plan successfully!"
+            });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = $"Error: {ex.Message}" });
+        }
     }
 
+    /// <summary>
+    /// Delete item from treatment plan - POST (AJAX)
+    /// </summary>
     [HttpPost]
     [ValidateAntiForgeryToken]
     public IActionResult DeleteItem(Guid itemId)
     {
-        var planId = _context.TreatmentItems.Find(itemId)?.TreatmentPlanId;
-        _treatmentPlanService.RemoveItemFromPlan(itemId);
-
-        if (planId.HasValue)
+        try
         {
-            return RedirectToAction("Details", new { id = planId.Value });
+            _treatmentPlanService.RemoveItemFromPlan(itemId);
+            return Json(new
+            {
+                success = true,
+                message = "Item removed from treatment plan successfully!"
+            });
         }
-
-        return RedirectToAction("Index");
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = $"Error: {ex.Message}" });
+        }
     }
 
+    /// <summary>
+    /// Update item quantity - POST (AJAX)
+    /// </summary>
     [HttpPost]
     [ValidateAntiForgeryToken]
     public IActionResult UpdateItemQuantity(Guid itemId, int quantity)
     {
-        var planId = _context.TreatmentItems.Find(itemId)?.TreatmentPlanId;
-        _treatmentPlanService.UpdateItemQuantity(itemId, quantity);
-
-        if (planId.HasValue)
+        try
         {
-            return RedirectToAction("Details", new { id = planId.Value });
+            _treatmentPlanService.UpdateItemQuantity(itemId, quantity);
+            return Json(new
+            {
+                success = true,
+                message = "Quantity updated successfully!"
+            });
         }
-
-        return RedirectToAction("Index");
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = $"Error: {ex.Message}" });
+        }
     }
 
+    /// <summary>
+    /// Get price list items - GET (returns JSON for dropdowns)
+    /// </summary>
     [HttpGet]
     public IActionResult GetPriceListItems()
     {
@@ -166,6 +205,9 @@ public class TreatmentPlansController : Controller
         return Json(items);
     }
 
+    /// <summary>
+    /// Complete treatment plan - POST (AJAX)
+    /// </summary>
     [HttpPost]
     [ValidateAntiForgeryToken]
     public IActionResult CompletePlan(Guid planId)
@@ -178,23 +220,27 @@ public class TreatmentPlansController : Controller
                 plan.IsCompleted = true;
                 _context.SaveChanges();
 
-                TempData["SuccessMessage"] = "Treatment plan completed successfully!";
+                return Json(new
+                {
+                    success = true,
+                    message = "Treatment plan completed successfully!"
+                });
             }
             else
             {
-                TempData["ErrorMessage"] = " Treatment plan not found!";
+                return Json(new { success = false, message = "Treatment plan not found!" });
             }
-
-            var patientId = plan?.PatientId ?? GetPatientIdFromPlan(planId);
-            return RedirectToAction("Details", "Patients", new { id = patientId });
         }
         catch (Exception ex)
         {
-            TempData["ErrorMessage"] = $" Error: {ex.Message}";
-            var patientId = GetPatientIdFromPlan(planId);
-            return RedirectToAction("Details", "Patients", new { id = patientId });
+            return Json(new { success = false, message = $"Error: {ex.Message}" });
         }
     }
+
+    /// <summary>
+    /// Delete treatment plan confirmation - GET
+    /// </summary>
+    [HttpGet]
     public IActionResult Delete(Guid id)
     {
         var treatmentPlan = _treatmentPlanService.GetById(id);
@@ -203,33 +249,41 @@ public class TreatmentPlansController : Controller
         return View(treatmentPlan);
     }
 
-    [HttpPost]
+    /// <summary>
+    /// Delete treatment plan - POST (AJAX)
+    /// </summary>
+    [HttpPost, ActionName("DeletePlanConfirmed")]
     [ValidateAntiForgeryToken]
     public IActionResult DeletePlanConfirmed(Guid id)
     {
-        var plan = _treatmentPlanService.GetById(id);
-        if (plan != null)
+        try
         {
-            var patientId = plan.PatientId;
-            _treatmentPlanService.DeletePlan(id);
-            return RedirectToAction("Details", "Patients", new { id = patientId });
+            var plan = _treatmentPlanService.GetById(id);
+            if (plan != null)
+            {
+                _treatmentPlanService.DeletePlan(id);
+                return Json(new
+                {
+                    success = true,
+                    message = "Treatment plan deleted successfully!",
+                    redirectUrl = Url.Action("Details", "Patients", new { id = plan.PatientId })
+                });
+            }
+            return Json(new { success = false, message = "Treatment plan not found!" });
         }
-        return NotFound();
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = $"Error: {ex.Message}" });
+        }
     }
 
+    /// <summary>
+    /// Get plans by patient - GET (returns partial for AJAX)
+    /// </summary>
     [HttpGet]
     public IActionResult GetPlansByPatient(Guid patientId)
     {
         var plans = _treatmentPlanService.GetPlansByPatientId(patientId);
         return PartialView("~/Views/Patients/_TreatmentPlans.cshtml", plans);
-    }
-
-    private Guid? GetPatientIdFromPlan(Guid planId)
-    {
-        var plan = _context.TreatmentPlans
-            .AsNoTracking()
-            .FirstOrDefault(p => p.Id == planId);
-
-        return plan?.PatientId;
     }
 }

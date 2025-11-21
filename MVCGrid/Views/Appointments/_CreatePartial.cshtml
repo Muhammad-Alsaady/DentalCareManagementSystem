@@ -1,79 +1,132 @@
 @model DentalCareManagmentSystem.Application.DTOs.AppointmentDto
 
-<form id="createForm" onsubmit="return submitForm('createForm', '@Url.Action("Create")')">
-    @Html.AntiForgeryToken()
-    
-    <div class="row">
-        <div class="col-md-6">
-            <div class="form-group mb-3">
-                <label asp-for="PatientId" class="form-label">Patient <span class="text-danger">*</span></label>
-                <select asp-for="PatientId" class="form-control" asp-items="ViewBag.Patients" required>
-                    <option value="">-- Select Patient --</option>
-                </select>
-                <span asp-validation-for="PatientId" class="text-danger"></span>
+<div class="appointment-form-container">
+    <form asp-action="Create" asp-controller="Appointments" method="post" id="appointmentCreateForm" class="needs-validation">
+        @Html.AntiForgeryToken()
+        
+        <input type="hidden" asp-for="Status" value="Scheduled" />
+        
+        <div class="row">
+            <div class="col-md-12 mb-3">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> 
+                    <strong>Create New Appointment</strong>
+                    <p class="mb-0 small">
+                        Fill in the details below. 
+                        <span class="badge bg-primary">Status: Scheduled</span> (automatically set)
+                    </p>
+                </div>
             </div>
         </div>
         
-        <div class="col-md-6">
-            <div class="form-group mb-3">
-                <label asp-for="Date" class="form-label">Appointment Date <span class="text-danger">*</span></label>
-                <input asp-for="Date" type="date" class="form-control" required />
-                <span asp-validation-for="Date" class="text-danger"></span>
+        <div class="row">
+            <div class="col-md-12">
+                <div class="form-group mb-3">
+                    <label asp-for="PatientId" class="form-label required">
+                        <i class="fas fa-user"></i> Patient
+                    </label>
+                    <select asp-for="PatientId" class="form-control form-control-lg" asp-items="ViewBag.Patients" required>
+                        <option value="">-- Select Patient --</option>
+                    </select>
+                    <span asp-validation-for="PatientId" class="text-danger"></span>
+                </div>
             </div>
         </div>
-    </div>
 
-    <div class="row">
-        <div class="col-md-6">
-            <div class="form-group mb-3">
-                <label asp-for="StartTime" class="form-label">Start Time <span class="text-danger">*</span></label>
-                <input asp-for="StartTime" type="time" class="form-control" required />
-                <span asp-validation-for="StartTime" class="text-danger"></span>
+        <div class="row">
+            <div class="col-md-12">
+                <div class="form-group mb-3">
+                    <label asp-for="Date" class="form-label required">
+                        <i class="fas fa-calendar"></i> Appointment Date
+                    </label>
+                    <input asp-for="Date" type="date" class="form-control" required />
+                    <span asp-validation-for="Date" class="text-danger"></span>
+                </div>
             </div>
         </div>
-        
-        <div class="col-md-6">
-            <div class="form-group mb-3">
-                <label asp-for="EndTime" class="form-label">End Time <span class="text-danger">*</span></label>
-                <input asp-for="EndTime" type="time" class="form-control" required />
-                <span asp-validation-for="EndTime" class="text-danger"></span>
-            </div>
-        </div>
-    </div>
 
-    <div class="row">
-        <div class="col-md-6">
-            <div class="form-group mb-3">
-                <label asp-for="Status" class="form-label">Status <span class="text-danger">*</span></label>
-                <select asp-for="Status" class="form-control" asp-items="ViewBag.StatusOptions" required>
-                    <option value="">-- Select Status --</option>
-                </select>
-                <span asp-validation-for="Status" class="text-danger"></span>
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group mb-3">
+                    <label asp-for="StartTime" class="form-label required">
+                        <i class="fas fa-clock"></i> Start Time
+                    </label>
+                    <input asp-for="StartTime" type="time" class="form-control" required />
+                    <span asp-validation-for="StartTime" class="text-danger"></span>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="form-group mb-3">
+                    <label asp-for="EndTime" class="form-label required">
+                        <i class="fas fa-clock"></i> End Time
+                    </label>
+                    <input asp-for="EndTime" type="time" class="form-control" required />
+                    <span asp-validation-for="EndTime" class="text-danger"></span>
+                </div>
             </div>
         </div>
-    </div>
 
-    <div class="row">
-        <div class="col-md-12">
-            <div class="form-group mb-3">
-                <label asp-for="Notes" class="form-label">Notes</label>
-                <textarea asp-for="Notes" class="form-control" rows="3" placeholder="Enter any additional notes"></textarea>
-                <span asp-validation-for="Notes" class="text-danger"></span>
+        <div class="row">
+            <div class="col-md-12">
+                <div class="form-group mb-4">
+                    <label asp-for="Notes" class="form-label">
+                        <i class="fas fa-sticky-note"></i> Notes (Optional)
+                    </label>
+                    <textarea asp-for="Notes" class="form-control" rows="3" placeholder="Enter any additional notes or special instructions"></textarea>
+                    <span asp-validation-for="Notes" class="text-danger"></span>
+                </div>
             </div>
         </div>
-    </div>
 
-    <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-            <i class="fas fa-times"></i> Cancel
-        </button>
-        <button type="submit" class="btn btn-success">
-            <i class="fas fa-calendar-plus"></i> Create Appointment
-        </button>
-    </div>
-</form>
+        <div class="d-grid gap-2">
+            <button type="submit" class="btn btn-success btn-lg">
+                <i class="fas fa-calendar-plus"></i> Create Appointment (Scheduled)
+            </button>
+            <button type="button" class="btn btn-outline-secondary" onclick="ModalLoader.close()">
+                <i class="fas fa-times"></i> Cancel
+            </button>
+        </div>
+    </form>
+</div>
+
+<style>
+    .appointment-form-container {
+        padding: 10px 0;
+    }
+
+    .required::after {
+        content: " *";
+        color: #dc3545;
+    }
+
+    #appointmentCreateForm .form-control:focus,
+    #appointmentCreateForm .form-select:focus {
+        border-color: #10b981;
+        box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+    }
+
+    #appointmentCreateForm .btn-success {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        border: none;
+        font-size: 1.1rem;
+        padding: 14px;
+    }
+
+    #appointmentCreateForm .btn-success:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(16, 185, 129, 0.3);
+    }
+
+    #appointmentCreateForm .form-control-lg {
+        font-size: 1.1rem;
+        padding: 12px;
+    }
+</style>
 
 <script>
-    // Enable client-side validation
-    $.validator.unobtrusive.parse('#createForm');
+    $(document).ready(function() {
+        // Form is automatically handled by ModalLoader
+        console.log('Appointment create form initialized - Status: Scheduled (automatic)');
+    });
 </script>

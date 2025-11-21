@@ -2,7 +2,6 @@ using DentalCareManagmentSystem.Application.DTOs;
 using DentalCareManagmentSystem.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
 
 namespace DentalManagementSystem.Controllers;
 
@@ -11,20 +10,36 @@ public class PaymentsController : Controller
 {
     private readonly IPaymentService _paymentService;
     private readonly IPatientService _patientService;
+    private readonly IAppointmentService _appointmentService;
 
-    public PaymentsController(IPaymentService paymentService, IPatientService patientService)
+    public PaymentsController(
+        IPaymentService paymentService,
+        IPatientService patientService,
+        IAppointmentService appointmentService)
     {
         _paymentService = paymentService;
         _patientService = patientService;
+        _appointmentService = appointmentService;
     }
 
     /// <summary>
     /// Display all payments
     /// </summary>
+    [HttpGet]
     public IActionResult Index()
     {
         var payments = _paymentService.GetAllPayments();
         return View(payments);
+    }
+
+    /// <summary>
+    /// Get payments grid partial (for AJAX refresh)
+    /// </summary>
+    [HttpGet]
+    public IActionResult GetPaymentsGrid(DateTime? startDate = null, DateTime? endDate = null)
+    {
+        var payments = _paymentService.GetAllPayments(startDate, endDate);
+        return PartialView("_PaymentHistoryGrid", payments);
     }
 
     /// <summary>
@@ -33,98 +48,120 @@ public class PaymentsController : Controller
     [HttpGet]
     public IActionResult GetPatientPaymentSummary(Guid patientId)
     {
-        try
-        {
-            var summary = _paymentService.GetPatientPaymentSummary(patientId);
-            return PartialView("_PaymentSummaryPartial", summary);
-        }
-        catch (Exception ex)
-        {
-            return Json(new { success = false, message = ex.Message });
-        }
+        var paymentSummary = _paymentService.GetPatientPaymentSummary(patientId);
+        return PartialView("_PaymentSummaryPartial", paymentSummary);
     }
 
     /// <summary>
-    /// Show add payment form
+    /// Add payment form - GET (returns partial for modal)
     /// </summary>
     [HttpGet]
-    [Authorize(Roles = "Receptionist,SystemAdmin")]
-    public IActionResult AddPayment(Guid patientId, Guid? appointmentId = null)
+    public IActionResult AddPayment(Guid? patientId, Guid? appointmentId)
     {
-        var patient = _patientService.GetById(patientId);
-        if (patient == null)
+        var model = new PaymentTransactionDto
         {
-            return Json(new { success = false, message = "Patient not found." });
-        }
-
-        var summary = _paymentService.GetPatientPaymentSummary(patientId);
-
-        var model = new CreatePaymentDto
-        {
-            PatientId = patientId,
+            PatientId = patientId ?? Guid.Empty,
             AppointmentId = appointmentId,
-            PaymentDate = DateTime.Today
+            PaymentDate = DateTime.Now,
+            Amount = 0
         };
 
-        ViewBag.PatientName = patient.FullName;
-        ViewBag.RemainingBalance = summary.RemainingBalance;
+        // Get patient list for dropdown
+        ViewBag.Patients = _patientService.GetAll().ToList();
+
+        // If patient is selected, get their appointments
+        if (patientId.HasValue)
+        {
+            ViewBag.Appointments = _appointmentService.GetAll()
+                .Where(a => a.PatientId == patientId.Value)
+                .ToList();
+        }
 
         return PartialView("_AddPaymentPartial", model);
     }
 
     /// <summary>
-    /// Process payment addition with full transaction support
+    /// Add payment - POST (AJAX, returns JSON)
     /// </summary>
     [HttpPost]
     [ValidateAntiForgeryToken]
-    [Authorize(Roles = "Receptionist,SystemAdmin")]
-    public async Task<IActionResult> AddPayment(CreatePaymentDto payment)
+    public async Task<IActionResult> AddPayment(Guid patientId, Guid? appointmentId, decimal amount, string notes)
     {
-        if (!ModelState.IsValid)
-        {
-            var patient = _patientService.GetById(payment.PatientId);
-            var summary = _paymentService.GetPatientPaymentSummary(payment.PatientId);
-            ViewBag.PatientName = patient?.FullName;
-            ViewBag.RemainingBalance = summary.RemainingBalance;
-            return PartialView("_AddPaymentPartial", payment);
-        }
-
         try
         {
-            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "Unknown";
-            
-            // Add payment with automatic recalculation and audit logging
-            var result = await _paymentService.AddPaymentAsync(payment, userId);
+            if (amount <= 0)
+            {
+                return Json(new { success = false, message = "Amount must be greater than zero." });
+            }
 
+            var createdBy = User.Identity?.Name ?? "System";
+
+            // Create payment DTO
+            var paymentDto = new CreatePaymentDto
+            {
+                PatientId = patientId,
+                AppointmentId = appointmentId,
+                Amount = amount,
+                Notes = notes,
+                PaymentDate = DateTime.Now
+            };
+
+            // Record payment using the service
+            await _paymentService.AddPaymentAsync(paymentDto, createdBy);
+            
             return Json(new
             {
                 success = true,
-                message = $"Payment of {payment.Amount:C} has been recorded successfully! All related appointments have been updated."
+                message = $"Payment of {amount:C} has been recorded successfully!"
             });
         }
         catch (Exception ex)
         {
-            return Json(new { success = false, message = ex.Message });
+            return Json(new
+            {
+                success = false,
+                message = $"Error: {ex.Message}"
+            });
         }
     }
 
     /// <summary>
-    /// Show delete confirmation
+    /// Print receipt - GET (opens in new tab)
+    /// </summary>
+    [HttpGet]
+    public IActionResult PrintReceipt(Guid id)
+    {
+        var payment = _paymentService.GetAllPayments()
+            .FirstOrDefault(p => p.Id == id);
+
+        if (payment == null)
+        {
+            return NotFound();
+        }
+
+        return View(payment);
+    }
+
+    /// <summary>
+    /// Delete payment confirmation - GET (returns partial for modal)
     /// </summary>
     [HttpGet]
     [Authorize(Roles = "SystemAdmin")]
     public IActionResult DeletePayment(Guid id)
     {
-        var payment = _paymentService.GetPaymentById(id);
+        var payment = _paymentService.GetAllPayments()
+            .FirstOrDefault(p => p.Id == id);
+
         if (payment == null)
         {
             return Json(new { success = false, message = "Payment not found." });
         }
+
         return PartialView("_DeletePaymentPartial", payment);
     }
 
     /// <summary>
-    /// Process payment deletion with full transaction support
+    /// Delete payment - POST (AJAX, returns JSON)
     /// </summary>
     [HttpPost, ActionName("DeletePaymentConfirmed")]
     [ValidateAntiForgeryToken]
@@ -133,61 +170,41 @@ public class PaymentsController : Controller
     {
         try
         {
-            var payment = _paymentService.GetPaymentById(id);
-            if (payment == null)
-            {
-                return Json(new { success = false, message = "Payment not found." });
-            }
-
-            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "Unknown";
-            
-            // Delete payment with automatic recalculation and audit logging
-            await _paymentService.DeletePaymentAsync(id, userId);
+            var deletedBy = User.Identity?.Name ?? "System";
+            await _paymentService.DeletePaymentAsync(id, deletedBy);
             
             return Json(new
             {
                 success = true,
-                message = $"Payment of {payment.Amount:C} has been deleted successfully! All related appointments have been updated."
+                message = "Payment has been deleted successfully!"
             });
         }
         catch (Exception ex)
         {
-            return Json(new { success = false, message = ex.Message });
+            return Json(new
+            {
+                success = false,
+                message = $"Error: {ex.Message}"
+            });
         }
     }
 
     /// <summary>
-    /// Get payments grid for a patient
+    /// Get appointments by patient - GET (AJAX, returns JSON)
+    /// For dynamic dropdown in add payment form
     /// </summary>
     [HttpGet]
-    public IActionResult GetPatientPaymentsGrid(Guid patientId)
+    public IActionResult GetAppointmentsByPatient(Guid patientId)
     {
-        var payments = _paymentService.GetPatientPayments(patientId);
-        ViewBag.PatientId = patientId;
-        return PartialView("_PaymentsGridPartial", payments);
-    }
+        var appointments = _appointmentService.GetAll()
+            .Where(a => a.PatientId == patientId)
+            .Select(a => new
+            {
+                id = a.Id,
+                text = $"{a.Date:yyyy-MM-dd} - {a.StartTime:hh\\:mm} ({a.Status})"
+            })
+            .ToList();
 
-    /// <summary>
-    /// Display patients with outstanding balances
-    /// </summary>
-    public IActionResult OutstandingBalances()
-    {
-        var patients = _paymentService.GetPatientsWithOutstandingBalance();
-        return View(patients);
-    }
-
-    /// <summary>
-    /// Print receipt
-    /// </summary>
-    [HttpGet]
-    public IActionResult PrintReceipt(Guid id)
-    {
-        var payment = _paymentService.GetPaymentById(id);
-        if (payment == null)
-        {
-            return NotFound();
-        }
-
-        return View(payment);
+        return Json(appointments);
     }
 }

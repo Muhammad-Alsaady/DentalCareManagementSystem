@@ -1,0 +1,170 @@
+/* ========================================
+   TOPBAR STYLES - Fixed Top Bar
+   ======================================== */
+
+.topbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 60px;
+    background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px;
+    z-index: 1050;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+}
+
+.topbar-left {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    flex: 1;
+}
+
+.topbar-center {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+}
+
+.topbar-right {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex: 1;
+    justify-content: flex-end;
+}
+
+.sidebar-toggle {
+    background: transparent;
+    border: none;
+    color: white;
+    font-size: 1.3rem;
+    cursor: pointer;
+    padding: 8px 12px;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+}
+
+.sidebar-toggle:hover {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.topbar-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1.2rem;
+    font-weight: 600;
+}
+
+.topbar-brand i {
+    font-size: 1.4rem;
+}
+
+.brand-name {
+    display: inline;
+}
+
+/* Today's Patients Button */
+.btn-todays-patients {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    padding: 8px 20px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-todays-patients:hover {
+    background: rgba(255, 255, 255, 0.3);
+    border-color: rgba(255, 255, 255, 0.5);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.btn-todays-patients i {
+    font-size: 1.1rem;
+}
+
+.topbar-clock {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.95rem;
+    background: rgba(255, 255, 255, 0.1);
+    padding: 8px 15px;
+    border-radius: 6px;
+    font-weight: 500;
+}
+
+.topbar-clock i {
+    font-size: 1.1rem;
+}
+
+#liveClock {
+    font-family: 'Courier New', monospace;
+    letter-spacing: 0.5px;
+}
+
+.topbar-divider {
+    width: 1px;
+    height: 30px;
+    background: rgba(255, 255, 255, 0.3);
+}
+
+/* Mobile Responsive */
+@media (max-width: 992px) {
+    .topbar {
+        padding: 0 15px;
+    }
+
+    .brand-name {
+        display: none;
+    }
+
+    .btn-todays-patients .btn-text {
+        display: none;
+    }
+
+    .btn-todays-patients {
+        padding: 8px 12px;
+    }
+}
+
+@media (max-width: 768px) {
+    .topbar-clock {
+        font-size: 0.85rem;
+        padding: 6px 10px;
+    }
+
+    .topbar-center {
+        flex: 0.5;
+    }
+}
+
+@media (max-width: 576px) {
+    .topbar-clock i {
+        display: none;
+    }
+
+    .topbar-divider {
+        display: none;
+    }
+
+    .topbar-center {
+        display: none;
+    }
+}

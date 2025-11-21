@@ -1,0 +1,222 @@
+@{
+    ViewData["Title"] = "Reports Dashboard";
+}
+
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <h2><i class="fas fa-chart-line"></i> Reports Dashboard</h2>
+            <p class="text-muted">View and analyze clinic performance metrics and statistics</p>
+            <hr />
+        </div>
+    </div>
+
+    <!-- Report Categories -->
+    <div class="row">
+        <!-- Patient Reports -->
+        <div class="col-md-6 col-lg-3 mb-4">
+            <div class="card h-100 border-primary shadow-sm hover-card">
+                <div class="card-body text-center">
+                    <div class="mb-3">
+                        <i class="fas fa-users fa-3x text-primary"></i>
+                    </div>
+                    <h5 class="card-title">Patient Reports</h5>
+                    <p class="card-text text-muted">
+                        View patient demographics, growth trends, and statistics
+                    </p>
+                    <a asp-action="PatientReport" class="btn btn-primary">
+                        <i class="fas fa-eye"></i> View Report
+                    </a>
+                </div>
+                <div class="card-footer bg-light">
+                    <small class="text-muted">
+                        <i class="fas fa-info-circle"></i> Demographics & Trends
+                    </small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Appointment Reports -->
+        <div class="col-md-6 col-lg-3 mb-4">
+            <div class="card h-100 border-success shadow-sm hover-card">
+                <div class="card-body text-center">
+                    <div class="mb-3">
+                        <i class="fas fa-calendar-check fa-3x text-success"></i>
+                    </div>
+                    <h5 class="card-title">Appointment Reports</h5>
+                    <p class="card-text text-muted">
+                        Analyze appointment patterns and completion rates
+                    </p>
+                    <a asp-action="AppointmentReport" class="btn btn-success">
+                        <i class="fas fa-eye"></i> View Report
+                    </a>
+                </div>
+                <div class="card-footer bg-light">
+                    <small class="text-muted">
+                        <i class="fas fa-info-circle"></i> Status & Trends
+                    </small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Financial Reports -->
+        <div class="col-md-6 col-lg-3 mb-4">
+            <div class="card h-100 border-warning shadow-sm hover-card">
+                <div class="card-body text-center">
+                    <div class="mb-3">
+                        <i class="fas fa-dollar-sign fa-3x text-warning"></i>
+                    </div>
+                    <h5 class="card-title">Financial Reports</h5>
+                    <p class="card-text text-muted">
+                        Review revenue, expenses, and financial performance
+                    </p>
+                    <a asp-action="FinancialReport" class="btn btn-warning">
+                        <i class="fas fa-eye"></i> View Report
+                    </a>
+                </div>
+                <div class="card-footer bg-light">
+                    <small class="text-muted">
+                        <i class="fas fa-info-circle"></i> Revenue & Outstanding
+                    </small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Payment Reports -->
+        <div class="col-md-6 col-lg-3 mb-4">
+            <div class="card h-100 border-info shadow-sm hover-card">
+                <div class="card-body text-center">
+                    <div class="mb-3">
+                        <i class="fas fa-money-bill-wave fa-3x text-info"></i>
+                    </div>
+                    <h5 class="card-title">Payment Reports</h5>
+                    <p class="card-text text-muted">
+                        Track payments, balances, and collection metrics
+                    </p>
+                    <a asp-action="PaymentReport" class="btn btn-info">
+                        <i class="fas fa-eye"></i> View Report
+                    </a>
+                </div>
+                <div class="card-footer bg-light">
+                    <small class="text-muted">
+                        <i class="fas fa-info-circle"></i> Payments & Collections
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-dark text-white">
+                    <h5 class="mb-0"><i class="fas fa-download"></i> Export Data</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <div class="d-grid">
+                                <button class="btn btn-outline-primary" onclick="exportPatients()">
+                                    <i class="fas fa-file-export"></i> Export Patients
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="d-grid">
+                                <button class="btn btn-outline-success" onclick="exportAppointments()">
+                                    <i class="fas fa-file-export"></i> Export Appointments
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="d-grid">
+                                <button class="btn btn-outline-info" onclick="exportPayments()">
+                                    <i class="fas fa-file-export"></i> Export Payments
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Stats Summary -->
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0"><i class="fas fa-info-circle"></i> About Reports</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6><i class="fas fa-chart-bar"></i> Available Reports:</h6>
+                            <ul class="list-unstyled">
+                                <li><i class="fas fa-check text-success"></i> Patient Demographics</li>
+                                <li><i class="fas fa-check text-success"></i> Appointment Statistics</li>
+                                <li><i class="fas fa-check text-success"></i> Financial Overview</li>
+                                <li><i class="fas fa-check text-success"></i> Payment Tracking</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6><i class="fas fa-cog"></i> Features:</h6>
+                            <ul class="list-unstyled">
+                                <li><i class="fas fa-check text-info"></i> Interactive Charts</li>
+                                <li><i class="fas fa-check text-info"></i> Data Export</li>
+                                <li><i class="fas fa-check text-info"></i> Date Range Filtering</li>
+                                <li><i class="fas fa-check text-info"></i> Real-time Statistics</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function exportPatients() {
+            window.location.href = '@Url.Action("ExportPatients")';
+        }
+
+        function exportAppointments() {
+            var startDate = prompt("Enter start date (yyyy-mm-dd) or leave empty for all:");
+            var endDate = prompt("Enter end date (yyyy-mm-dd) or leave empty for all:");
+            
+            var url = '@Url.Action("ExportAppointments")';
+            if (startDate) url += '?startDate=' + startDate;
+            if (endDate) url += (startDate ? '&' : '?') + 'endDate=' + endDate;
+            
+            window.location.href = url;
+        }
+
+        function exportPayments() {
+            var startDate = prompt("Enter start date (yyyy-mm-dd) or leave empty for all:");
+            var endDate = prompt("Enter end date (yyyy-mm-dd) or leave empty for all:");
+            
+            var url = '@Url.Action("ExportPayments")';
+            if (startDate) url += '?startDate=' + startDate;
+            if (endDate) url += (startDate ? '&' : '?') + 'endDate=' + endDate;
+            
+            window.location.href = url;
+        }
+    </script>
+}
+
+<style>
+    .hover-card {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .hover-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+    }
+
+    .card-footer {
+        border-top: 1px solid rgba(0,0,0,.125);
+    }
+</style>

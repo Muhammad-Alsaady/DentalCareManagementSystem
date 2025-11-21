@@ -1,7 +1,11 @@
+/* ========================================
+   SIDEBAR STYLES - Left Menu
+   ======================================== */
+
 .sidebar {
     position: fixed;
     left: 0;
-    top: 0;
+    top: 60px; /* Start UNDER the topbar */
     bottom: 0;
     width: 260px;
     background: linear-gradient(180deg, #1e3a5f 0%, #2c5282 100%);
@@ -9,14 +13,14 @@
     overflow-y: auto;
     overflow-x: hidden;
     transition: transform 0.3s ease, box-shadow 0.3s ease;
-    z-index: 1040;
+    z-index: 1040; /* Below topbar (1050) */
     box-shadow: 4px 0 15px rgba(0,0,0,0.2);
 }
 
 .sidebar-overlay {
     display: none;
     position: fixed;
-    top: 0;
+    top: 60px; /* Start under topbar */
     left: 0;
     right: 0;
     bottom: 0;
@@ -224,7 +228,7 @@
 }
 
 /* Animations */
-@@keyframes fadeIn {
+@keyframes fadeIn {
     from {
         opacity: 0;
         transform: translateY(-10px);
@@ -235,7 +239,7 @@
     }
 }
 
-@@keyframes pulse {
+@keyframes pulse {
     0%, 100% {
         opacity: 1;
     }
@@ -245,7 +249,7 @@
 }
 
 /* Mobile Responsive */
-@@media (max-width: 768px) {
+@media (max-width: 768px) {
     .sidebar {
         transform: translateX(-100%);
     }

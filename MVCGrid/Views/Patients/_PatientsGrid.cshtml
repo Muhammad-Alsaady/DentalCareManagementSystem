@@ -36,7 +36,7 @@
     grid.Columns.Add(model => model.Gender)
         .Titled("Gender")
         .Css("text-center col-gender")
-        .RenderedAs(model => GetGenderBadge(model.Gender))
+        .RenderedAs(model => model?.Gender)
         .Filterable(true)
         .Sortable(true);
 
@@ -65,22 +65,22 @@
 }
 
 @functions {
-    string GetGenderBadge(string gender)
-    {
-        var badgeClass = gender?.ToLower() switch
-        {
-            "male" => "bg-primary",
-            "female" => "bg-danger",
-            _ => "bg-secondary"
-        };
-        var icon = gender?.ToLower() switch
-        {
-            "male" => "<i class='fas fa-mars'></i>",
-            "female" => "<i class='fas fa-venus'></i>",
-            _ => ""
-        };
-        return $"<span class='badge {badgeClass}'>{icon} {gender}</span>";
-    }
+    // string GetGenderBadge(string gender)
+    // {
+    //     var badgeClass = gender?.ToLower() switch
+    //     {
+    //         "male" => "bg-primary",
+    //         "female" => "bg-danger",
+    //         _ => "bg-secondary"
+    //     };
+    //     var icon = gender?.ToLower() switch
+    //     {
+    //         "male" => "<i class='fas fa-mars'></i>",
+    //         "female" => "<i class='fas fa-venus'></i>",
+    //         _ => ""
+    //     };
+    //     return $"<span class='badge {badgeClass}'>{icon} {gender}</span>";
+    // }
 
     string GetActionButtons(DentalCareManagmentSystem.Application.DTOs.PatientDto model)
     {

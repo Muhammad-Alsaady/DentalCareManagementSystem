@@ -74,7 +74,9 @@ public class PatientsController : Controller
             var patient = _patientService.Create(patientDto);
             return Json(new { 
                 success = true, 
-                message = $"Patient '{patient.FullName}' has been created successfully!" 
+                message = $"Patient '{patient.FullName}' has been created successfully!",
+                patientId = patient.Id,
+                openAppointmentModal = true // Signal to open appointment modal
             });
         }
 
@@ -213,8 +215,9 @@ public class PatientsController : Controller
         return Unauthorized();
     }
 
-    [HttpPost]
-    [Authorize(Roles = "Doctor")]
+    /// <summary>
+    /// Upload patient image - POST (for patient details page)
+    /// </summary>
     [HttpPost]
     [ValidateAntiForgeryToken]
     [Authorize(Roles = "Doctor")]
@@ -227,9 +230,13 @@ public class PatientsController : Controller
 
         return RedirectToAction("Details", new { id = patientId });
     }
+
+    /// <summary>
+    /// Create treatment plan - POST (for patient details page)
+    /// </summary>
     [HttpPost]
-    [Authorize(Roles = "Doctor")]
     [ValidateAntiForgeryToken]
+    [Authorize(Roles = "Doctor")]
     public IActionResult CreateTreatmentPlan(Guid patientId)
     {
         var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)!.Value;
@@ -238,7 +245,9 @@ public class PatientsController : Controller
         return RedirectToAction("Details", new { id = patientId });
     }
 
-
+    /// <summary>
+    /// Delete patient image - POST (for patient details page)
+    /// </summary>
     [HttpPost]
     [ValidateAntiForgeryToken]
     [Authorize(Roles = "Doctor")]
@@ -247,5 +256,4 @@ public class PatientsController : Controller
         _imageService.DeleteImage(imageId);
         return RedirectToAction("Details", new { id = patientId });
     }
-
 }

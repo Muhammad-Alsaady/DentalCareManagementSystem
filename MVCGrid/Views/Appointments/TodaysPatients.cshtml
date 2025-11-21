@@ -1,0 +1,489 @@
+@model List<DentalCareManagmentSystem.Application.DTOs.AppointmentDto>
+@{
+    ViewData["Title"] = "Today's Patients";
+    var filterDate = ViewBag.FilterDate as DateTime? ?? DateTime.Today;
+    var isToday = filterDate.Date == DateTime.Today.Date;
+}
+
+<div class="container-fluid todays-patients-page">
+    <!-- Hidden anti-forgery token for AJAX calls -->
+    @Html.AntiForgeryToken()
+    
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="page-header">
+                <div class="header-content">
+                    <div class="header-left">
+                        <h1 class="page-title">
+                            <i class="fas fa-calendar-day text-primary"></i> 
+                            @if (isToday)
+                            {
+                                <text>Today's Patients</text>
+                            }
+                            else
+                            {
+                                <text>Appointments for @filterDate.ToString("MMMM dd, yyyy")</text>
+                            }
+                        </h1>
+                        <p class="page-subtitle">
+                            <i class="fas fa-clock"></i> @filterDate.ToString("dddd, MMMM dd, yyyy")
+                            <span class="badge bg-primary ms-2 fs-6">@Model.Count Appointments</span>
+                        </p>
+                    </div>
+                    <div class="header-actions">
+                        <button class="btn btn-success btn-lg shadow-sm" onclick="addNewPatient()">
+                            <i class="fas fa-user-plus"></i> Add New Patient
+                        </button>
+                        <button class="btn btn-primary btn-lg shadow-sm" onclick="addNewAppointment()">
+                            <i class="fas fa-calendar-plus"></i> New Appointment
+                        </button>
+                        <button class="btn btn-outline-secondary btn-lg" onclick="manualRefresh()">
+                            <i class="fas fa-sync-alt"></i> Refresh
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Stats Cards -->
+    <div class="row mb-4 stats-row">
+        <div class="col-md-3">
+            <div class="stat-card stat-card-total">
+                <div class="stat-icon">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div class="stat-content">
+                    <h2 class="stat-number">@Model.Count</h2>
+                    <p class="stat-label">Total Patients</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card stat-card-scheduled">
+                <div class="stat-icon">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div class="stat-content">
+                    <h2 class="stat-number">@Model.Count(a => a.Status == "Scheduled")</h2>
+                    <p class="stat-label">Scheduled</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card stat-card-completed">
+                <div class="stat-icon">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div class="stat-content">
+                    <h2 class="stat-number">@Model.Count(a => a.Status == "Completed")</h2>
+                    <p class="stat-label">Completed</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card stat-card-notified">
+                <div class="stat-icon">
+                    <i class="fas fa-bell"></i>
+                </div>
+                <div class="stat-content">
+                    <h2 class="stat-number">@Model.Count(a => a.Status == "Notified")</h2>
+                    <p class="stat-label">Notified</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Patients Grid -->
+    <div class="row">
+        <div class="col-12">
+            <div class="grid-card shadow-sm">
+                <div class="grid-card-header">
+                    <h4 class="grid-title">
+                        <i class="fas fa-list-ul"></i> Patient Appointments
+                    </h4>
+                </div>
+                <div class="grid-card-body" id="gridContainer">
+                    @await Html.PartialAsync("_TodaysPatientsGrid", Model)
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // Enable auto-refresh every 10 seconds
+            UIHelpers.enableAutoRefresh(
+                'TodaysPatientsGrid',
+                '#gridContainer',
+                '@Url.Action("GetTodaysPatientsGrid")',
+                {}
+            );
+
+            // Listen for successful modal submissions
+            $(document).on('modalSuccess', function(event, response) {
+                // Refresh grid after any modal operation
+                manualRefresh();
+                
+                // Check if we should open appointment modal after patient creation
+                if (response.openAppointmentModal && response.patientId) {
+                    setTimeout(function() {
+                        addNewAppointment(response.patientId);
+                    }, 500); // Wait for first modal to fully close
+                }
+            });
+
+            console.log('Today\'s Patients page initialized with auto-refresh (10s interval)');
+        });
+
+        // Add New Patient
+        function addNewPatient() {
+            ModalLoader.load(
+                '@Url.Action("Create", "Patients")',
+                'Add New Patient'
+            );
+        }
+
+        // Add New Appointment
+        function addNewAppointment(patientId) {
+            var url = '@Url.Action("Create", "Appointments")';
+            if (patientId) {
+                url += '?patientId=' + patientId;
+            }
+            
+            ModalLoader.load(url, 'New Appointment');
+        }
+
+        // View Patient Card
+        function viewPatientCard(patientId, patientName) {
+            ModalLoader.load(
+                '@Url.Action("Details", "Patients")/' + patientId,
+                'Patient Details: ' + patientName
+            );
+        }
+
+        // Add Payment
+        function addPayment(patientId, patientName) {
+            ModalLoader.load(
+                '@Url.Action("AddPayment", "Payments")?patientId=' + patientId,
+                'Add Payment: ' + patientName,
+                {
+                    onSuccess: function() {
+                        // Load payment summary
+                        loadPaymentSummary(patientId);
+                    }
+                }
+            );
+        }
+
+        // Load Payment Summary into modal
+        function loadPaymentSummary(patientId) {
+            $.ajax({
+                url: '@Url.Action("GetPatientPaymentSummary", "Payments")',
+                data: { patientId: patientId },
+                success: function(html) {
+                    $('#paymentSummaryContainer').html(html);
+                }
+            });
+        }
+
+        // Show Edit Form
+        function showEdit(id) {
+            ModalLoader.load(
+                '@Url.Action("Edit", "Appointments")/' + id,
+                'Edit Appointment'
+            );
+        }
+
+        // Show Delete Confirmation
+        function showDelete(id) {
+            ModalLoader.load(
+                '@Url.Action("Delete", "Appointments")/' + id,
+                'Delete Appointment'
+            );
+        }
+
+        // Show Details
+        function showDetails(id) {
+            ModalLoader.load(
+                '@Url.Action("Details", "Appointments")/' + id,
+                'Appointment Details'
+            );
+        }
+
+        // Update Status (Doctor only - to Completed)
+        function updateStatus(id, status) {
+            if (confirm('Change status to ' + status + '?')) {
+                UIHelpers.ajaxAction(
+                    '@Url.Action("UpdateStatus", "Appointments")',
+                    { id: id, status: status },
+                    function(response) {
+                        manualRefresh();
+                    }
+                );
+            }
+        }
+
+        // Mark as Completed (Doctor only)
+        function markAsCompleted(id) {
+            if (confirm('Mark this appointment as Completed?')) {
+                $.ajax({
+                    url: '@Url.Action("UpdateStatus", "Appointments")',
+                    type: 'POST',
+                    data: {
+                        id: id,
+                        status: 'Completed',
+                        __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            UIHelpers.showAlert(response.message, 'success');
+                            manualRefresh();
+                        } else {
+                            UIHelpers.showAlert(response.message || 'Error updating status', 'danger');
+                        }
+                    },
+                    error: function() {
+                        UIHelpers.showAlert('Error updating appointment status', 'danger');
+                    }
+                });
+            }
+        }
+
+        // Manual Refresh
+        function manualRefresh() {
+            UIHelpers.reloadGridPartial('#gridContainer', '@Url.Action("GetTodaysPatientsGrid")');
+        }
+
+        // Cleanup on page unload
+        $(window).on('beforeunload', function() {
+            UIHelpers.disableAutoRefresh('TodaysPatientsGrid');
+        });
+    </script>
+}
+
+@section Styles {
+    <style>
+        .todays-patients-page {
+            padding: 15px 0;
+        }
+
+        /* Page Header */
+        .page-header {
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+            border-radius: 12px;
+            padding: 25px 30px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            margin-bottom: 20px;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .page-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #1f2937;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .page-subtitle {
+            font-size: 1.1rem;
+            color: #6b7280;
+            margin: 8px 0 0 0;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .header-actions .btn {
+            font-size: 1.05rem;
+            padding: 12px 24px;
+            font-weight: 600;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .header-actions .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .header-actions .btn i {
+            margin-right: 8px;
+        }
+
+        /* Stats Cards */
+        .stats-row {
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            transition: all 0.3s ease;
+            border-left: 4px solid #e5e7eb;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+        }
+
+        .stat-icon {
+            width: 70px;
+            height: 70px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+        }
+
+        .stat-content {
+            flex: 1;
+        }
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin: 0;
+            line-height: 1;
+        }
+
+        .stat-label {
+            font-size: 0.95rem;
+            color: #6b7280;
+            margin: 8px 0 0 0;
+            font-weight: 500;
+        }
+
+        /* Stat card variants */
+        .stat-card-total {
+            border-left-color: #3b82f6;
+        }
+        .stat-card-total .stat-icon {
+            background: rgba(59, 130, 246, 0.1);
+            color: #3b82f6;
+        }
+        .stat-card-total .stat-number {
+            color: #3b82f6;
+        }
+
+        .stat-card-scheduled {
+            border-left-color: #0ea5e9;
+        }
+        .stat-card-scheduled .stat-icon {
+            background: rgba(14, 165, 233, 0.1);
+            color: #0ea5e9;
+        }
+        .stat-card-scheduled .stat-number {
+            color: #0ea5e9;
+        }
+
+        .stat-card-completed {
+            border-left-color: #10b981;
+        }
+        .stat-card-completed .stat-icon {
+            background: rgba(16, 185, 129, 0.1);
+            color: #10b981;
+        }
+        .stat-card-completed .stat-number {
+            color: #10b981;
+        }
+
+        .stat-card-notified {
+            border-left-color: #f59e0b;
+        }
+        .stat-card-notified .stat-icon {
+            background: rgba(245, 158, 11, 0.1);
+            color: #f59e0b;
+        }
+        .stat-card-notified .stat-number {
+            color: #f59e0b;
+        }
+
+        /* Grid Card */
+        .grid-card {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+
+        .grid-card-header {
+            background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+            padding: 20px 25px;
+            border-bottom: none;
+        }
+
+        .grid-title {
+            color: white;
+            margin: 0;
+            font-size: 1.25rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .grid-card-body {
+            padding: 0;
+        }
+
+        /* Responsive */
+        @@media (max-width: 992px) {
+            .header-content {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .header-actions {
+                width: 100%;
+            }
+
+            .header-actions .btn {
+                flex: 1;
+            }
+        }
+
+        @@media (max-width: 768px) {
+            .page-title {
+                font-size: 1.5rem;
+            }
+
+            .stat-card {
+                padding: 20px;
+            }
+
+            .stat-icon {
+                width: 60px;
+                height: 60px;
+                font-size: 1.5rem;
+            }
+
+            .stat-number {
+                font-size: 2rem;
+            }
+        }
+    </style>
+}

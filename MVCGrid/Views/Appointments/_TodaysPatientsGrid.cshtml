@@ -1,0 +1,297 @@
+@model List<DentalCareManagmentSystem.Application.DTOs.AppointmentDto>
+@using NonFactors.Mvc.Grid
+@using System.Text
+
+@{
+    var grid = new Grid<DentalCareManagmentSystem.Application.DTOs.AppointmentDto>(Model)
+    {
+        Name = "TodaysPatientsGrid",
+        Id = "TodaysPatientsGrid",
+        EmptyText = "No patients scheduled for today",
+        FilterMode = GridFilterMode.Header
+    };
+
+    // Patient Name - 20%
+    grid.Columns.Add(model => model.PatientName)
+        .Titled("Patient Name")
+        .Css("col-patient-name")
+        .RenderedAs(model => GetPatientNameWithCard(model))
+        .Filterable(true)
+        .Sortable(true);
+
+    // Phone - 13%
+    grid.Columns.Add(model => model.PatientPhone)
+        .Titled("Phone")
+        .Css("col-phone")
+        .Filterable(true)
+        .Sortable(true);
+
+    // Start Time - 10%
+    grid.Columns.Add(model => model.StartTime)
+        .Titled("Time")
+        .Formatted("{0:hh\\:mm tt}")
+        .Css("text-center col-time fw-bold")
+        .Filterable(false)
+        .Sortable(true);
+
+    // Status - 12%
+    grid.Columns.Add(model => model.Status)
+        .Titled("Status")
+        .Css("text-center col-status")
+        .RenderedAs(model => GetStatusBadge(model.Status))
+        .Filterable(true)
+        .Sortable(true);
+
+    // Payment Status - 13%
+    grid.Columns.Add(model => model.Id)
+        .Titled("Payment")
+        .Css("text-center col-payment")
+        .Encoded(false)
+        .RenderedAs(model => GetPaymentIndicator(model))
+        .Filterable(false)
+        .Sortable(false);
+
+    // Notes - 15%
+    grid.Columns.Add(model => model.Notes)
+        .Titled("Notes")
+        .Css("col-notes small")
+        .Filterable(false)
+        .Sortable(false);
+
+    // Actions - 17%
+    grid.Columns.Add(model => model.Id)
+        .Titled("Actions")
+        .Css("text-center col-actions")
+        .Encoded(false)
+        .RenderedAs(model => GetActionButtons(model))
+        .Filterable(false)
+        .Sortable(false);
+
+    grid.Pager = new GridPager<DentalCareManagmentSystem.Application.DTOs.AppointmentDto>(grid)
+    {
+        PartialViewName = "MvcGrid/_Pager",
+        PageSizes = new Dictionary<int, string> { 
+            { 10, "10" }, 
+            { 20, "20" }, 
+            { 50, "50" }
+        },
+        ShowPageSizes = true,
+        RowsPerPage = 20,
+        PagesToDisplay = 5
+    };
+}
+
+@functions {
+    string GetPatientNameWithCard(DentalCareManagmentSystem.Application.DTOs.AppointmentDto model)
+    {
+        return $@"
+            <div class='patient-name-cell'>
+                <strong class='patient-name'>{model.PatientName}</strong>
+                <button onclick='viewPatientCard(""{model.PatientId}"", ""{model.PatientName}"")' 
+                        class='btn btn-sm btn-outline-info ms-2' 
+                        title='View Patient Card'>
+                    <i class='fas fa-id-card'></i>
+                </button>
+            </div>
+        ";
+    }
+
+    string GetStatusBadge(string status)
+    {
+        var badgeClass = status switch
+        {
+            "Scheduled" => "bg-primary", // Blue
+            "Notified" => "bg-warning text-dark",
+            "Completed" => "bg-success", // Green
+            "Cancelled" => "bg-danger",
+            _ => "bg-secondary"
+        };
+        var icon = status switch
+        {
+            "Scheduled" => "<i class='fas fa-clock'></i>",
+            "Notified" => "<i class='fas fa-bell'></i>",
+            "Completed" => "<i class='fas fa-check-circle'></i>",
+            "Cancelled" => "<i class='fas fa-times-circle'></i>",
+            _ => ""
+        };
+        return $"<span class='badge {badgeClass} fs-6 px-3 py-2'>{icon} {status}</span>";
+    }
+
+    string GetPaymentIndicator(DentalCareManagmentSystem.Application.DTOs.AppointmentDto model)
+    {
+        // This would ideally fetch from payment service, but for now we'll use a placeholder
+        // In production, you'd inject IPaymentService and get actual data
+        var sb = new StringBuilder();
+        
+        sb.Append("<div class='payment-cell'>");
+        
+        // Placeholder - in real implementation, check actual payment status
+        sb.Append("<button onclick='addPayment(\"" + model.PatientId + "\", \"" + model.PatientName + "\")' ");
+        sb.Append("class='btn btn-success btn-sm'>");
+        sb.Append("<i class='fas fa-dollar-sign'></i> Add Payment");
+        sb.Append("</button>");
+        
+        // Show payment status badge (would be dynamic in production)
+        sb.Append("<div class='mt-1'>");
+        sb.Append("<span class='badge bg-warning text-dark'>Check Status</span>");
+        sb.Append("</div>");
+        
+        sb.Append("</div>");
+        
+        return sb.ToString();
+    }
+
+    string GetActionButtons(DentalCareManagmentSystem.Application.DTOs.AppointmentDto model)
+    {
+        var sb = new StringBuilder();
+        
+        // Determine row highlighting based on time and status
+        var now = DateTime.Now;
+        var appointmentTime = model.Date.Date.Add(model.StartTime);
+        var timeDiff = (appointmentTime - now).TotalMinutes;
+        
+        string rowClass = "";
+        if (timeDiff < 0 && model.Status != "Completed")
+        {
+            rowClass = "appointment-passed";
+        }
+        else if (timeDiff > 0 && timeDiff <= 30 && model.Status == "Scheduled")
+        {
+            rowClass = "appointment-soon";
+        }
+        
+        if (!string.IsNullOrEmpty(rowClass))
+        {
+            sb.Append($"<script>$(\"[data-id='{model.Id}']\").closest('tr').addClass('{rowClass}');</script>");
+        }
+        
+        sb.Append("<div class='btn-group-vertical btn-group-sm' role='group' style='gap: 4px;'>");
+        
+        // Edit button (only for Scheduled)
+        if (model.Status == "Scheduled")
+        {
+            sb.Append($"<button type='button' onclick='showEdit(\"{model.Id}\")' class='btn btn-primary btn-sm' title='Edit'>");
+            sb.Append("<i class='fas fa-edit'></i> Edit");
+            sb.Append("</button>");
+        }
+        
+        // Complete button (DOCTOR ONLY, only for Scheduled)
+        if (model.Status == "Scheduled" && User.IsInRole("Doctor"))
+        {
+            sb.Append($"<button type='button' onclick='markAsCompleted(\"{model.Id}\")' class='btn btn-success btn-sm' title='Mark as Completed'>");
+            sb.Append("<i class='fas fa-check-circle'></i> Complete");
+            sb.Append("</button>");
+        }
+        
+        // View Details
+        sb.Append($"<button type='button' onclick='showDetails(\"{model.Id}\")' class='btn btn-info btn-sm' title='View Details'>");
+        sb.Append("<i class='fas fa-eye'></i> Details");
+        sb.Append("</button>");
+        
+        // Delete button (only for Scheduled)
+        if (model.Status == "Scheduled")
+        {
+            sb.Append($"<button type='button' onclick='showDelete(\"{model.Id}\")' class='btn btn-danger btn-sm' title='Delete'>");
+            sb.Append("<i class='fas fa-trash'></i> Delete");
+            sb.Append("</button>");
+        }
+        
+        sb.Append("</div>");
+        return sb.ToString();
+    }
+}
+
+@await Html.PartialAsync("MvcGrid/_Grid", grid)
+
+<style>
+    /* Grid Columns */
+    .col-patient-name { width: 20%; }
+    .col-phone { width: 13%; }
+    .col-time { width: 10%; font-size: 1.05rem; }
+    .col-status { width: 12%; }
+    .col-payment { width: 13%; }
+    .col-notes { width: 15%; }
+    .col-actions { width: 17%; }
+    
+    /* Patient Name Cell */
+    .patient-name-cell {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .patient-name {
+        font-size: 1.05rem;
+        color: #1f2937;
+    }
+    
+    /* Status Badges */
+    .badge {
+        font-size: 0.9rem;
+        padding: 8px 12px;
+        font-weight: 600;
+    }
+    
+    .badge i {
+        margin-right: 6px;
+    }
+    
+    /* Payment Cell */
+    .payment-cell {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+    }
+    
+    /* Action Buttons */
+    .btn-group-vertical {
+        width: 100%;
+    }
+    
+    .btn-group-vertical .btn {
+        font-size: 0.9rem;
+        padding: 6px 12px;
+        font-weight: 500;
+    }
+    
+    /* Row Highlighting */
+    .appointment-soon {
+        background-color: #fef3c7 !important;
+        border-left: 4px solid #f59e0b !important;
+    }
+    
+    .appointment-passed {
+        background-color: #f3f4f6 !important;
+        opacity: 0.7;
+    }
+    
+    /* Make grid more receptionist-friendly */
+    .mvc-grid table {
+        font-size: 1rem;
+    }
+    
+    .mvc-grid th {
+        background: #f9fafb;
+        font-weight: 600;
+        font-size: 0.95rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        padding: 15px 10px;
+    }
+    
+    .mvc-grid td {
+        padding: 12px 10px;
+        vertical-align: middle;
+    }
+    
+    .mvc-grid tbody tr {
+        transition: all 0.2s ease;
+    }
+    
+    .mvc-grid tbody tr:hover {
+        background-color: #f0f9ff !important;
+        transform: scale(1.01);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+</style>

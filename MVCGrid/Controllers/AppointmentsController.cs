@@ -19,11 +19,14 @@ public class AppointmentsController : Controller
         _patientService = patientService;
     }
 
+    /// <summary>
+    /// Display all appointments with optional filters
+    /// </summary>
     public IActionResult Index(string searchString)
     {
         var appointments = _appointmentService.GetAll();
 
-        if (!String.IsNullOrEmpty(searchString))
+        if (!string.IsNullOrEmpty(searchString))
         {
             appointments = appointments.Where(a => a.PatientName != null && a.PatientName.Contains(searchString));
         }
@@ -31,39 +34,68 @@ public class AppointmentsController : Controller
         return View(appointments.ToList());
     }
 
-    //[HttpGet]
-    //public IActionResult Create(Guid? patientId)
-    //{
-    //    ViewBag.Patients = new SelectList(_patientService.GetAll(), "Id", "FullName", patientId);
+    /// <summary>
+    /// Get appointments grid partial (for AJAX refresh with filters)
+    /// </summary>
+    [HttpGet]
+    public IActionResult GetAppointmentsGrid(DateTime? date, string status)
+    {
+        var appointments = _appointmentService.GetAll();
 
+        // Apply date filter
+        if (date.HasValue)
+        {
+            appointments = appointments.Where(a => a.Date.Date == date.Value.Date);
+        }
 
-    //    ViewBag.StatusOptions = new SelectList(Enum.GetNames(typeof(Domain.Enums.AppointmentStatus)));
+        // Apply status filter
+        if (!string.IsNullOrEmpty(status))
+        {
+            appointments = appointments.Where(a => a.Status == status);
+        }
 
-    //    var model = new AppointmentDto();
+        return PartialView("_AppointmentsGrid", appointments.ToList());
+    }
 
-    //    if (patientId.HasValue)
-    //    {
-    //        model.PatientId = patientId.Value;
-    //    }
+    /// <summary>
+    /// TODAY'S PATIENTS - Default landing page
+    /// Shows Scheduled AND Completed appointments for today
+    /// </summary>
+    [HttpGet]
+    public IActionResult TodaysPatients(DateTime? filterDate)
+    {
+        var targetDate = filterDate ?? DateTime.Today;
+        
+        var todaysAppointments = _appointmentService.GetAll()
+            .Where(a => a.Date.Date == targetDate.Date && 
+                       (a.Status == "Scheduled" || a.Status == "Completed"))
+            .ToList();
+        
+        ViewBag.FilterDate = targetDate;
+        
+        return View(todaysAppointments);
+    }
 
-    //    return View(model);
-    //}
+    /// <summary>
+    /// Get today's patients grid (for AJAX refresh)
+    /// Shows Scheduled AND Completed
+    /// </summary>
+    [HttpGet]
+    public IActionResult GetTodaysPatientsGrid(DateTime? filterDate)
+    {
+        var targetDate = filterDate ?? DateTime.Today;
+        
+        var todaysAppointments = _appointmentService.GetAll()
+            .Where(a => a.Date.Date == targetDate.Date && 
+                       (a.Status == "Scheduled" || a.Status == "Completed"))
+            .ToList();
+        
+        return PartialView("_TodaysPatientsGrid", todaysAppointments);
+    }
 
-
-    //[HttpPost]
-    //[ValidateAntiForgeryToken]
-    //public IActionResult Create(AppointmentDto appointmentDto)
-    //{
-    //    if (ModelState.IsValid)
-    //    {
-    //        _appointmentService.Create(appointmentDto);
-    //        return RedirectToAction(nameof(Index));
-    //    }
-
-    //    ViewBag.Patients = new SelectList(_patientService.GetAll(), "Id", "FullName", appointmentDto.PatientId);
-    //    ViewBag.StatusOptions = new SelectList(Enum.GetNames(typeof(Domain.Enums.AppointmentStatus)), appointmentDto.Status);
-    //    return View(appointmentDto);
-    //}
+    /// <summary>
+    /// Create appointment - GET (returns partial view for modal)
+    /// </summary>
     [HttpGet]
     public IActionResult Create(Guid? patientId)
     {
@@ -72,7 +104,7 @@ public class AppointmentsController : Controller
             Date = DateTime.Today,
             StartTime = new TimeSpan(DateTime.Now.Hour, DateTime.Now.Minute, 0),
             EndTime = new TimeSpan(DateTime.Now.Hour + 1, DateTime.Now.Minute, 0),
-            Status = "Scheduled"
+            Status = "Scheduled" // ALWAYS default to Scheduled
         };
 
         if (patientId.HasValue)
@@ -81,17 +113,24 @@ public class AppointmentsController : Controller
         }
 
         ViewBag.Patients = new SelectList(_patientService.GetAll(), "Id", "FullName", patientId);
-        ViewBag.StatusOptions = new SelectList(Enum.GetNames(typeof(AppointmentStatus)));
+        // Don't pass status options - status is always Scheduled
 
         return PartialView("_CreatePartial", model);
     }
 
+    /// <summary>
+    /// Create appointment - POST (AJAX, returns JSON)
+    /// Status is ALWAYS set to Scheduled server-side
+    /// </summary>
     [HttpPost]
     [ValidateAntiForgeryToken]
     public IActionResult Create(AppointmentDto appointmentDto)
     {
         if (ModelState.IsValid)
         {
+            // FORCE status to Scheduled (security measure)
+            appointmentDto.Status = "Scheduled";
+            
             _appointmentService.Create(appointmentDto);
             return Json(new
             {
@@ -101,10 +140,13 @@ public class AppointmentsController : Controller
         }
 
         ViewBag.Patients = new SelectList(_patientService.GetAll(), "Id", "FullName", appointmentDto.PatientId);
-        ViewBag.StatusOptions = new SelectList(Enum.GetNames(typeof(AppointmentStatus)), appointmentDto.Status);
         return PartialView("_CreatePartial", appointmentDto);
     }
 
+    /// <summary>
+    /// Edit appointment - GET (returns partial view for modal)
+    /// </summary>
+    [HttpGet]
     public IActionResult Edit(Guid id)
     {
         var appointment = _appointmentService.GetById(id);
@@ -112,11 +154,15 @@ public class AppointmentsController : Controller
         {
             return Json(new { success = false, message = "Appointment not found." });
         }
+        
         ViewBag.Patients = new SelectList(_patientService.GetAll(), "Id", "FullName", appointment.PatientId);
         ViewBag.StatusOptions = new SelectList(Enum.GetNames(typeof(AppointmentStatus)), appointment.Status);
         return PartialView("_EditPartial", appointment);
     }
 
+    /// <summary>
+    /// Edit appointment - POST (AJAX, returns JSON)
+    /// </summary>
     [HttpPost]
     [ValidateAntiForgeryToken]
     public IActionResult Edit(AppointmentDto appointmentDto)
@@ -127,14 +173,19 @@ public class AppointmentsController : Controller
             return Json(new
             {
                 success = true,
-                message = $"Appointment has been updated successfully!"
+                message = "Appointment has been updated successfully!"
             });
         }
+        
         ViewBag.Patients = new SelectList(_patientService.GetAll(), "Id", "FullName", appointmentDto.PatientId);
         ViewBag.StatusOptions = new SelectList(Enum.GetNames(typeof(AppointmentStatus)), appointmentDto.Status);
         return PartialView("_EditPartial", appointmentDto);
     }
 
+    /// <summary>
+    /// Details - GET (returns partial view for modal)
+    /// </summary>
+    [HttpGet]
     public IActionResult Details(Guid id)
     {
         var appointment = _appointmentService.GetById(id);
@@ -145,6 +196,10 @@ public class AppointmentsController : Controller
         return PartialView("_DetailsPartial", appointment);
     }
 
+    /// <summary>
+    /// Delete confirmation - GET (returns partial view for modal)
+    /// </summary>
+    [HttpGet]
     public IActionResult Delete(Guid id)
     {
         var appointment = _appointmentService.GetById(id);
@@ -155,6 +210,9 @@ public class AppointmentsController : Controller
         return PartialView("_DeletePartial", appointment);
     }
 
+    /// <summary>
+    /// Delete appointment - POST (AJAX, returns JSON)
+    /// </summary>
     [HttpPost, ActionName("DeleteConfirmed")]
     [ValidateAntiForgeryToken]
     public IActionResult DeleteConfirmed(Guid id)
@@ -166,46 +224,52 @@ public class AppointmentsController : Controller
             return Json(new
             {
                 success = true,
-                message = $"Appointment has been deleted successfully!"
+                message = "Appointment has been deleted successfully!"
             });
         }
         return Json(new { success = false, message = "Appointment not found." });
     }
 
+    /// <summary>
+    /// Update appointment status - POST (AJAX, returns JSON)
+    /// Scheduled → Completed: Doctor only
+    /// </summary>
     [HttpPost]
+    [ValidateAntiForgeryToken]
+    [Authorize(Roles = "Doctor")] // ONLY doctors can mark as completed
     public IActionResult UpdateStatus(Guid id, string status)
     {
-        if (Enum.TryParse<AppointmentStatus>(status, out var appointmentStatus))
+        // Only allow changing to Completed (from Scheduled)
+        if (status == "Completed")
         {
-            _appointmentService.UpdateStatus(id, appointmentStatus.ToString());
-            return Ok();
+            _appointmentService.UpdateStatus(id, status);
+            return Json(new
+            {
+                success = true,
+                message = $"Status updated to {status} successfully!"
+            });
         }
-        return BadRequest("Invalid status");
+        
+        return Json(new { success = false, message = "Invalid status transition." });
     }
 
+    /// <summary>
+    /// Calendar view - GET
+    /// </summary>
+    [HttpGet]
     public IActionResult Calendar()
     {
         var appointments = _appointmentService.GetAll().ToList();
         return View(appointments);
     }
 
+    /// <summary>
+    /// Get appointments by date - GET (returns JSON for calendar)
+    /// </summary>
     [HttpGet]
     public IActionResult GetAppointmentsByDate(DateTime date)
     {
         var appointments = _appointmentService.GetAppointmentsByDate(date);
         return Json(appointments);
-    }
-
-    [HttpGet]
-    public IActionResult GetAppointmentsGrid()
-    {
-        var appointments = _appointmentService.GetAll().ToList();
-        return PartialView("_AppointmentsGrid", appointments);
-    }
-    public IActionResult TodaysAppointments()
-    {
-        // Get all today's appointments regardless of status
-        var todaysAppointments = _appointmentService.GetTodaysAppointments().ToList();
-        return View(todaysAppointments);
     }
 }
