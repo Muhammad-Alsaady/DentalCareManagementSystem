@@ -25,7 +25,9 @@ public class AppointmentService : IAppointmentService
             StartTime = appointmentDto.StartTime,
             EndTime = appointmentDto.StartTime.Add(TimeSpan.FromMinutes(30)), // Assuming 30 min slots
             Status = AppointmentStatus.Scheduled,
-            Notes = appointmentDto.Notes // Added
+            Notes = appointmentDto.Notes,
+            // PaidAmount is always initialized to 0, will be set by PaymentService
+            PaidAmount = 0
         };
         try
         {
@@ -57,7 +59,7 @@ public class AppointmentService : IAppointmentService
                 EndTime = a.EndTime,
                 Status = a.Status.ToString(),
                 Notes = a.Notes,
-                PaidAmount = a.PaidAmount,
+                PaidAmount = a.PaidAmount, // Read from database (updated by PaymentService only)
                 TotalCost = a.Patient != null 
                     ? a.Patient.TreatmentPlans
                         .Where(tp => !tp.IsCompleted)
@@ -152,21 +154,6 @@ public class AppointmentService : IAppointmentService
         return GetAll().Where(a => a.Date.Date >= startDate.Date && a.Date.Date <= endDate.Date).ToList();
     }
 
-    //public void MarkAsNotified(Guid id, string userId)
-    //{
-    //    var appointment = _context.Appointments.Find(id);
-    //    if (appointment != null && appointment.Status == AppointmentStatus.Scheduled)
-    //    {
-    //        appointment.Status = AppointmentStatus.Notified;
-    //        _context.NotificationLogs.Add(new NotificationLog
-    //        {
-    //            AppointmentId = id,
-    //            NotifiedById = userId,
-    //            NotifiedAt = DateTime.UtcNow
-    //        });
-    //        _context.SaveChanges();
-    //    }
-    //}
     public void MarkAsNotified(Guid id, string userId)
     {
         var appointment = _context.Appointments
@@ -188,23 +175,17 @@ public class AppointmentService : IAppointmentService
             appointment.PatientId = appointmentDto.PatientId;
             appointment.Date = appointmentDto.Date;
             appointment.StartTime = appointmentDto.StartTime;
-            appointment.EndTime = appointmentDto.EndTime; // Updated
+            appointment.EndTime = appointmentDto.EndTime;
             if (appointmentDto.Status != null) 
             {
                 appointment.Status = Enum.Parse<AppointmentStatus>(appointmentDto.Status);
             }
-            appointment.Notes = appointmentDto.Notes; // Added
+            appointment.Notes = appointmentDto.Notes;
+            // DO NOT update PaidAmount here - it's managed by PaymentService only
             _context.SaveChanges();
         }
     }
 
-    public void UpdatePaidAmount(Guid id, decimal paidAmount)
-    {
-        var appointment = _context.Appointments.Find(id);
-        if (appointment != null)
-        {
-            appointment.PaidAmount = paidAmount;
-            _context.SaveChanges();
-        }
-    }
+    // PaidAmount is now managed EXCLUSIVELY by PaymentService.RecalculatePaymentTotalsAsync
+    // This ensures single source of truth and prevents inconsistencies
 }

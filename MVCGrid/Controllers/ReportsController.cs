@@ -11,17 +11,20 @@ public class ReportsController : Controller
     private readonly IAppointmentService _appointmentService;
     private readonly ITreatmentPlanService _treatmentPlanService;
     private readonly IPriceListService _priceListService;
+    private readonly IPaymentService _paymentService;
 
     public ReportsController(
         IPatientService patientService,
         IAppointmentService appointmentService,
         ITreatmentPlanService treatmentPlanService,
-        IPriceListService priceListService)
+        IPriceListService priceListService,
+        IPaymentService paymentService)
     {
         _patientService = patientService;
         _appointmentService = appointmentService;
         _treatmentPlanService = treatmentPlanService;
         _priceListService = priceListService;
+        _paymentService = paymentService;
     }
 
     public IActionResult Index()
@@ -60,15 +63,40 @@ public class ReportsController : Controller
 
     public IActionResult FinancialReport()
     {
+        var currentYear = DateTime.Now.Year;
+        var startOfMonth = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
+        var endOfMonth = startOfMonth.AddMonths(1).AddDays(-1);
+        
         var viewModel = new FinancialReportViewModel
         {
-            TotalRevenue = _treatmentPlanService.GetTotalRevenue(),
-            RevenueThisMonth = _treatmentPlanService.GetRevenueThisMonth(),
-            OutstandingPayments = _treatmentPlanService.GetOutstandingPayments(),
-            RevenueByTreatment = _treatmentPlanService.GetRevenueByTreatmentType(),
-            MonthlyRevenue = _treatmentPlanService.GetMonthlyRevenue()
+            TotalRevenue = _paymentService.GetTotalRevenue(),
+            RevenueThisMonth = _paymentService.GetTotalRevenue(startOfMonth, endOfMonth),
+            OutstandingPayments = _paymentService.GetPatientsWithOutstandingBalance()
+                .Sum(p => p.RemainingBalance),
+            MonthlyRevenue = _paymentService.GetRevenueByMonth(currentYear),
+            PatientsWithOutstandingBalance = _paymentService.GetPatientsWithOutstandingBalance().Count,
+            TotalPaid = _paymentService.GetTotalRevenue(),
+            RecentPayments = _paymentService.GetAllPayments(DateTime.Now.AddDays(-30), DateTime.Now)
+                .Take(10).ToList()
         };
 
+        return View(viewModel);
+    }
+    
+    public IActionResult PaymentReport(int year = 0)
+    {
+        if (year == 0) year = DateTime.Now.Year;
+        
+        var viewModel = new PaymentReportViewModel
+        {
+            Year = year,
+            TotalRevenue = _paymentService.GetTotalRevenue(new DateTime(year, 1, 1), new DateTime(year, 12, 31)),
+            MonthlyRevenue = _paymentService.GetRevenueByMonth(year),
+            OutstandingBalance = _paymentService.GetPatientsWithOutstandingBalance().Sum(p => p.RemainingBalance),
+            PatientsWithOutstandingBalance = _paymentService.GetPatientsWithOutstandingBalance(),
+            RecentPayments = _paymentService.GetAllPayments(new DateTime(year, 1, 1), new DateTime(year, 12, 31))
+        };
+        
         return View(viewModel);
     }
 
@@ -86,6 +114,14 @@ public class ReportsController : Controller
         var appointments = _appointmentService.GetAppointmentsByDateRange(startDate ?? DateTime.MinValue, endDate ?? DateTime.MaxValue);
         // Implementation for CSV/Excel export would go here
         return Json(appointments);
+    }
+    
+    [HttpGet]
+    public IActionResult ExportPayments(DateTime? startDate, DateTime? endDate)
+    {
+        var payments = _paymentService.GetAllPayments(startDate, endDate);
+        // Implementation for CSV/Excel export would go here
+        return Json(payments);
     }
 }
 
@@ -114,6 +150,18 @@ public class FinancialReportViewModel
     public decimal TotalRevenue { get; set; }
     public decimal RevenueThisMonth { get; set; }
     public decimal OutstandingPayments { get; set; }
-    public Dictionary<string, decimal> RevenueByTreatment { get; set; } = new();
     public Dictionary<string, decimal> MonthlyRevenue { get; set; } = new();
+    public int PatientsWithOutstandingBalance { get; set; }
+    public decimal TotalPaid { get; set; }
+    public List<DentalCareManagmentSystem.Application.DTOs.PaymentTransactionDto> RecentPayments { get; set; } = new();
+}
+
+public class PaymentReportViewModel
+{
+    public int Year { get; set; }
+    public decimal TotalRevenue { get; set; }
+    public Dictionary<string, decimal> MonthlyRevenue { get; set; } = new();
+    public decimal OutstandingBalance { get; set; }
+    public List<DentalCareManagmentSystem.Application.DTOs.PatientPaymentSummaryDto> PatientsWithOutstandingBalance { get; set; } = new();
+    public List<DentalCareManagmentSystem.Application.DTOs.PaymentTransactionDto> RecentPayments { get; set; } = new();
 }

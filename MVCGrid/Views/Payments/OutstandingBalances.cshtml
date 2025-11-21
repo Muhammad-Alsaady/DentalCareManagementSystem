@@ -1,0 +1,88 @@
+@model List<DentalCareManagmentSystem.Application.DTOs.PatientPaymentSummaryDto>
+@{
+    ViewData["Title"] = "Outstanding Balances";
+}
+
+<div class="container-fluid">
+    <div class="row mb-3">
+        <div class="col-md-12">
+            <h2>Patients with Outstanding Balances</h2>
+            <hr />
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-body">
+                    @if (Model.Any())
+                    {
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Patient Name</th>
+                                    <th>Total Cost</th>
+                                    <th>Total Paid</th>
+                                    <th>Remaining Balance</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var summary in Model)
+                                {
+                                    <tr>
+                                        <td>
+                                            <a asp-controller="Patients" asp-action="Details" asp-route-id="@summary.PatientId">
+                                                @summary.PatientName
+                                            </a>
+                                        </td>
+                                        <td>@summary.TotalCost.ToString("C")</td>
+                                        <td>@summary.TotalPaid.ToString("C")</td>
+                                        <td><strong class="text-danger">@summary.RemainingBalance.ToString("C")</strong></td>
+                                        <td>
+                                            @if (User.IsInRole("Receptionist") || User.IsInRole("SystemAdmin"))
+                                            {
+                                                <button class="btn btn-sm btn-primary add-payment-btn" 
+                                                        data-patient-id="@summary.PatientId">
+                                                    <i class="fas fa-plus"></i> Add Payment
+                                                </button>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <td><strong>Total:</strong></td>
+                                    <td><strong>@Model.Sum(s => s.TotalCost).ToString("C")</strong></td>
+                                    <td><strong>@Model.Sum(s => s.TotalPaid).ToString("C")</strong></td>
+                                    <td><strong class="text-danger">@Model.Sum(s => s.RemainingBalance).ToString("C")</strong></td>
+                                    <td></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    }
+                    else
+                    {
+                        <div class="alert alert-success">
+                            <i class="fas fa-check-circle"></i>
+                            No patients with outstanding balances. All payments are up to date!
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).on('click', '.add-payment-btn', function () {
+            var patientId = $(this).data('patient-id');
+            $.get('@Url.Action("AddPayment", "Payments")', { patientId: patientId }, function (data) {
+                $('#modalContainer').html(data);
+                $('#actionModal').modal('show');
+            });
+        });
+    </script>
+}

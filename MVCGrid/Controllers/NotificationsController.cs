@@ -362,30 +362,16 @@ public class NotificationsController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [Authorize(Roles = "Receptionist,SystemAdmin")]
     public IActionResult UpdatePaidAmount(Guid appointmentId, decimal paidAmount)
     {
-        try
-        {
-            if (paidAmount < 0)
-            {
-                return Json(new { success = false, message = "Paid amount cannot be negative" });
-            }
-
-            _appointmentService.UpdatePaidAmount(appointmentId, paidAmount);
-            
-            var appointment = _appointmentService.GetById(appointmentId);
-            
-            return Json(new
-            {
-                success = true,
-                message = "Paid amount updated successfully",
-                paidAmount = appointment?.PaidAmount ?? 0,
-                remainder = appointment?.Remainder ?? 0
-            });
-        }
-        catch (Exception ex)
-        {
-            return Json(new { success = false, message = ex.Message });
-        }
+        // DEPRECATED: This method is no longer used
+        // Payment amounts are now managed exclusively through PaymentService
+        // Use the Payments controller to add payments instead
+        return Json(new 
+        { 
+            success = false, 
+            message = "This method is deprecated. Please use the Payments module to record payments." 
+        });
     }
 }

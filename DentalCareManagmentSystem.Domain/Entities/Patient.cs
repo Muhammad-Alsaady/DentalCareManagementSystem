@@ -1,4 +1,3 @@
-
 using DentalCareManagmentSystem.Domain.Enums;
 
 namespace DentalCareManagmentSystem.Domain.Entities;
@@ -18,4 +17,5 @@ public class Patient
     public virtual ICollection<DiagnosisNote> DiagnosisNotes { get; set; } = new List<DiagnosisNote>();
     public virtual ICollection<PatientImage> PatientImages { get; set; } = new List<PatientImage>();
     public virtual ICollection<TreatmentPlan> TreatmentPlans { get; set; } = new List<TreatmentPlan>();
+    public virtual ICollection<PaymentTransaction> PaymentTransactions { get; set; } = new List<PaymentTransaction>();
 }

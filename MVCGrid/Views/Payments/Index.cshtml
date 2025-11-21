@@ -1,0 +1,87 @@
+@model List<DentalCareManagmentSystem.Application.DTOs.PaymentTransactionDto>
+@{
+    ViewData["Title"] = "Payment History";
+}
+
+<div class="container-fluid">
+    <div class="row mb-3">
+        <div class="col-md-12">
+            <h2>Payment History</h2>
+            <hr />
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-body">
+                    @if (Model.Any())
+                    {
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Payment Date</th>
+                                    <th>Patient</th>
+                                    <th>Amount</th>
+                                    <th>Notes</th>
+                                    <th>Created By</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var payment in Model)
+                                {
+                                    <tr>
+                                        <td>@payment.PaymentDate.ToString("dd/MM/yyyy")</td>
+                                        <td>@payment.PatientName</td>
+                                        <td><strong>@payment.Amount.ToString("C")</strong></td>
+                                        <td>@payment.Notes</td>
+                                        <td>@payment.CreatedByName</td>
+                                        <td>
+                                            <a href="@Url.Action("PrintReceipt", new { id = payment.Id })" 
+                                               class="btn btn-sm btn-info" target="_blank">
+                                                <i class="fas fa-print"></i> Print
+                                            </a>
+                                            @if (User.IsInRole("SystemAdmin"))
+                                            {
+                                                <button class="btn btn-sm btn-danger delete-payment" 
+                                                        data-id="@payment.Id">
+                                                    <i class="fas fa-trash"></i> Delete
+                                                </button>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <td colspan="2"><strong>Total:</strong></td>
+                                    <td><strong>@Model.Sum(p => p.Amount).ToString("C")</strong></td>
+                                    <td colspan="3"></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    }
+                    else
+                    {
+                        <div class="alert alert-info">
+                            No payments found.
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).on('click', '.delete-payment', function () {
+            var paymentId = $(this).data('id');
+            $.get('@Url.Action("DeletePayment")', { id: paymentId }, function (data) {
+                $('#modalContainer').html(data);
+                $('#actionModal').modal('show');
+            });
+        });
+    </script>
+}

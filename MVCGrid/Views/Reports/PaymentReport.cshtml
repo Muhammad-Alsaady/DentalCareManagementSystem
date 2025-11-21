@@ -1,0 +1,255 @@
+@model DentalManagementSystem.Controllers.PaymentReportViewModel
+@{
+    ViewData["Title"] = "Payment Report - " + Model.Year;
+}
+
+<div class="container-fluid">
+    <div class="row mb-3">
+        <div class="col-md-12">
+            <h2>Payment Report - @Model.Year</h2>
+            <hr />
+        </div>
+    </div>
+
+    <!-- Year Selector -->
+    <div class="row mb-3">
+        <div class="col-md-12">
+            <div class="form-inline">
+                <label class="mr-2">Select Year:</label>
+                <select id="yearSelector" class="form-control" onchange="changeYear(this.value)">
+                    @for (int year = DateTime.Now.Year; year >= DateTime.Now.Year - 5; year--)
+                    {
+                        <option value="@year" selected="@(year == Model.Year)">@year</option>
+                    }
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card border-success">
+                <div class="card-body text-center">
+                    <h6 class="text-muted">Total Revenue (@Model.Year)</h6>
+                    <h3 class="text-success">@Model.TotalRevenue.ToString("C")</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-danger">
+                <div class="card-body text-center">
+                    <h6 class="text-muted">Outstanding Balance</h6>
+                    <h3 class="text-danger">@Model.OutstandingBalance.ToString("C")</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-info">
+                <div class="card-body text-center">
+                    <h6 class="text-muted">Patients with Balance</h6>
+                    <h3 class="text-info">@Model.PatientsWithOutstandingBalance.Count</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-primary">
+                <div class="card-body text-center">
+                    <h6 class="text-muted">Total Payments</h6>
+                    <h3 class="text-primary">@Model.RecentPayments.Count</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Monthly Revenue Chart -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Monthly Revenue - @Model.Year</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="monthlyRevenueChart" height="80"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Outstanding Balances Table -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header bg-warning">
+                    <h5 class="mb-0">Patients with Outstanding Balances</h5>
+                </div>
+                <div class="card-body">
+                    @if (Model.PatientsWithOutstandingBalance.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Patient Name</th>
+                                        <th>Total Cost</th>
+                                        <th>Total Paid</th>
+                                        <th>Outstanding Balance</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var patient in Model.PatientsWithOutstandingBalance.OrderByDescending(p => p.RemainingBalance))
+                                    {
+                                        <tr>
+                                            <td>
+                                                <a asp-controller="Patients" asp-action="Details" asp-route-id="@patient.PatientId">
+                                                    @patient.PatientName
+                                                </a>
+                                            </td>
+                                            <td>@patient.TotalCost.ToString("C")</td>
+                                            <td>@patient.TotalPaid.ToString("C")</td>
+                                            <td><strong class="text-danger">@patient.RemainingBalance.ToString("C")</strong></td>
+                                            <td>
+                                                @if (User.IsInRole("Receptionist") || User.IsInRole("SystemAdmin"))
+                                                {
+                                                    <button class="btn btn-sm btn-primary" onclick="addPayment('@patient.PatientId')">
+                                                        <i class="fas fa-plus"></i> Add Payment
+                                                    </button>
+                                                }
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-success">
+                            <i class="fas fa-check-circle"></i>
+                            No outstanding balances for this period!
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Payments -->
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">All Payments - @Model.Year</h5>
+                </div>
+                <div class="card-body">
+                    @if (Model.RecentPayments.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Patient</th>
+                                        <th>Amount</th>
+                                        <th>Notes</th>
+                                        <th>Received By</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var payment in Model.RecentPayments.OrderByDescending(p => p.PaymentDate))
+                                    {
+                                        <tr>
+                                            <td>@payment.PaymentDate.ToString("dd/MM/yyyy")</td>
+                                            <td>
+                                                <a asp-controller="Patients" asp-action="Details" asp-route-id="@payment.PatientId">
+                                                    @payment.PatientName
+                                                </a>
+                                            </td>
+                                            <td><strong>@payment.Amount.ToString("C")</strong></td>
+                                            <td>@payment.Notes</td>
+                                            <td>@payment.CreatedByName</td>
+                                            <td>
+                                                <a href="@Url.Action("PrintReceipt", "Payments", new { id = payment.Id })" 
+                                                   class="btn btn-sm btn-info" target="_blank">
+                                                    <i class="fas fa-print"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-info">
+                            No payments recorded for this year.
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        function changeYear(year) {
+            window.location.href = '@Url.Action("PaymentReport")?year=' + year;
+        }
+
+        function addPayment(patientId) {
+            $.get('@Url.Action("AddPayment", "Payments")', { patientId: patientId }, function (data) {
+                $('#modalContainer').html(data);
+                $('#actionModal').modal('show');
+            });
+        }
+
+        // Monthly Revenue Chart
+        var ctx = document.getElementById('monthlyRevenueChart').getContext('2d');
+        var monthlyData = @Html.Raw(Json.Serialize(Model.MonthlyRevenue));
+        
+        var labels = Object.keys(monthlyData);
+        var data = Object.values(monthlyData);
+        
+        var chart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Revenue',
+                    data: data,
+                    backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return '$' + value.toLocaleString();
+                            }
+                        }
+                    }
+                },
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return 'Revenue: $' + context.parsed.y.toLocaleString();
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+}

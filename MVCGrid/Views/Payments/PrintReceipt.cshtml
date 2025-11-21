@@ -1,0 +1,113 @@
+@model DentalCareManagmentSystem.Application.DTOs.PaymentTransactionDto
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Payment Receipt</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        .receipt-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .receipt-details {
+            margin: 20px 0;
+        }
+        .receipt-details table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .receipt-details td {
+            padding: 8px;
+            border-bottom: 1px solid #ddd;
+        }
+        .receipt-details td:first-child {
+            font-weight: bold;
+            width: 150px;
+        }
+        .amount {
+            font-size: 24px;
+            font-weight: bold;
+            color: #28a745;
+        }
+        .footer {
+            margin-top: 50px;
+            text-align: center;
+            font-size: 12px;
+            color: #666;
+        }
+        @@media print {
+            .no-print {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="receipt-header">
+        <h1>Dental Care Management System</h1>
+        <h2>Payment Receipt</h2>
+    </div>
+
+    <div class="receipt-details">
+        <table>
+            <tr>
+                <td>Receipt #:</td>
+                <td>@Model.Id.ToString().Substring(0, 8).ToUpper()</td>
+            </tr>
+            <tr>
+                <td>Payment Date:</td>
+                <td>@Model.PaymentDate.ToString("dddd, MMMM dd, yyyy")</td>
+            </tr>
+            <tr>
+                <td>Patient Name:</td>
+                <td>@Model.PatientName</td>
+            </tr>
+            <tr>
+                <td>Amount Paid:</td>
+                <td class="amount">@Model.Amount.ToString("C")</td>
+            </tr>
+            @if (!string.IsNullOrEmpty(Model.Notes))
+            {
+                <tr>
+                    <td>Notes:</td>
+                    <td>@Model.Notes</td>
+                </tr>
+            }
+            <tr>
+                <td>Received By:</td>
+                <td>@Model.CreatedByName</td>
+            </tr>
+            <tr>
+                <td>Receipt Generated:</td>
+                <td>@DateTime.Now.ToString("dd/MM/yyyy HH:mm")</td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="footer">
+        <p>Thank you for your payment!</p>
+        <p>This is an official receipt from Dental Care Management System</p>
+    </div>
+
+    <div class="no-print" style="text-align: center; margin-top: 30px;">
+        <button onclick="window.print()" class="btn btn-primary">Print Receipt</button>
+        <button onclick="window.close()" class="btn btn-secondary">Close</button>
+    </div>
+
+    <script>
+        // Auto-print when page loads
+        window.onload = function() {
+            // Uncomment the line below to auto-print
+            // window.print();
+        };
+    </script>
+</body>
+</html>

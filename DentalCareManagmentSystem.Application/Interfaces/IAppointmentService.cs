@@ -12,7 +12,6 @@ public interface IAppointmentService
     void Update(AppointmentDto appointment);
     void Delete(Guid id);
     void UpdateStatus(Guid id, string status);
-    void UpdatePaidAmount(Guid id, decimal paidAmount);
     List<AppointmentDto> GetAppointmentsByDate(DateTime date);
     List<AppointmentDto> GetCompletedAppointments();
     List<AppointmentDto> GetCancelledAppointments();

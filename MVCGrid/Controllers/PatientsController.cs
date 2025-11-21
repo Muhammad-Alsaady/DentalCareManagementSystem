@@ -14,13 +14,20 @@ public class PatientsController : Controller
     private readonly IDiagnosisService _diagnosisService;
     private readonly IImageService _imageService;
     private readonly ITreatmentPlanService _treatmentPlanService;
+    private readonly IPaymentService _paymentService;
 
-    public PatientsController(IPatientService patientService, IDiagnosisService diagnosisService, IImageService imageService, ITreatmentPlanService treatmentPlanService)
+    public PatientsController(
+        IPatientService patientService, 
+        IDiagnosisService diagnosisService, 
+        IImageService imageService, 
+        ITreatmentPlanService treatmentPlanService,
+        IPaymentService paymentService)
     {
         _patientService = patientService;
         _diagnosisService = diagnosisService;
         _imageService = imageService;
         _treatmentPlanService = treatmentPlanService;
+        _paymentService = paymentService;
     }
 
 
@@ -141,6 +148,17 @@ public class PatientsController : Controller
 
         var treatmentPlans = _treatmentPlanService.GetPlansByPatientId(id).ToList();
         ViewBag.TreatmentPlans = treatmentPlans;
+        
+        // Add payment summary
+        try
+        {
+            var paymentSummary = _paymentService.GetPatientPaymentSummary(id);
+            ViewBag.PaymentSummary = paymentSummary;
+        }
+        catch
+        {
+            ViewBag.PaymentSummary = null;
+        }
 
         // Check if there's an active (Notified) appointment for this patient today
         var appointmentService = HttpContext.RequestServices.GetService<IAppointmentService>();
