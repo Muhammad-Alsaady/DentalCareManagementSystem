@@ -19,4 +19,6 @@ public interface ITreatmentPlanService
     decimal GetOutstandingPayments(); // Added
     Dictionary<string, decimal> GetRevenueByTreatmentType(); // Added
     Dictionary<string, decimal> GetMonthlyRevenue(); // Added
+    void ApplyDiscountToPlan(Guid planId, decimal percentage);
+
 }

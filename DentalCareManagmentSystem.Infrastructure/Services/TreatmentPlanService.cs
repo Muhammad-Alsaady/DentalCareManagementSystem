@@ -1,6 +1,8 @@
 ﻿using DentalCareManagmentSystem.Application.DTOs;
 using DentalCareManagmentSystem.Application.Interfaces;
 using DentalCareManagmentSystem.Domain.Entities;
+using DentalCareManagmentSystem.Domain.Services;
+using DentalCareManagmentSystem.Domain.Visitors;
 using DentalCareManagmentSystem.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 
@@ -122,6 +124,22 @@ public class TreatmentPlanService : ITreatmentPlanService
             .Include(p => p.Items)
             .AsEnumerable()
             .Sum(p => p.Items.Sum(i => i.LineTotal));
+    }
+    public void ApplyDiscountToPlan(Guid planId, decimal percentage)
+    {
+        var plan = _context.TreatmentPlans
+            .Include(p => p.Items)
+            .FirstOrDefault(p => p.Id == planId);
+
+        if (plan == null)
+            throw new ArgumentException("Treatment plan not found.", nameof(planId));
+
+        var visitor = new PercentageDiscountVisitor(percentage);
+        var discountService = new DiscountService();
+
+        discountService.Apply(plan.Items, visitor);
+
+        _context.SaveChanges();
     }
 
     public Dictionary<string, decimal> GetRevenueByTreatmentType()

@@ -1,5 +1,6 @@
-using DentalCareManagmentSystem.Application.DTOs;
+﻿using DentalCareManagmentSystem.Application.DTOs;
 using DentalCareManagmentSystem.Application.Interfaces;
+using DentalCareManagmentSystem.Infrastructure.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -11,16 +12,21 @@ public class PaymentsController : Controller
     private readonly IPaymentService _paymentService;
     private readonly IPatientService _patientService;
     private readonly IAppointmentService _appointmentService;
+    private readonly ITreatmentPlanService _treatmentPlanService;
+
 
     public PaymentsController(
-        IPaymentService paymentService,
-        IPatientService patientService,
-        IAppointmentService appointmentService)
+    IPaymentService paymentService,
+    IPatientService patientService,
+    IAppointmentService appointmentService,
+    ITreatmentPlanService treatmentPlanService) 
     {
         _paymentService = paymentService;
         _patientService = patientService;
         _appointmentService = appointmentService;
+        _treatmentPlanService = treatmentPlanService; 
     }
+
 
     /// <summary>
     /// Display all payments
@@ -207,4 +213,61 @@ public class PaymentsController : Controller
 
         return Json(appointments);
     }
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> PayTreatmentPlanWithDiscount(Guid planId, decimal discountPercentage)
+    {
+        try
+        {
+            var plan = _treatmentPlanService.GetById(planId);
+            if (plan == null)
+                return Json(new { success = false, message = "Treatment plan not found." });
+
+            // حساب إجمالي بعد الخصم
+            var totalBeforeDiscount = plan.Items.Sum(i => i.LineTotal);
+            var discountAmount = totalBeforeDiscount * (discountPercentage / 100m);
+            var totalAfterDiscount = totalBeforeDiscount - discountAmount;
+
+            if (totalAfterDiscount < 0)
+                totalAfterDiscount = 0;
+
+            // 2. إنشاء الدفع
+            var paymentDto = new CreatePaymentDto
+            {
+                PatientId = plan.PatientId,
+                Amount = totalAfterDiscount,
+                Notes = $"Discount applied: {discountPercentage}%",
+                PaymentDate = DateTime.Now
+            };
+
+            var createdBy = User.Identity?.Name ?? "System";
+            await _paymentService.AddPaymentAsync(paymentDto, createdBy);
+
+            return Json(new
+            {
+                success = true,
+                message = $"Payment of {totalAfterDiscount:C} recorded with {discountPercentage}% discount."
+            });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = $"Error: {ex.Message}" });
+        }
+    }
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public IActionResult ApplyDiscount(Guid planId, decimal percentage)
+    {
+        try
+        {
+            _treatmentPlanService.ApplyDiscountToPlan(planId, percentage);
+            return Json(new { success = true, message = $"Discount of {percentage}% applied successfully!" });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = $"Error: {ex.Message}" });
+        }
+    }
+
+
 }

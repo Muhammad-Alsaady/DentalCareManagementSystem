@@ -57,10 +57,10 @@ app.MapStaticAssets();
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Notifications}/{action=Index}/{id?}")
-    .WithStaticAssets();
+    ;
 
 app.MapRazorPages()
-   .WithStaticAssets();
+  ;
 
 // Map SignalR Hub
 app.MapHub<DentalManagementSystem.Controllers.NotificationHub>("/notificationHub");
