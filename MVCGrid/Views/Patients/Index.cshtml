@@ -3,6 +3,9 @@
     ViewData["Title"] = "Patients";
 }
 
+@* Anti-forgery token for delete operations *@
+@Html.AntiForgeryToken()
+
 <div class="container-fluid">
     <!-- Header with Actions -->
     <div class="row mb-3">
@@ -12,9 +15,6 @@
                 <div>
                     <button class="btn btn-success" onclick="showCreate()">
                         <i class="fas fa-plus"></i> Add New Patient
-                    </button>
-                    <button class="btn btn-outline-primary" onclick="refreshGrid()">
-                        <i class="fas fa-sync-alt"></i> Refresh
                     </button>
                 </div>
             </div>
@@ -55,68 +55,106 @@
     </div>
 </div>
 
-<!-- Modal for CRUD operations -->
-<div class="modal fade" id="crudModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="crudModalLabel">Patient</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body" id="crudModalBody">
-                <!-- Dynamic content will be loaded here -->
-            </div>
-        </div>
-    </div>
-</div>
-
 @section Scripts {
     <script>
-        let crudModal;
-
         $(document).ready(function() {
-            // Initialize modal
-            crudModal = new bootstrap.Modal(document.getElementById('crudModal'));
-
-            // Setup AJAX form handler for patient forms
-            UIHelpers.ajaxFormHandler('.patient-form', function(response) {
+            // Listen for modal success events
+            $(document).on('modalSuccess', function(event, response) {
+                // Refresh the grid when patient is created/updated/deleted
                 refreshGrid();
             });
+
+            console.log('Patients page initialized');
         });
 
-        // Show Create Form
+        // Show Create Form using Global Modal
         function showCreate() {
-            UIHelpers.loadModal('@Url.Action("Create")', 'Add New Patient');
+            ModalLoader.load('@Url.Action("Create")', 'Add New Patient');
         }
 
-        // Show Edit Form
+        // Show Edit Form using Global Modal
         function showEdit(id) {
-            UIHelpers.loadModal('@Url.Action("Edit")/' + id, 'Edit Patient');
+            ModalLoader.load('@Url.Action("Edit")/' + id, 'Edit Patient');
         }
 
-        // Show Delete Confirmation
-        function showDelete(id) {
-            UIHelpers.loadModal('@Url.Action("Delete")/' + id, 'Delete Patient');
-        }
-
-        // Show Details - Navigate to Details page
+        // Show Details using Global Modal
         function showDetails(id) {
-            window.location.href = '@Url.Action("Details")/' + id;
+            ModalLoader.load('@Url.Action("Details")/' + id, 'Patient Details');
         }
 
-        // Create Appointment for Patient
-        function createAppointment(id, name) {
-            window.location.href = '@Url.Action("Create", "Appointments")?patientId=' + id;
+        // Create Appointment for Patient using Global Modal
+        function createAppointment(patientId, patientName) {
+            ModalLoader.load(
+                '@Url.Action("Create", "Appointments")?patientId=' + patientId,
+                'New Appointment for ' + patientName
+            );
+        }
+
+        // Delete Patient - Using toastr warning confirmation
+        function deletePatient(id, name) {
+            toastr.warning(
+                '<div style="margin-top: 10px;">' +
+                '<p style="margin-bottom: 15px; font-size: 14px;">Are you sure you want to delete <strong>' + name + '</strong>?</p>' +
+                '<p style="margin-bottom: 15px; color: #dc3545; font-size: 13px;"><i class="fas fa-exclamation-triangle"></i> This action cannot be undone!</p>' +
+                '<button type="button" class="btn btn-danger btn-sm me-2" onclick="confirmDeletePatient(\'' + id + '\', \'' + name + '\')">Yes, Delete</button>' +
+                '<button type="button" class="btn btn-secondary btn-sm" onclick="toastr.clear()">Cancel</button>' +
+                '</div>',
+                'Delete Patient?',
+                {
+                    closeButton: false,
+                    timeOut: 0,
+                    extendedTimeOut: 0,
+                    tapToDismiss: false,
+                    allowHtml: true,
+                    positionClass: "toast-top-center",
+                    toastClass: "toastr-confirm"
+                }
+            );
+        }
+
+        // Confirm Delete Patient
+        function confirmDeletePatient(id, name) {
+            toastr.clear();
+            
+            $.ajax({
+                url: '@Url.Action("DeleteConfirmed")',
+                type: 'POST',
+                data: {
+                    id: id,
+                    __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                },
+                success: function(response) {
+                    if (response.success) {
+                        toastr.success(response.message);
+                        refreshGrid();
+                    } else {
+                        toastr.error(response.message);
+                    }
+                },
+                error: function() {
+                    toastr.error('Failed to delete patient. Please try again.');
+                }
+            });
         }
 
         // Perform Search
         function performSearch() {
             var searchTerm = $('#searchInput').val();
-            UIHelpers.reloadGridPartial(
-                '#gridContainer',
-                '@Url.Action("GetPatientsGrid")',
-                { searchString: searchTerm }
-            );
+            $.ajax({
+                url: '@Url.Action("GetPatientsGrid")',
+                type: 'GET',
+                data: { searchString: searchTerm },
+                beforeSend: function() {
+                    $('#gridContainer').css('opacity', '0.5');
+                },
+                success: function(html) {
+                    $('#gridContainer').html(html).css('opacity', '1');
+                },
+                error: function() {
+                    $('#gridContainer').css('opacity', '1');
+                    toastr.error('Search failed. Please try again.');
+                }
+            });
         }
 
         // Clear Search
@@ -127,7 +165,33 @@
 
         // Refresh Grid
         function refreshGrid() {
-            UIHelpers.reloadGridPartial('#gridContainer', '@Url.Action("GetPatientsGrid")');
+            var searchTerm = $('#searchInput').val();
+            $.ajax({
+                url: '@Url.Action("GetPatientsGrid")',
+                type: 'GET',
+                data: { searchString: searchTerm },
+                beforeSend: function() {
+                    $('#gridContainer').css('opacity', '0.5');
+                },
+                success: function(html) {
+                    $('#gridContainer').html(html).css('opacity', '1');
+                },
+                error: function() {
+                    $('#gridContainer').css('opacity', '1');
+                }
+            });
         }
     </script>
+    
+    <style>
+        /* Custom toastr confirmation styles */
+        .toastr-confirm {
+            width: 400px !important;
+            padding: 20px !important;
+        }
+        
+        .toastr-confirm .toast-message {
+            padding: 0 !important;
+        }
+    </style>
 }

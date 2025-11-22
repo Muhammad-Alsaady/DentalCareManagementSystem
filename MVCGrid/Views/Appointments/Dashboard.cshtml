@@ -1,0 +1,563 @@
+@model List<DentalCareManagmentSystem.Application.DTOs.AppointmentDto>
+@{
+    ViewData["Title"] = "Receptionist Dashboard";
+    var selectedDate = ViewBag.SelectedDate as DateTime? ?? DateTime.Today;
+    var isToday = selectedDate.Date == DateTime.Today.Date;
+}
+
+<div class="container-fluid dashboard-page">
+    @Html.AntiForgeryToken()
+    
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="dashboard-header">
+                <div class="header-content">
+                    <div class="header-left">
+                        <h1 class="page-title">
+                            <i class="fas fa-tachometer-alt text-primary"></i> 
+                            Receptionist Dashboard
+                        </h1>
+                        <p class="page-subtitle">
+                            <i class="fas fa-calendar"></i> 
+                            @if (isToday)
+                            {
+                                <text>Today - @selectedDate.ToString("dddd, MMMM dd, yyyy")</text>
+                            }
+                            else
+                            {
+                                @selectedDate.ToString("dddd, MMMM dd, yyyy")
+                            }
+                            <span class="badge bg-primary ms-2 fs-6">@Model.Count Appointments</span>
+                        </p>
+                    </div>
+                    <div class="header-actions">
+                        <button class="btn btn-success btn-lg shadow-sm" onclick="addNewPatient()">
+                            <i class="fas fa-user-plus"></i> Add Patient
+                        </button>
+                        <button class="btn btn-primary btn-lg shadow-sm" onclick="addNewAppointment()">
+                            <i class="fas fa-calendar-plus"></i> New Appointment
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Date Filter Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="date-filter-card">
+                <div class="row align-items-center">
+                    <div class="col-md-6">
+                        <label class="filter-label">
+                            <i class="fas fa-calendar-alt"></i> Select Date
+                        </label>
+                        <div class="input-group input-group-lg date-picker-group">
+                            <span class="input-group-text">
+                                <i class="fas fa-calendar-day"></i>
+                            </span>
+                            <input type="text" 
+                                   id="dashboardDatePicker" 
+                                   class="form-control form-control-lg" 
+                                   value="@selectedDate.ToString("MM/dd/yyyy")"
+                                   placeholder="Select date..."
+                                   readonly>
+                            <button class="btn btn-primary" type="button" onclick="goToToday()">
+                                <i class="fas fa-calendar-check"></i> Today
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-md-6 text-end">
+                        <button class="btn btn-outline-secondary btn-lg" onclick="refreshGrid()">
+                            <i class="fas fa-sync-alt"></i> Refresh
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="row mb-4 stats-row">
+        <div class="col-md-3">
+            <div class="stat-card stat-card-total">
+                <div class="stat-icon">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div class="stat-content">
+                    <h2 class="stat-number">@ViewBag.TotalPatients</h2>
+                    <p class="stat-label">Total Appointments</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card stat-card-scheduled">
+                <div class="stat-icon">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div class="stat-content">
+                    <h2 class="stat-number">@ViewBag.Scheduled</h2>
+                    <p class="stat-label">Scheduled</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card stat-card-completed">
+                <div class="stat-icon">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div class="stat-content">
+                    <h2 class="stat-number">@ViewBag.Completed</h2>
+                    <p class="stat-label">Completed</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card stat-card-notified">
+                <div class="stat-icon">
+                    <i class="fas fa-bell"></i>
+                </div>
+                <div class="stat-content">
+                    <h2 class="stat-number">@ViewBag.Notified</h2>
+                    <p class="stat-label">Notified</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Appointments Grid -->
+    <div class="row">
+        <div class="col-12">
+            <div class="grid-card shadow">
+                <div class="grid-card-header">
+                    <h4 class="grid-title">
+                        <i class="fas fa-list-ul"></i> Appointments for @selectedDate.ToString("MMMM dd, yyyy")
+                    </h4>
+                </div>
+                <div class="grid-card-body" id="dashboardGridContainer">
+                    @await Html.PartialAsync("_DashboardGrid", Model)
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <!-- Bootstrap Datepicker -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/css/bootstrap-datepicker.min.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/js/bootstrap-datepicker.min.js"></script>
+    
+    <script>
+        $(document).ready(function() {
+            // Initialize datepicker
+            $('#dashboardDatePicker').datepicker({
+                format: 'mm/dd/yyyy',
+                autoclose: true,
+                todayHighlight: true,
+                todayBtn: 'linked',
+                orientation: 'bottom auto'
+            }).on('changeDate', function(e) {
+                var selectedDate = e.format('yyyy-mm-dd');
+                loadAppointmentsForDate(selectedDate);
+            });
+
+            // Make entire input group clickable
+            $('.date-picker-group').on('click', function(e) {
+                if (e.target.tagName !== 'BUTTON') {
+                    $('#dashboardDatePicker').datepicker('show');
+                }
+            });
+
+            // Listen for modal success events
+            $(document).on('modalSuccess', function(event, response) {
+                refreshGrid();
+            });
+
+            console.log('Dashboard initialized');
+        });
+
+        // Load appointments for selected date
+        function loadAppointmentsForDate(date) {
+            $.ajax({
+                url: '@Url.Action("Dashboard", "Appointments")',
+                data: { selectedDate: date },
+                success: function(html) {
+                    // Reload entire page to update stats
+                    window.location.href = '@Url.Action("Dashboard", "Appointments")?selectedDate=' + date;
+                },
+                error: function() {
+                    UIHelpers.showAlert('Error loading appointments', 'danger');
+                }
+            });
+        }
+
+        // Refresh grid only
+        function refreshGrid() {
+            var currentDate = $('#dashboardDatePicker').val();
+            var dateFormatted = new Date(currentDate).toISOString().split('T')[0];
+            
+            $.ajax({
+                url: '@Url.Action("GetDashboardGrid", "Appointments")',
+                data: { selectedDate: dateFormatted },
+                success: function(html) {
+                    $('#dashboardGridContainer').html(html);
+                },
+                error: function() {
+                    UIHelpers.showAlert('Error refreshing grid', 'danger');
+                }
+            });
+        }
+
+        // Go to today
+        function goToToday() {
+            var today = new Date();
+            $('#dashboardDatePicker').datepicker('setDate', today);
+            loadAppointmentsForDate(today.toISOString().split('T')[0]);
+        }
+
+        // Add New Patient
+        function addNewPatient() {
+            ModalLoader.load(
+                '@Url.Action("Create", "Patients")',
+                'Add New Patient'
+            );
+        }
+
+        // Add New Appointment
+        function addNewAppointment(patientId) {
+            var url = '@Url.Action("Create", "Appointments")';
+            if (patientId) {
+                url += '?patientId=' + patientId;
+            }
+            
+            ModalLoader.load(url, 'New Appointment');
+        }
+
+        // Edit Paid Amount
+        function editPaidAmount(appointmentId) {
+            ModalLoader.load(
+                '@Url.Action("EditPaidAmount", "Appointments")/' + appointmentId,
+                'Edit Payment Amount'
+            );
+        }
+
+        // View Patient Card
+        function viewPatientCard(patientId, patientName) {
+            ModalLoader.load(
+                '@Url.Action("Details", "Patients")/' + patientId,
+                'Patient Details: ' + patientName
+            );
+        }
+
+        // Add Payment
+        function addPayment(patientId, patientName) {
+            ModalLoader.load(
+                '@Url.Action("AddPayment", "Payments")?patientId=' + patientId,
+                'Add Payment: ' + patientName
+            );
+        }
+
+        // Show Edit Form
+        function showEdit(id) {
+            ModalLoader.load(
+                '@Url.Action("Edit", "Appointments")/' + id,
+                'Edit Appointment'
+            );
+        }
+
+        // Show Delete Confirmation
+        function showDelete(id) {
+            ModalLoader.load(
+                '@Url.Action("Delete", "Appointments")/' + id,
+                'Delete Appointment'
+            );
+        }
+
+        // Show Details
+        function showDetails(id) {
+            ModalLoader.load(
+                '@Url.Action("Details", "Appointments")/' + id,
+                'Appointment Details'
+            );
+        }
+    </script>
+}
+
+@section Styles {
+    <style>
+        .dashboard-page {
+            padding: 20px 0;
+        }
+
+        /* Dashboard Header */
+        .dashboard-header {
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+            margin-bottom: 20px;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .page-title {
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: #1f2937;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .page-subtitle {
+            font-size: 1.15rem;
+            color: #6b7280;
+            margin: 10px 0 0 0;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .header-actions .btn {
+            font-size: 1.05rem;
+            padding: 12px 28px;
+            font-weight: 600;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .header-actions .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+        }
+
+        /* Date Filter Card */
+        .date-filter-card {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+
+        .filter-label {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 12px;
+            display: block;
+        }
+
+        .filter-label i {
+            color: #2563eb;
+            margin-right: 8px;
+        }
+
+        .date-picker-group {
+            cursor: pointer;
+        }
+
+        .date-picker-group .input-group-text {
+            background: #2563eb;
+            color: white;
+            border: none;
+            font-size: 1.2rem;
+        }
+
+        .date-picker-group .form-control {
+            border: 2px solid #e5e7eb;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .date-picker-group .form-control:focus {
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        /* Stats Cards */
+        .stats-row {
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            transition: all 0.3s ease;
+            border-left: 5px solid #e5e7eb;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+        }
+
+        .stat-icon {
+            width: 75px;
+            height: 75px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.2rem;
+        }
+
+        .stat-content {
+            flex: 1;
+        }
+
+        .stat-number {
+            font-size: 2.8rem;
+            font-weight: 700;
+            margin: 0;
+            line-height: 1;
+        }
+
+        .stat-label {
+            font-size: 1rem;
+            color: #6b7280;
+            margin: 10px 0 0 0;
+            font-weight: 500;
+        }
+
+        /* Stat card variants */
+        .stat-card-total {
+            border-left-color: #3b82f6;
+        }
+        .stat-card-total .stat-icon {
+            background: rgba(59, 130, 246, 0.1);
+            color: #3b82f6;
+        }
+        .stat-card-total .stat-number {
+            color: #3b82f6;
+        }
+
+        .stat-card-scheduled {
+            border-left-color: #0ea5e9;
+        }
+        .stat-card-scheduled .stat-icon {
+            background: rgba(14, 165, 233, 0.1);
+            color: #0ea5e9;
+        }
+        .stat-card-scheduled .stat-number {
+            color: #0ea5e9;
+        }
+
+        .stat-card-completed {
+            border-left-color: #10b981;
+        }
+        .stat-card-completed .stat-icon {
+            background: rgba(16, 185, 129, 0.1);
+            color: #10b981;
+        }
+        .stat-card-completed .stat-number {
+            color: #10b981;
+        }
+
+        .stat-card-notified {
+            border-left-color: #f59e0b;
+        }
+        .stat-card-notified .stat-icon {
+            background: rgba(245, 158, 11, 0.1);
+            color: #f59e0b;
+        }
+        .stat-card-notified .stat-number {
+            color: #f59e0b;
+        }
+
+        /* Grid Card */
+        .grid-card {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .grid-card-header {
+            background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+            padding: 20px 30px;
+            border-bottom: none;
+        }
+
+        .grid-title {
+            color: white;
+            margin: 0;
+            font-size: 1.3rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .grid-card-body {
+            padding: 0;
+        }
+
+        /* Datepicker customization */
+        .datepicker {
+            border-radius: 8px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        .datepicker table tr td.today {
+            background: #3b82f6;
+            color: white;
+        }
+
+        .datepicker table tr td.active {
+            background: #1e40af;
+            color: white;
+        }
+
+        /* Responsive */
+        @@media (max-width: 992px) {
+            .header-content {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .header-actions {
+                width: 100%;
+            }
+
+            .header-actions .btn {
+                flex: 1;
+            }
+        }
+
+        @@media (max-width: 768px) {
+            .page-title {
+                font-size: 1.8rem;
+            }
+
+            .stat-card {
+                padding: 20px;
+            }
+
+            .stat-icon {
+                width: 65px;
+                height: 65px;
+                font-size: 1.8rem;
+            }
+
+            .stat-number {
+                font-size: 2.2rem;
+            }
+        }
+    </style>
+}

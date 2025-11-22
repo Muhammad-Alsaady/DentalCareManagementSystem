@@ -72,34 +72,23 @@ const UIHelpers = {
     },
 
     /**
-     * Show alert message
+     * Show alert message using toastr
      * @param {string} message - The message to display
-     * @param {string} type - Bootstrap alert type (success, danger, warning, info)
+     * @param {string} type - Alert type (success, danger, warning, info)
      */
     showAlert: function(message, type) {
         type = type || 'info';
         
-        const alertHtml = `
-            <div class="alert alert-${type} alert-dismissible fade show" role="alert">
-                <i class="fas fa-${UIHelpers.getAlertIcon(type)}"></i> ${message}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-        `;
+        // Map Bootstrap alert types to toastr types
+        const toastrType = {
+            'success': 'success',
+            'danger': 'error',
+            'warning': 'warning',
+            'info': 'info'
+        }[type] || 'info';
         
-        const $alertContainer = $('#alertContainer');
-        if ($alertContainer.length === 0) {
-            // Create alert container if it doesn't exist
-            $('body').append('<div id="alertContainer" style="position: fixed; top: 80px; right: 20px; z-index: 9999; min-width: 300px;"></div>');
-        }
-        
-        $('#alertContainer').append(alertHtml);
-        
-        // Auto-remove after 5 seconds
-        setTimeout(function() {
-            $('#alertContainer .alert').first().fadeOut('slow', function() {
-                $(this).remove();
-            });
-        }, 5000);
+        // Use toastr
+        toastr[toastrType](message);
     },
 
     /**
@@ -150,10 +139,16 @@ const UIHelpers = {
             success: function(html) {
                 $(containerSelector).html(html);
                 
-                // Reinitialize MVC Grid
-                $(containerSelector).find('.mvc-grid').each(function() {
-                    new MvcGrid(this);
-                });
+                // Reinitialize MVC Grid if the library is loaded
+                if (typeof MvcGrid !== 'undefined') {
+                    $(containerSelector).find('.mvc-grid').each(function() {
+                        try {
+                            new MvcGrid(this);
+                        } catch (e) {
+                            console.warn('MvcGrid initialization skipped:', e.message);
+                        }
+                    });
+                }
                 
                 $(containerSelector).css('opacity', '1');
                 
@@ -294,9 +289,15 @@ const UIHelpers = {
     initGrids: function() {
         if (typeof MvcGrid !== 'undefined') {
             document.querySelectorAll('.mvc-grid').forEach(function(el) {
-                new MvcGrid(el);
+                try {
+                    new MvcGrid(el);
+                } catch (e) {
+                    console.warn('MvcGrid initialization skipped for element:', el, e.message);
+                }
             });
             console.log('MVCGrid instances initialized');
+        } else {
+            console.warn('MvcGrid library not loaded');
         }
     },
 

@@ -40,9 +40,9 @@
             @{
                 var badgeClass = Model.Status switch
                 {
-                    "Scheduled" => "bg-info",
-                    "Notified" => "bg-warning",
-                    "Completed" => "bg-success",
+                    "Scheduled" => "bg-primary", // Blue for Scheduled
+                    "Notified" => "bg-warning text-dark",
+                    "Completed" => "bg-success", // Green for Completed
                     "Cancelled" => "bg-danger",
                     _ => "bg-secondary"
                 };
@@ -64,14 +64,17 @@
     }
 </div>
 
-<div class="modal-footer">
+<div class="mt-3 d-flex gap-2 justify-content-end">
     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
         <i class="fas fa-times"></i> Close
     </button>
-    <button type="button" onclick="crudModal.hide(); showEdit('@Model.Id');" class="btn btn-primary">
-        <i class="fas fa-edit"></i> Edit
-    </button>
-    <button type="button" onclick="crudModal.hide(); showDelete('@Model.Id');" class="btn btn-danger">
-        <i class="fas fa-trash"></i> Delete
-    </button>
+    @if (Model.Status == "Scheduled")
+    {
+        <button type="button" onclick="ModalLoader.close(); showEdit('@Model.Id');" class="btn btn-primary">
+            <i class="fas fa-edit"></i> Edit
+        </button>
+        <button type="button" onclick="ModalLoader.close(); showDelete('@Model.Id');" class="btn btn-danger">
+            <i class="fas fa-trash"></i> Delete
+        </button>
+    }
 </div>

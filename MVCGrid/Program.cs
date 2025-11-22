@@ -1,7 +1,7 @@
 using DentalCareManagmentSystem.Application.Interfaces;
+using DentalCareManagmentSystem.Domain.Entities;
 using DentalCareManagmentSystem.Infrastructure.Data;
 using DentalCareManagmentSystem.Infrastructure.Services;
-using DentalCareManagmentSystem.Domain.Entities;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
@@ -42,25 +42,24 @@ if (app.Environment.IsDevelopment())
 else
 {
     app.UseExceptionHandler("/Home/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
 
 app.UseHttpsRedirection();
+app.UseStaticFiles(); // FIXED: Serve static files (CSS, JS, images)
+
 app.UseRouting();
 
 app.UseAuthentication();
 app.UseAuthorization();
 
-app.MapStaticAssets();
-
+// Map controllers with default route
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Notifications}/{action=Index}/{id?}")
-    .WithStaticAssets();
+    pattern: "{controller=Home}/{action=Index}/{id?}");
 
-app.MapRazorPages()
-   .WithStaticAssets();
+// Map Razor Pages for Identity
+app.MapRazorPages();
 
 // Map SignalR Hub
 app.MapHub<DentalManagementSystem.Controllers.NotificationHub>("/notificationHub");

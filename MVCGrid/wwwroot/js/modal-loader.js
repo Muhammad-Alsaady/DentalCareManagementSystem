@@ -1,7 +1,6 @@
 /**
  * Global Modal Loader - Unified modal system for entire application
- * Replaces all individual modals with a single, consistent modal experience
- * FIXED: Proper reset, z-index handling, and timing for sequential modals
+ * FIXED: Complete modal reset, backdrop cleanup, and interaction issues
  */
 
 var ModalLoader = (function() {
@@ -16,7 +15,6 @@ var ModalLoader = (function() {
     var bodyElement;
     var footerElement;
     var loadingSpinner;
-    var currentBackdrop = null;
 
     /**
      * Initialize modal elements
@@ -31,6 +29,13 @@ var ModalLoader = (function() {
         loadingSpinner = document.getElementById('modalLoadingSpinner');
 
         if (modalElement) {
+            // Destroy any existing modal instance
+            var existingModal = bootstrap.Modal.getInstance(modalElement);
+            if (existingModal) {
+                existingModal.dispose();
+            }
+
+            // Create new modal instance with proper settings
             modal = new bootstrap.Modal(modalElement, {
                 backdrop: 'static',
                 keyboard: false,
@@ -44,11 +49,48 @@ var ModalLoader = (function() {
             
             // Listen for modal shown event
             modalElement.addEventListener('shown.bs.modal', function() {
+                // Ensure modal and content are interactive
+                ensureInteractive();
+                
                 // Focus first input
                 var firstInput = bodyElement.querySelector('input:not([type=hidden]), select, textarea');
                 if (firstInput) {
-                    firstInput.focus();
+                    setTimeout(function() {
+                        firstInput.focus();
+                    }, 100);
                 }
+            });
+            
+            // Listen for modal show event
+            modalElement.addEventListener('show.bs.modal', function() {
+                // Clean up any stray backdrops before showing
+                removeAllBackdrops();
+            });
+        }
+    }
+
+    /**
+     * Ensure modal and all elements are interactive
+     */
+    function ensureInteractive() {
+        // Force enable pointer events on modal elements
+        if (modalElement) {
+            modalElement.style.pointerEvents = 'auto';
+            var modalDialog = modalElement.querySelector('.modal-dialog');
+            if (modalDialog) {
+                modalDialog.style.pointerEvents = 'auto';
+            }
+            var modalContent = modalElement.querySelector('.modal-content');
+            if (modalContent) {
+                modalContent.style.pointerEvents = 'auto';
+            }
+        }
+        
+        // Enable all interactive elements
+        if (bodyElement) {
+            var inputs = bodyElement.querySelectorAll('input, select, textarea, button, a');
+            inputs.forEach(function(el) {
+                el.style.pointerEvents = 'auto';
             });
         }
     }
@@ -57,7 +99,7 @@ var ModalLoader = (function() {
      * Complete cleanup of modal and backdrop
      */
     function cleanupModal() {
-        // Reset body content
+        // Reset body content to loading spinner
         if (bodyElement) {
             bodyElement.innerHTML = `
                 <div class="text-center py-5" id="modalLoadingSpinner">
@@ -86,7 +128,9 @@ var ModalLoader = (function() {
         }
         
         // Remove any stray backdrops
-        removeAllBackdrops();
+        setTimeout(function() {
+            removeAllBackdrops();
+        }, 100);
         
         // Re-enable body scroll
         document.body.classList.remove('modal-open');
@@ -102,7 +146,6 @@ var ModalLoader = (function() {
         backdrops.forEach(function(backdrop) {
             backdrop.remove();
         });
-        currentBackdrop = null;
     }
 
     /**
@@ -161,7 +204,7 @@ var ModalLoader = (function() {
         }
 
         function proceedWithLoad() {
-            // Clean up any stray backdrops
+            // Clean up any stray backdrops BEFORE showing modal
             removeAllBackdrops();
             
             // Set title
@@ -172,8 +215,13 @@ var ModalLoader = (function() {
             // Reset modal content
             resetModal();
             
-            // Open modal
+            // Show modal
             modal.show();
+            
+            // Ensure interactive after a brief delay
+            setTimeout(function() {
+                ensureInteractive();
+            }, 100);
 
             // Load content via AJAX
             $.ajax({
@@ -190,6 +238,9 @@ var ModalLoader = (function() {
                     if (bodyElement) {
                         bodyElement.innerHTML = response;
                     }
+
+                    // Ensure everything is interactive
+                    ensureInteractive();
 
                     // Initialize any forms in the modal
                     initializeModalForms();
@@ -250,6 +301,7 @@ var ModalLoader = (function() {
                 
                 // Disable submit button
                 submitBtn.prop('disabled', true);
+                var originalText = submitBtn.html();
                 submitBtn.html('<i class="fas fa-spinner fa-spin"></i> Saving...');
                 
                 $.ajax({
@@ -261,7 +313,7 @@ var ModalLoader = (function() {
                     success: function(response) {
                         // Re-enable button
                         submitBtn.prop('disabled', false);
-                        submitBtn.html(submitBtn.data('original-text') || 'Save');
+                        submitBtn.html(originalText);
                         
                         if (response.success) {
                             // Close modal
@@ -269,17 +321,9 @@ var ModalLoader = (function() {
                             
                             // Show success message
                             if (response.message) {
-                                UIHelpers.showAlert(response.message, 'success');
-                            }
-                            
-                            // Reload grids if specified
-                            if (response.reloadGrid) {
-                                UIHelpers.initGrids();
-                            }
-                            
-                            // Custom callback
-                            if (response.callback && typeof window[response.callback] === 'function') {
-                                window[response.callback](response);
+                                if (typeof UIHelpers !== 'undefined' && UIHelpers.showAlert) {
+                                    UIHelpers.showAlert(response.message, 'success');
+                                }
                             }
                             
                             // Trigger custom event with response data
@@ -289,28 +333,27 @@ var ModalLoader = (function() {
                             if (bodyElement) {
                                 bodyElement.innerHTML = response;
                             }
+                            ensureInteractive();
                             initializeModalForms();
                         }
                     },
                     error: function(xhr) {
                         // Re-enable button
                         submitBtn.prop('disabled', false);
-                        submitBtn.html(submitBtn.data('original-text') || 'Save');
+                        submitBtn.html(originalText);
                         
                         var errorMsg = 'An error occurred. Please try again.';
                         if (xhr.responseJSON && xhr.responseJSON.message) {
                             errorMsg = xhr.responseJSON.message;
                         }
-                        UIHelpers.showAlert(errorMsg, 'danger');
+                        if (typeof UIHelpers !== 'undefined' && UIHelpers.showAlert) {
+                            UIHelpers.showAlert(errorMsg, 'danger');
+                        } else {
+                            alert(errorMsg);
+                        }
                     }
                 });
             });
-            
-            // Store original button text
-            var submitBtn = $(form).find('button[type=submit]');
-            if (!submitBtn.data('original-text')) {
-                submitBtn.data('original-text', submitBtn.html());
-            }
         });
     }
 
@@ -331,10 +374,12 @@ var ModalLoader = (function() {
         }
 
         // Reinitialize tooltips
-        var tooltipTriggerList = [].slice.call(bodyElement.querySelectorAll('[data-bs-toggle="tooltip"]'));
-        tooltipTriggerList.map(function(tooltipTriggerEl) {
-            return new bootstrap.Tooltip(tooltipTriggerEl);
-        });
+        if (bodyElement) {
+            var tooltipTriggerList = [].slice.call(bodyElement.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            tooltipTriggerList.map(function(tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl);
+            });
+        }
     }
 
     /**
@@ -343,7 +388,7 @@ var ModalLoader = (function() {
     function closeModal() {
         if (modal) {
             modal.hide();
-            // Force cleanup
+            // Force cleanup after animation
             setTimeout(function() {
                 cleanupModal();
             }, 300);
@@ -374,7 +419,7 @@ var ModalLoader = (function() {
     // Initialize on DOM ready
     $(document).ready(function() {
         init();
-        console.log('Global Modal Loader initialized with z-index: 11000');
+        console.log('? Global Modal Loader initialized (z-index: 11000)');
     });
 
     // Public API

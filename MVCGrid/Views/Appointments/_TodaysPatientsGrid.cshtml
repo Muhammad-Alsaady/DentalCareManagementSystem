@@ -29,7 +29,7 @@
     // Start Time - 10%
     grid.Columns.Add(model => model.StartTime)
         .Titled("Time")
-        .Formatted("{0:hh\\:mm tt}")
+        .RenderedAs(model => FormatTime(model.StartTime))
         .Css("text-center col-time fw-bold")
         .Filterable(false)
         .Sortable(true);
@@ -82,6 +82,12 @@
 }
 
 @functions {
+    string FormatTime(TimeSpan time)
+    {
+        var dateTime = DateTime.Today.Add(time);
+        return dateTime.ToString("hh:mm tt");
+    }
+
     string GetPatientNameWithCard(DentalCareManagmentSystem.Application.DTOs.AppointmentDto model)
     {
         return $@"
@@ -100,9 +106,9 @@
     {
         var badgeClass = status switch
         {
-            "Scheduled" => "bg-primary", // Blue
+            "Scheduled" => "bg-primary", // Blue for Scheduled
             "Notified" => "bg-warning text-dark",
-            "Completed" => "bg-success", // Green
+            "Completed" => "bg-success", // Green for Completed
             "Cancelled" => "bg-danger",
             _ => "bg-secondary"
         };
@@ -188,10 +194,10 @@
         sb.Append("<i class='fas fa-eye'></i> Details");
         sb.Append("</button>");
         
-        // Delete button (only for Scheduled)
+        // Delete button (only for Scheduled) - Direct delete with confirmation
         if (model.Status == "Scheduled")
         {
-            sb.Append($"<button type='button' onclick='showDelete(\"{model.Id}\")' class='btn btn-danger btn-sm' title='Delete'>");
+            sb.Append($"<button type='button' onclick='deleteAppointment(\"{model.Id}\", \"{model.PatientName}\")' class='btn btn-danger btn-sm' title='Delete'>");
             sb.Append("<i class='fas fa-trash'></i> Delete");
             sb.Append("</button>");
         }

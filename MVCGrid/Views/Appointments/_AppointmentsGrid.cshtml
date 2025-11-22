@@ -36,7 +36,7 @@
     // Start Time - 10%
     grid.Columns.Add(model => model.StartTime)
         .Titled("Start Time")
-        .Formatted("{0:hh\\:mm}")
+        .RenderedAs(model => FormatTime(model.StartTime))
         .Css("text-center col-start-time")
         .Filterable(false)
         .Sortable(true);
@@ -44,7 +44,7 @@
     // End Time - 10%
     grid.Columns.Add(model => model.EndTime)
         .Titled("End Time")
-        .Formatted("{0:hh\\:mm}")
+        .RenderedAs(model => FormatTime(model.EndTime))
         .Css("text-center col-end-time")
         .Filterable(false)
         .Sortable(true);
@@ -89,6 +89,12 @@
 }
 
 @functions {
+    string FormatTime(TimeSpan time)
+    {
+        var dateTime = DateTime.Today.Add(time);
+        return dateTime.ToString("hh:mm tt");
+    }
+
     string GetStatusBadge(string status)
     {
         var badgeClass = status switch
@@ -117,8 +123,8 @@
         sb.Append("<i class='fas fa-edit'></i>");
         sb.Append("</button>");
         
-        // Delete button
-        sb.Append($"<button type='button' onclick='showDelete(\"{model.Id}\")' class='btn btn-danger btn-sm' title='Delete'>");
+        // Delete button - Direct delete with confirmation
+        sb.Append($"<button type='button' onclick='deleteAppointment(\"{model.Id}\", \"{model.PatientName}\")' class='btn btn-danger btn-sm' title='Delete'>");
         sb.Append("<i class='fas fa-trash'></i>");
         sb.Append("</button>");
         

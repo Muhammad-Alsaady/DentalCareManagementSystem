@@ -71,7 +71,9 @@ public class AppointmentsController : Controller
                        (a.Status == "Scheduled" || a.Status == "Completed"))
             .ToList();
         
+        // Pass both the date and a flag for display
         ViewBag.FilterDate = targetDate;
+        ViewBag.IsToday = targetDate.Date == DateTime.Today.Date;
         
         return View(todaysAppointments);
     }

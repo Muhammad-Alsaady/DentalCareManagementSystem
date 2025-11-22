@@ -5,6 +5,9 @@
     var selectedStatus = ViewBag.SelectedStatus as string ?? "";
 }
 
+@* Anti-forgery token for delete operations *@
+@Html.AntiForgeryToken()
+
 <div class="container-fluid">
     <!-- Header -->
     <div class="row mb-3">
@@ -14,9 +17,6 @@
                 <div>
                     <button class="btn btn-success" onclick="showCreate()">
                         <i class="fas fa-plus"></i> New Appointment
-                    </button>
-                    <button class="btn btn-outline-primary" onclick="refreshAppointments()">
-                        <i class="fas fa-sync-alt"></i> Refresh
                     </button>
                 </div>
             </div>
@@ -71,30 +71,10 @@
     </div>
 </div>
 
-<!-- Modal for CRUD operations -->
-<div class="modal fade" id="crudModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="crudModalLabel">Appointment</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body" id="crudModalBody">
-                <!-- Dynamic content will be loaded here -->
-            </div>
-        </div>
-    </div>
-</div>
-
 @section Scripts {
     <script>
-        let crudModal;
-
         $(document).ready(function() {
-            // Initialize modal
-            crudModal = new bootstrap.Modal(document.getElementById('crudModal'));
-
-            // Enable auto-refresh every 15 seconds
+            // Enable auto-refresh every 30 seconds
             UIHelpers.enableAutoRefresh(
                 'AppointmentsGrid',
                 '#gridContainer',
@@ -105,43 +85,106 @@
                 }
             );
 
-            // Setup AJAX form handler for appointment forms
-            UIHelpers.ajaxFormHandler('#appointmentForm', function(response) {
+            // Listen for modal success events
+            $(document).on('modalSuccess', function(event, response) {
                 refreshAppointments();
             });
+
+            console.log('Appointments page initialized');
         });
 
-        // Show Create Form
+        // Show Create Form using Global Modal
         function showCreate() {
-            UIHelpers.loadModal('@Url.Action("Create")', 'Create Appointment');
+            ModalLoader.load('@Url.Action("Create")', 'Create Appointment');
         }
 
-        // Show Edit Form
+        // Show Edit Form using Global Modal
         function showEdit(id) {
-            UIHelpers.loadModal('@Url.Action("Edit")/' + id, 'Edit Appointment');
+            ModalLoader.load('@Url.Action("Edit")/' + id, 'Edit Appointment');
         }
 
-        // Show Delete Confirmation
-        function showDelete(id) {
-            UIHelpers.loadModal('@Url.Action("Delete")/' + id, 'Delete Appointment');
+        // Delete Appointment - Using toastr warning confirmation
+        function deleteAppointment(id, patientName) {
+            toastr.warning(
+                '<div style="margin-top: 10px;">' +
+                '<p style="margin-bottom: 15px; font-size: 14px;">Delete appointment for <strong>' + patientName + '</strong>?</p>' +
+                '<p style="margin-bottom: 15px; color: #dc3545; font-size: 13px;"><i class="fas fa-exclamation-triangle"></i> This action cannot be undone!</p>' +
+                '<button type="button" class="btn btn-danger btn-sm me-2" onclick="confirmDeleteAppointment(\'' + id + '\')">Yes, Delete</button>' +
+                '<button type="button" class="btn btn-secondary btn-sm" onclick="toastr.clear()">Cancel</button>' +
+                '</div>',
+                'Delete Appointment?',
+                {
+                    closeButton: false,
+                    timeOut: 0,
+                    extendedTimeOut: 0,
+                    tapToDismiss: false,
+                    allowHtml: true,
+                    positionClass: "toast-top-center",
+                    toastClass: "toastr-confirm"
+                }
+            );
         }
 
-        // Show Details
+        // Confirm Delete Appointment
+        function confirmDeleteAppointment(id) {
+            toastr.clear();
+            
+            $.ajax({
+                url: '@Url.Action("DeleteConfirmed")',
+                type: 'POST',
+                data: {
+                    id: id,
+                    __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                },
+                success: function(response) {
+                    if (response.success) {
+                        toastr.success(response.message);
+                        refreshAppointments();
+                    } else {
+                        toastr.error(response.message);
+                    }
+                },
+                error: function() {
+                    toastr.error('Failed to delete appointment. Please try again.');
+                }
+            });
+        }
+
+        // Show Details using Global Modal
         function showDetails(id) {
-            UIHelpers.loadModal('@Url.Action("Details")/' + id, 'Appointment Details');
+            ModalLoader.load('@Url.Action("Details")/' + id, 'Appointment Details');
         }
 
         // Update Status
         function updateStatus(id, status) {
-            UIHelpers.confirm(`Change status to ${status}?`, function() {
-                UIHelpers.ajaxAction(
-                    '@Url.Action("UpdateStatus")',
-                    { id: id, status: status },
-                    function(response) {
-                        refreshAppointments();
-                    }
-                );
-            });
+            toastr.warning(
+                '<div style="margin-top: 10px;">' +
+                '<p style="margin-bottom: 15px; font-size: 14px;">Change status to <strong>' + status + '</strong>?</p>' +
+                '<button type="button" class="btn btn-primary btn-sm me-2" onclick="confirmUpdateStatus(\'' + id + '\', \'' + status + '\')">Yes, Change</button>' +
+                '<button type="button" class="btn btn-secondary btn-sm" onclick="toastr.clear()">Cancel</button>' +
+                '</div>',
+                'Update Status?',
+                {
+                    closeButton: false,
+                    timeOut: 0,
+                    extendedTimeOut: 0,
+                    tapToDismiss: false,
+                    allowHtml: true,
+                    positionClass: "toast-top-center",
+                    toastClass: "toastr-confirm"
+                }
+            );
+        }
+
+        function confirmUpdateStatus(id, status) {
+            toastr.clear();
+            UIHelpers.ajaxAction(
+                '@Url.Action("UpdateStatus")',
+                { id: id, status: status },
+                function(response) {
+                    refreshAppointments();
+                }
+            );
         }
 
         // Apply Filters
@@ -150,11 +193,21 @@
             const status = $('#filterStatus').val();
             
             // Update grid with filters
-            UIHelpers.reloadGridPartial(
-                '#gridContainer',
-                '@Url.Action("GetAppointmentsGrid")',
-                { date: date, status: status }
-            );
+            $.ajax({
+                url: '@Url.Action("GetAppointmentsGrid")',
+                type: 'GET',
+                data: { date: date, status: status },
+                beforeSend: function() {
+                    $('#gridContainer').css('opacity', '0.5');
+                },
+                success: function(html) {
+                    $('#gridContainer').html(html).css('opacity', '1');
+                },
+                error: function() {
+                    $('#gridContainer').css('opacity', '1');
+                    toastr.error('Failed to apply filters.');
+                }
+            });
 
             // Update auto-refresh with new filters
             UIHelpers.enableAutoRefresh(
@@ -182,4 +235,16 @@
             UIHelpers.disableAutoRefresh('AppointmentsGrid');
         });
     </script>
+    
+    <style>
+        /* Custom toastr confirmation styles */
+        .toastr-confirm {
+            width: 400px !important;
+            padding: 20px !important;
+        }
+        
+        .toastr-confirm .toast-message {
+            padding: 0 !important;
+        }
+    </style>
 }

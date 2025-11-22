@@ -53,9 +53,19 @@ public class PatientsController : Controller
     }
 
     [HttpGet]
-    public IActionResult GetPatientsGrid()
+    public IActionResult GetPatientsGrid(string searchString)
     {
-        var patients = _patientService.GetPatientsWithTotalDue();
+        var patients = _patientService.GetPatientsWithTotalDue().ToList();
+        
+        // Apply search filter if provided
+        if (!string.IsNullOrEmpty(searchString))
+        {
+            patients = patients.Where(p => 
+                (p.FullName != null && p.FullName.Contains(searchString, StringComparison.OrdinalIgnoreCase)) ||
+                (p.Phone != null && p.Phone.Contains(searchString))
+            ).ToList();
+        }
+        
         return PartialView("_PatientsGrid", patients);
     }
 
@@ -76,7 +86,7 @@ public class PatientsController : Controller
                 success = true, 
                 message = $"Patient '{patient.FullName}' has been created successfully!",
                 patientId = patient.Id,
-                openAppointmentModal = true // Signal to open appointment modal
+                patientName = patient.FullName
             });
         }
 
@@ -140,7 +150,10 @@ public class PatientsController : Controller
     public IActionResult Details(Guid id)
     {
         var patient = _patientService.GetById(id);
-        if (patient == null) return NotFound();
+        if (patient == null)
+        {
+            return Json(new { success = false, message = "Patient not found." });
+        }
 
         ViewBag.DiagnosisNotes = _diagnosisService.GetNotesByPatientId(id);
         ViewBag.PatientImages = _imageService.GetImagesByPatientId(id);
@@ -175,7 +188,8 @@ public class PatientsController : Controller
             ViewBag.CurrentAppointment = currentAppointment;
         }
 
-        return View(patient);
+        // Return partial view for modal
+        return PartialView("_DetailsPartial", patient);
     }
 
     // AJAX partials for patient details tabs

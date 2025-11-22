@@ -1,0 +1,211 @@
+@model DentalCareManagmentSystem.Application.DTOs.PatientDto
+@{
+    var diagnosisNotes = ViewBag.DiagnosisNotes as IEnumerable<DentalCareManagmentSystem.Domain.Entities.DiagnosisNote>;
+    var patientImages = ViewBag.PatientImages as IEnumerable<DentalCareManagmentSystem.Domain.Entities.PatientImage>;
+    var treatmentPlans = ViewBag.TreatmentPlans as List<DentalCareManagmentSystem.Application.DTOs.TreatmentPlanDto>;
+    var paymentSummary = ViewBag.PaymentSummary as DentalCareManagmentSystem.Application.DTOs.PatientPaymentSummaryDto;
+    var currentAppointment = ViewBag.CurrentAppointment as DentalCareManagmentSystem.Application.DTOs.AppointmentDto;
+}
+
+<div class="patient-details-partial">
+    <!-- Patient Basic Info -->
+    <div class="card mb-3">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0"><i class="fas fa-user"></i> Patient Information</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>Full Name:</strong> @Model.FullName</p>
+                    <p><strong>Age:</strong> @Model.Age years</p>
+                    <p><strong>Gender:</strong> @Model.Gender</p>
+                </div>
+                <div class="col-md-6">
+                    <p><strong>Phone:</strong> <a href="tel:@Model.Phone">@Model.Phone</a></p>
+                    @if (!string.IsNullOrEmpty(Model.Notes))
+                    {
+                        <p><strong>Notes:</strong> @Model.Notes</p>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Current Appointment Alert -->
+    @if (currentAppointment != null)
+    {
+        <div class="alert alert-info">
+            <i class="fas fa-calendar-check"></i> 
+            <strong>Current Appointment:</strong> 
+            Today at @currentAppointment.StartTime.ToString(@"hh\:mm tt") - Status: <span class="badge bg-warning">@currentAppointment.Status</span>
+        </div>
+    }
+
+    <!-- Payment Summary -->
+    @if (paymentSummary != null)
+    {
+        <div class="card mb-3">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0"><i class="fas fa-dollar-sign"></i> Payment Summary</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <p><strong>Total Cost:</strong> $@paymentSummary.TotalCost.ToString("N2")</p>
+                    </div>
+                    <div class="col-md-4">
+                        <p><strong>Total Paid:</strong> $@paymentSummary.TotalPaid.ToString("N2")</p>
+                    </div>
+                    <div class="col-md-4">
+                        <p><strong>Balance Due:</strong> 
+                            <span class="@(paymentSummary.RemainingBalance > 0 ? "text-danger fw-bold" : "text-success")">
+                                $@paymentSummary.RemainingBalance.ToString("N2")
+                            </span>
+                        </p>
+                    </div>
+                </div>
+                @if (paymentSummary.Payments != null && paymentSummary.Payments.Any())
+                {
+                    <hr />
+                    <h6>Recent Payments:</h6>
+                    <div class="table-responsive" style="max-height: 200px; overflow-y: auto;">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Amount</th>
+                                    <th>Notes</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var payment in paymentSummary.Payments.Take(5))
+                                {
+                                    <tr>
+                                        <td>@payment.PaymentDate.ToString("MMM dd, yyyy")</td>
+                                        <td>$@payment.Amount.ToString("N2")</td>
+                                        <td>@payment.Notes</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+
+    <!-- Treatment Plans -->
+    @if (treatmentPlans != null && treatmentPlans.Any())
+    {
+        <div class="card mb-3">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0"><i class="fas fa-tooth"></i> Treatment Plans</h5>
+            </div>
+            <div class="card-body">
+                @foreach (var plan in treatmentPlans)
+                {
+                    <div class="mb-3">
+                        <p>
+                            <strong>Plan from @plan.CreatedAt.ToString("MMM dd, yyyy")</strong> - 
+                            Total Cost: $@plan.TotalCost.ToString("N2") -
+                            <span class="badge @(plan.IsCompleted ? "bg-success" : "bg-warning")">
+                                @(plan.IsCompleted ? "Completed" : "In Progress")
+                            </span>
+                        </p>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+
+    <!-- Diagnosis Notes -->
+    @if (diagnosisNotes != null && diagnosisNotes.Any())
+    {
+        <div class="card mb-3">
+            <div class="card-header bg-warning">
+                <h5 class="mb-0"><i class="fas fa-notes-medical"></i> Diagnosis Notes</h5>
+            </div>
+            <div class="card-body">
+                <div style="max-height: 300px; overflow-y: auto;">
+                    @foreach (var note in diagnosisNotes.OrderByDescending(n => n.CreatedAt))
+                    {
+                        <div class="mb-3 p-3 border rounded">
+                            <p class="mb-1"><strong>@note.CreatedAt.ToString("MMM dd, yyyy hh:mm tt")</strong></p>
+                            <p class="mb-0">@note.Note</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Patient Images -->
+    @if (patientImages != null && patientImages.Any())
+    {
+        <div class="card mb-3">
+            <div class="card-header bg-secondary text-white">
+                <h5 class="mb-0"><i class="fas fa-images"></i> Patient Images</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    @foreach (var image in patientImages)
+                    {
+                        <div class="col-md-4 mb-3">
+                            <img src="@image.FilePath" alt="Patient Image" class="img-thumbnail" style="max-height: 200px; width: 100%; object-fit: cover;" />
+                            <p class="text-muted small mb-0">@image.UploadedAt.ToString("MMM dd, yyyy")</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Action Buttons -->
+    <div class="mt-3 d-flex gap-2">
+        <button type="button" class="btn btn-primary" onclick="editPatient('@Model.Id')">
+            <i class="fas fa-edit"></i> Edit Patient
+        </button>
+        <button type="button" class="btn btn-success" onclick="addPaymentForPatient('@Model.Id', '@Model.FullName')">
+            <i class="fas fa-dollar-sign"></i> Add Payment
+        </button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+            <i class="fas fa-times"></i> Close
+        </button>
+    </div>
+</div>
+
+<script>
+    function editPatient(patientId) {
+        ModalLoader.load(
+            '@Url.Action("Edit", "Patients")/' + patientId,
+            'Edit Patient'
+        );
+    }
+
+    function addPaymentForPatient(patientId, patientName) {
+        ModalLoader.load(
+            '@Url.Action("AddPayment", "Payments")?patientId=' + patientId,
+            'Add Payment: ' + patientName
+        );
+    }
+</script>
+
+<style>
+    .patient-details-partial .card {
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .patient-details-partial .card-header {
+        border-radius: 8px 8px 0 0;
+        padding: 15px;
+    }
+
+    .patient-details-partial p {
+        margin-bottom: 8px;
+    }
+
+    .patient-details-partial strong {
+        color: #374151;
+    }
+</style>

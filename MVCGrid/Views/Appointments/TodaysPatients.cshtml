@@ -2,7 +2,7 @@
 @{
     ViewData["Title"] = "Today's Patients";
     var filterDate = ViewBag.FilterDate as DateTime? ?? DateTime.Today;
-    var isToday = filterDate.Date == DateTime.Today.Date;
+    var isToday = ViewBag.IsToday as bool? ?? true;
 }
 
 <div class="container-fluid todays-patients-page">
@@ -95,6 +95,30 @@
         </div>
     </div>
 
+    <!-- Date Filter Card (Optional - for manual date selection) -->
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <form id="dateFilterForm" class="row align-items-end">
+                        <div class="col-md-4">
+                            <label class="form-label">Select Date:</label>
+                            <input type="date" class="form-control" id="filterDateInput" value="@filterDate.ToString("yyyy-MM-dd")" />
+                        </div>
+                        <div class="col-md-4">
+                            <button type="button" class="btn btn-primary" onclick="filterByDate()">
+                                <i class="fas fa-filter"></i> Filter
+                            </button>
+                            <button type="button" class="btn btn-secondary" onclick="goToToday()">
+                                <i class="fas fa-calendar-day"></i> Today
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Patients Grid -->
     <div class="row">
         <div class="col-12">
@@ -115,12 +139,12 @@
 @section Scripts {
     <script>
         $(document).ready(function() {
-            // Enable auto-refresh every 10 seconds
+            // Enable auto-refresh every 30 seconds (increased from 10 to avoid too frequent refreshes)
             UIHelpers.enableAutoRefresh(
                 'TodaysPatientsGrid',
                 '#gridContainer',
                 '@Url.Action("GetTodaysPatientsGrid")',
-                {}
+                { filterDate: '@filterDate.ToString("yyyy-MM-dd")' }
             );
 
             // Listen for successful modal submissions
@@ -136,8 +160,21 @@
                 }
             });
 
-            console.log('Today\'s Patients page initialized with auto-refresh (10s interval)');
+            console.log('Today\'s Patients page initialized with auto-refresh (30s interval)');
         });
+
+        // Filter by selected date
+        function filterByDate() {
+            var selectedDate = $('#filterDateInput').val();
+            if (selectedDate) {
+                window.location.href = '@Url.Action("TodaysPatients")?filterDate=' + selectedDate;
+            }
+        }
+
+        // Go to today
+        function goToToday() {
+            window.location.href = '@Url.Action("TodaysPatients")';
+        }
 
         // Add New Patient
         function addNewPatient() {
@@ -198,12 +235,51 @@
             );
         }
 
-        // Show Delete Confirmation
-        function showDelete(id) {
-            ModalLoader.load(
-                '@Url.Action("Delete", "Appointments")/' + id,
-                'Delete Appointment'
+        // Delete Appointment - Using toastr warning confirmation
+        function deleteAppointment(id, patientName) {
+            toastr.warning(
+                '<div style="margin-top: 10px;">' +
+                '<p style="margin-bottom: 15px; font-size: 14px;">Delete appointment for <strong>' + patientName + '</strong>?</p>' +
+                '<p style="margin-bottom: 15px; color: #dc3545; font-size: 13px;"><i class="fas fa-exclamation-triangle"></i> This action cannot be undone!</p>' +
+                '<button type="button" class="btn btn-danger btn-sm me-2" onclick="confirmDeleteAppointment(\'' + id + '\')">Yes, Delete</button>' +
+                '<button type="button" class="btn btn-secondary btn-sm" onclick="toastr.clear()">Cancel</button>' +
+                '</div>',
+                'Delete Appointment?',
+                {
+                    closeButton: false,
+                    timeOut: 0,
+                    extendedTimeOut: 0,
+                    tapToDismiss: false,
+                    allowHtml: true,
+                    positionClass: "toast-top-center",
+                    toastClass: "toastr-confirm"
+                }
             );
+        }
+
+        // Confirm Delete Appointment
+        function confirmDeleteAppointment(id) {
+            toastr.clear();
+            
+            $.ajax({
+                url: '@Url.Action("DeleteConfirmed", "Appointments")',
+                type: 'POST',
+                data: {
+                    id: id,
+                    __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                },
+                success: function(response) {
+                    if (response.success) {
+                        toastr.success(response.message);
+                        manualRefresh();
+                    } else {
+                        toastr.error(response.message);
+                    }
+                },
+                error: function() {
+                    toastr.error('Failed to delete appointment. Please try again.');
+                }
+            });
         }
 
         // Show Details
@@ -255,7 +331,12 @@
 
         // Manual Refresh
         function manualRefresh() {
-            UIHelpers.reloadGridPartial('#gridContainer', '@Url.Action("GetTodaysPatientsGrid")');
+            var filterDate = '@filterDate.ToString("yyyy-MM-dd")';
+            UIHelpers.reloadGridPartial(
+                '#gridContainer', 
+                '@Url.Action("GetTodaysPatientsGrid")',
+                { filterDate: filterDate }
+            );
         }
 
         // Cleanup on page unload
@@ -484,6 +565,16 @@
             .stat-number {
                 font-size: 2rem;
             }
+        }
+        
+        /* Custom toastr confirmation styles */
+        .toastr-confirm {
+            width: 400px !important;
+            padding: 20px !important;
+        }
+        
+        .toastr-confirm .toast-message {
+            padding: 0 !important;
         }
     </style>
 }

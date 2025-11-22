@@ -1,6 +1,6 @@
 @model DentalCareManagmentSystem.Application.DTOs.PatientDto
 
-<form id="createForm" onsubmit="return submitForm('createForm', '@Url.Action("Create")')">
+<form asp-action="Create" method="post" id="patientCreateForm">
     @Html.AntiForgeryToken()
     
     <div class="row">
@@ -33,7 +33,7 @@
         <div class="col-md-6">
             <div class="form-group mb-3">
                 <label asp-for="Gender" class="form-label">Gender <span class="text-danger">*</span></label>
-                <select asp-for="Gender" class="form-control" required>
+                <select asp-for="Gender" class="form-select" required>
                     <option value="">-- Select Gender --</option>
                     <option value="Male">Male</option>
                     <option value="Female">Female</option>
@@ -48,12 +48,60 @@
             <i class="fas fa-times"></i> Cancel
         </button>
         <button type="submit" class="btn btn-success">
-            <i class="fas fa-user-plus"></i> Create Patient
+            <i class="fas fa-user-plus"></i> Create Patient & Add Appointment
         </button>
     </div>
 </form>
 
 <script>
-    // Enable client-side validation
-    $.validator.unobtrusive.parse('#createForm');
+    $(document).ready(function() {
+        // Handle form submission
+        $('#patientCreateForm').on('submit', function(e) {
+            e.preventDefault();
+            
+            var $form = $(this);
+            var $submitBtn = $form.find('button[type=submit]');
+            var originalText = $submitBtn.html();
+            
+            // Disable submit button
+            $submitBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Creating...');
+            
+            $.ajax({
+                url: $form.attr('action'),
+                type: 'POST',
+                data: $form.serialize(),
+                success: function(response) {
+                    if (response.success) {
+                        // Show success message
+                        UIHelpers.showAlert(response.message, 'success');
+                        
+                        // Close the modal
+                        ModalLoader.close();
+                        
+                        // ALWAYS open appointment modal after patient is created
+                        if (response.patientId) {
+                            // Wait for modal to close, then open appointment modal
+                            setTimeout(function() {
+                                ModalLoader.load(
+                                    '@Url.Action("Create", "Appointments")?patientId=' + response.patientId,
+                                    'New Appointment for ' + (response.patientName || 'Patient')
+                                );
+                            }, 500);
+                        }
+                        
+                        // Trigger modal success event to refresh grid
+                        $(document).trigger('modalSuccess', [response]);
+                    } else {
+                        // Show validation errors - reload form with errors
+                        $('#globalModalBody').html(response);
+                        $submitBtn.prop('disabled', false).html(originalText);
+                    }
+                },
+                error: function(xhr) {
+                    $submitBtn.prop('disabled', false).html(originalText);
+                    UIHelpers.showAlert('Error creating patient. Please try again.', 'danger');
+                }
+            });
+        });
+    });
 </script>

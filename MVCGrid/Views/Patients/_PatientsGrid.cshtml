@@ -102,8 +102,8 @@
         sb.Append("<i class='fas fa-calendar-plus'></i>");
         sb.Append("</button>");
         
-        // Delete button
-        sb.Append($"<button type='button' onclick='showDelete(\"{model.Id}\")' class='btn btn-danger btn-sm' title='Delete'>");
+        // Delete button - Direct delete with confirmation
+        sb.Append($"<button type='button' onclick='deletePatient(\"{model.Id}\", \"{model.FullName}\")' class='btn btn-danger btn-sm' title='Delete'>");
         sb.Append("<i class='fas fa-trash'></i>");
         sb.Append("</button>");
         
