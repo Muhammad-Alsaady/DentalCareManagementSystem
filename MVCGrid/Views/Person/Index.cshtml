@@ -346,7 +346,7 @@
                     crudModal.show();
                 },
                 error: function() {
-                    showAlert('Failed to load create form', 'error');
+                    toastr.error('Failed to load create form');
                 }
             });
         }
@@ -358,7 +358,7 @@
                 type: 'GET',
                 success: function(result) {
                     if (result.success === false) {
-                        showAlert(result.message, 'error');
+                        toastr.error(result.message);
                         return;
                     }
                     $('#crudModalLabel').html('<i class="fas fa-user-edit"></i> Edit Person');
@@ -366,7 +366,7 @@
                     crudModal.show();
                 },
                 error: function() {
-                    showAlert('Failed to load edit form', 'error');
+                    toastr.error('Failed to load edit form');
                 }
             });
         }
@@ -386,7 +386,7 @@
                     crudModal.show();
                 },
                 error: function() {
-                    showAlert('Failed to load delete confirmation', 'error');
+                    toastr.error('Failed to load delete confirmation');
                 }
             });
         }
@@ -398,7 +398,7 @@
                 type: 'GET',
                 success: function(result) {
                     if (result.success === false) {
-                        showAlert(result.message, 'error');
+                        toastr.error(result.message);
                         return;
                     }
                     $('#crudModalLabel').html('<i class="fas fa-user"></i> Person Details');
@@ -406,7 +406,7 @@
                     crudModal.show();
                 },
                 error: function() {
-                    showAlert('Failed to load details', 'error');
+                    toastr.error('Failed to load details');
                 }
             });
         }
@@ -422,7 +422,7 @@
                 success: function(result) {
                     if (result.success) {
                         crudModal.hide();
-                        showAlert(result.message, 'success');
+                        toastr.success(result.message);
                         refreshGrid();
                     } else {
                         // If validation failed, replace form with errors
@@ -430,7 +430,7 @@
                     }
                 },
                 error: function() {
-                    showAlert('An error occurred while processing your request', 'error');
+                    toastr.error('An error occurred while processing your request');
                 }
             });
             
@@ -448,31 +448,9 @@
                     document.querySelectorAll(".mvc-grid").forEach(el => new MvcGrid(el));
                 },
                 error: function() {
-                    showAlert('Failed to refresh grid', 'error');
+                    toastr.error('Failed to refresh grid');
                 }
             });
-        }
-
-        // Show Alert
-        function showAlert(message, type) {
-            var alertClass = type === 'success' ? 'alert-info' : 'alert-error';
-            var alertHtml = `
-                <div class="alert ${alertClass} alert-dismissible" role="alert">
-                    <button style="color:black" type="button" class="close" data-bs-dismiss="alert" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                    <h5>${message}</h5>
-                </div>
-            `;
-            
-            $('#alertContainer').html(alertHtml);
-            
-            // Auto-hide after 5 seconds
-            setTimeout(function() {
-                $('#alertContainer .alert').fadeOut(function() {
-                    $(this).remove();
-                });
-            }, 5000);
         }
     </script>
 }

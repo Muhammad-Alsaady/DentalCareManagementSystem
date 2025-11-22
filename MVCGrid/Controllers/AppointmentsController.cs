@@ -20,24 +20,19 @@ public class AppointmentsController : Controller
     }
 
     /// <summary>
-    /// Display all appointments with optional filters
+    /// Display all appointments. The grid is AJAX-enabled.
     /// </summary>
-    public IActionResult Index(string searchString)
+    public IActionResult Index()
     {
-        var appointments = _appointmentService.GetAll();
-
-        if (!string.IsNullOrEmpty(searchString))
-        {
-            appointments = appointments.Where(a => a.PatientName != null && a.PatientName.Contains(searchString));
-        }
-
-        return View(appointments.ToList());
+        var appointments = _appointmentService.GetAll().ToList();
+        return View(appointments);
     }
 
     /// <summary>
     /// Get appointments grid partial (for AJAX refresh with filters)
     /// </summary>
     [HttpGet]
+    [NonAction] // This is no longer called directly by our JS, the grid handles it.
     public IActionResult GetAppointmentsGrid(DateTime? date, string status)
     {
         var appointments = _appointmentService.GetAll();
@@ -65,16 +60,16 @@ public class AppointmentsController : Controller
     public IActionResult TodaysPatients(DateTime? filterDate)
     {
         var targetDate = filterDate ?? DateTime.Today;
-        
+
         var todaysAppointments = _appointmentService.GetAll()
-            .Where(a => a.Date.Date == targetDate.Date && 
+            .Where(a => a.Date.Date == targetDate.Date &&
                        (a.Status == "Scheduled" || a.Status == "Completed"))
             .ToList();
-        
+
         // Pass both the date and a flag for display
         ViewBag.FilterDate = targetDate;
         ViewBag.IsToday = targetDate.Date == DateTime.Today.Date;
-        
+
         return View(todaysAppointments);
     }
 
@@ -86,12 +81,12 @@ public class AppointmentsController : Controller
     public IActionResult GetTodaysPatientsGrid(DateTime? filterDate)
     {
         var targetDate = filterDate ?? DateTime.Today;
-        
+
         var todaysAppointments = _appointmentService.GetAll()
-            .Where(a => a.Date.Date == targetDate.Date && 
+            .Where(a => a.Date.Date == targetDate.Date &&
                        (a.Status == "Scheduled" || a.Status == "Completed"))
             .ToList();
-        
+
         return PartialView("_TodaysPatientsGrid", todaysAppointments);
     }
 
@@ -132,7 +127,7 @@ public class AppointmentsController : Controller
         {
             // FORCE status to Scheduled (security measure)
             appointmentDto.Status = "Scheduled";
-            
+
             _appointmentService.Create(appointmentDto);
             return Json(new
             {
@@ -156,7 +151,7 @@ public class AppointmentsController : Controller
         {
             return Json(new { success = false, message = "Appointment not found." });
         }
-        
+
         ViewBag.Patients = new SelectList(_patientService.GetAll(), "Id", "FullName", appointment.PatientId);
         ViewBag.StatusOptions = new SelectList(Enum.GetNames(typeof(AppointmentStatus)), appointment.Status);
         return PartialView("_EditPartial", appointment);
@@ -178,7 +173,7 @@ public class AppointmentsController : Controller
                 message = "Appointment has been updated successfully!"
             });
         }
-        
+
         ViewBag.Patients = new SelectList(_patientService.GetAll(), "Id", "FullName", appointmentDto.PatientId);
         ViewBag.StatusOptions = new SelectList(Enum.GetNames(typeof(AppointmentStatus)), appointmentDto.Status);
         return PartialView("_EditPartial", appointmentDto);
@@ -220,7 +215,12 @@ public class AppointmentsController : Controller
     public IActionResult DeleteConfirmed(Guid id)
     {
         var appointment = _appointmentService.GetById(id);
-        if (appointment != null)
+        if (appointment == null)
+        {
+            return Json(new { success = false, message = "Appointment not found." });
+        }
+
+        try
         {
             _appointmentService.Delete(id);
             return Json(new
@@ -229,7 +229,15 @@ public class AppointmentsController : Controller
                 message = "Appointment has been deleted successfully!"
             });
         }
-        return Json(new { success = false, message = "Appointment not found." });
+        catch (Exception ex)
+        {
+            // In a real app, log the exception ex
+            return Json(new
+            {
+                success = false,
+                message = "Could not delete the appointment. It might be linked to other records."
+            });
+        }
     }
 
     /// <summary>
@@ -251,7 +259,7 @@ public class AppointmentsController : Controller
                 message = $"Status updated to {status} successfully!"
             });
         }
-        
+
         return Json(new { success = false, message = "Invalid status transition." });
     }
 

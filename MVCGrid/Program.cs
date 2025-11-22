@@ -13,7 +13,11 @@ builder.Services.AddDbContext<ClinicDbContext>(options =>
     options.UseSqlServer(connectionString));
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
-builder.Services.AddDefaultIdentity<User>(options => options.SignIn.RequireConfirmedAccount = false)
+builder.Services.AddDefaultIdentity<User>(options => {
+        options.SignIn.RequireConfirmedAccount = false;
+        // Allow sign-in with username or email
+        options.User.RequireUniqueEmail = true;
+    })
     .AddRoles<IdentityRole>()
     .AddEntityFrameworkStores<ClinicDbContext>();
 builder.Services.AddControllersWithViews();
@@ -33,6 +37,21 @@ builder.Services.AddScoped<IPaymentService, PaymentService>();
 builder.Services.AddSignalR();
 
 var app = builder.Build();
+
+// Seed Database with default roles and users
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    try
+    {
+        await DentalCareManagmentSystem.Infrastructure.Data.DbSeeder.SeedDataAsync(services);
+    }
+    catch (Exception ex)
+    {
+        var logger = services.GetRequiredService<ILogger<Program>>();
+        logger.LogError(ex, "An error occurred while seeding the database.");
+    }
+}
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

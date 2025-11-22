@@ -1,0 +1,126 @@
+@model List<DentalCareManagmentSystem.Application.DTOs.TreatmentPlanDto>
+@using NonFactors.Mvc.Grid
+@using System.Text
+
+@{
+    var grid = new Grid<DentalCareManagmentSystem.Application.DTOs.TreatmentPlanDto>(Model)
+    {
+        Name = "TreatmentPlansGrid",
+        Id = "TreatmentPlansGrid",
+        EmptyText = "No treatment plans found",
+        FilterMode = GridFilterMode.Header
+    };
+
+    // Patient Name
+    grid.Columns.Add(model => model.PatientName)
+        .Titled("Patient")
+        .Css("col-patient")
+        .Filterable(true)
+        .Sortable(true);
+
+    // Created Date
+    grid.Columns.Add(model => model.CreatedAt)
+        .Titled("Created")
+        .Formatted("{0:yyyy-MM-dd}")
+        .Css("col-created")
+        .Sortable(true);
+
+    // Created By
+    grid.Columns.Add(model => model.CreatedBy)
+        .Titled("Created By")
+        .Css("col-created-by")
+        .Filterable(true)
+        .Sortable(true);
+
+    // Total Cost
+    grid.Columns.Add(model => model.TotalCost)
+        .Titled("Cost")
+        .Formatted("{0:C}")
+        .Css("text-end col-cost")
+        .Sortable(true);
+
+    // Items Count
+    grid.Columns.Add(model => model.Items.Count)
+        .Titled("Items")
+        .Css("text-center col-items");
+
+    // Status
+    grid.Columns.Add(model => model.IsCompleted)
+        .Titled("Status")
+        .Css("text-center col-status")
+        .Encoded(false)
+        .RenderedAs(model => GetStatusBadge(model.IsCompleted))
+        .Filterable(true)
+        .Sortable(true);
+
+    // Actions
+    grid.Columns.Add(model => model.Id)
+        .Titled("Actions")
+        .Css("text-center col-actions")
+        .Encoded(false)
+        .RenderedAs(model => GetActionButtons(model))
+        .Filterable(false)
+        .Sortable(false);
+
+    grid.Pager = new GridPager<DentalCareManagmentSystem.Application.DTOs.TreatmentPlanDto>(grid)
+    {
+        PartialViewName = "MvcGrid/_Pager",
+        PageSizes = new Dictionary<int, string> { 
+            { 10, "10" }, 
+            { 20, "20" }, 
+            { 50, "50" }, 
+            { 100, "All" }
+        },
+        ShowPageSizes = true,
+        RowsPerPage = 20,
+        PagesToDisplay = 5
+    };
+}
+
+@functions {
+    string GetStatusBadge(bool isCompleted)
+    {
+        if (isCompleted)
+        {
+            return "<span class='badge bg-success'><i class='fas fa-check-circle'></i> Completed</span>";
+        }
+        else
+        {
+            return "<span class='badge bg-warning text-dark'><i class='fas fa-clock'></i> In Progress</span>";
+        }
+    }
+
+    string GetActionButtons(DentalCareManagmentSystem.Application.DTOs.TreatmentPlanDto model)
+    {
+        var sb = new StringBuilder();
+        sb.Append("<div class='btn-group btn-group-sm' role='group'>");
+        
+        // View Details button
+        sb.Append($"<a href='{Url.Action("Details", "TreatmentPlans", new { id = model.Id })}' class='btn btn-info btn-sm' title='View Details'>");
+        sb.Append("<i class='fas fa-eye'></i>");
+        sb.Append("</a>");
+        
+        // Delete button (SystemAdmin only)
+        if (User.IsInRole("SystemAdmin"))
+        {
+            sb.Append($"<button type='button' onclick='deletePlan(\"{model.Id}\")' class='btn btn-danger btn-sm' title='Delete Plan'>");
+            sb.Append("<i class='fas fa-trash'></i>");
+            sb.Append("</button>");
+        }
+        
+        sb.Append("</div>");
+        return sb.ToString();
+    }
+}
+
+@await Html.PartialAsync("MvcGrid/_Grid", grid)
+
+<style>
+    .col-patient { width: 25%; }
+    .col-created { width: 12%; }
+    .col-created-by { width: 18%; }
+    .col-cost { width: 12%; }
+    .col-items { width: 8%; }
+    .col-status { width: 15%; }
+    .col-actions { width: 10%; }
+</style>

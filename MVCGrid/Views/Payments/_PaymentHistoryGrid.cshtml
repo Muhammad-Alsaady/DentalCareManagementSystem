@@ -5,43 +5,48 @@
 @{
     var grid = new Grid<DentalCareManagmentSystem.Application.DTOs.PaymentTransactionDto>(Model)
     {
-        Name = "PaymentHistoryGrid",
-        Id = "PaymentHistoryGrid",
+        Name = "PaymentsGrid",
+        Id = "PaymentsGrid",
         EmptyText = "No payment transactions found",
         FilterMode = GridFilterMode.Header
     };
 
     // Payment Date
     grid.Columns.Add(model => model.PaymentDate)
-        .Titled("Payment Date")
-        .Formatted("{0:dd/MM/yyyy}")
-        .Css("col-payment-date")
-        .Filterable(false)
+        .Titled("Date")
+        .Formatted("{0:yyyy-MM-dd HH:mm}")
+        .Css("col-date")
+        .Filterable(true)
+        .Sortable(true);
+
+    // Patient Name
+    grid.Columns.Add(model => model.PatientName)
+        .Titled("Patient")
+        .Css("col-patient")
+        .Filterable(true)
         .Sortable(true);
 
     // Amount
     grid.Columns.Add(model => model.Amount)
         .Titled("Amount")
         .Formatted("{0:C}")
-        .Css("col-amount text-end")
-        .Filterable(false)
+        .Css("text-end col-amount")
         .Sortable(true);
 
     // Notes
     grid.Columns.Add(model => model.Notes)
         .Titled("Notes")
         .Css("col-notes")
-        .Filterable(false)
-        .Sortable(false);
+        .Filterable(true);
 
     // Created By
     grid.Columns.Add(model => model.CreatedByName)
         .Titled("Received By")
-        .Css("col-created-by")
+        .Css("col-received-by")
         .Filterable(true)
         .Sortable(true);
 
-    // Actions
+    // Actions (if admin)
     if (User.IsInRole("SystemAdmin"))
     {
         grid.Columns.Add(model => model.Id)
@@ -57,12 +62,13 @@
     {
         PartialViewName = "MvcGrid/_Pager",
         PageSizes = new Dictionary<int, string> { 
-            { 10, "10 rows" }, 
-            { 20, "20 rows" }, 
-            { 50, "50 rows" }
+            { 10, "10" }, 
+            { 20, "20" }, 
+            { 50, "50" }, 
+            { 100, "All" }
         },
         ShowPageSizes = true,
-        RowsPerPage = 10,
+        RowsPerPage = 20,
         PagesToDisplay = 5
     };
 }
@@ -71,16 +77,19 @@
     string GetActionButtons(DentalCareManagmentSystem.Application.DTOs.PaymentTransactionDto model)
     {
         var sb = new StringBuilder();
+        sb.Append("<div class='btn-group btn-group-sm' role='group'>");
         
-        sb.Append("<div class='btn-group btn-group-sm'>");
+        // Print Receipt button
         sb.Append($"<a href='{Url.Action("PrintReceipt", "Payments", new { id = model.Id })}' class='btn btn-info btn-sm' target='_blank' title='Print Receipt'>");
         sb.Append("<i class='fas fa-print'></i>");
         sb.Append("</a>");
-        sb.Append($"<button onclick='deletePayment(\"{model.Id}\")' class='btn btn-danger btn-sm' title='Delete Payment'>");
+        
+        // Delete button
+        sb.Append($"<button type='button' onclick='deletePayment(\"{model.Id}\")' class='btn btn-danger btn-sm' title='Delete Payment'>");
         sb.Append("<i class='fas fa-trash'></i>");
         sb.Append("</button>");
-        sb.Append("</div>");
         
+        sb.Append("</div>");
         return sb.ToString();
     }
 }
@@ -88,9 +97,10 @@
 @await Html.PartialAsync("MvcGrid/_Grid", grid)
 
 <style>
-    .col-payment-date { width: 15%; }
-    .col-amount { width: 15%; }
-    .col-notes { width: 35%; }
-    .col-created-by { width: 20%; }
-    .col-actions { width: 15%; }
+    .col-date { width: 15%; }
+    .col-patient { width: 20%; }
+    .col-amount { width: 12%; }
+    .col-notes { width: 25%; }
+    .col-received-by { width: 18%; }
+    .col-actions { width: 10%; }
 </style>

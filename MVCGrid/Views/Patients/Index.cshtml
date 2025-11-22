@@ -1,4 +1,4 @@
-@model List<DentalCareManagmentSystem.Application.DTOs.PatientDto>
+@model IEnumerable<DentalCareManagmentSystem.Application.DTOs.PatientDto>
 @{
     ViewData["Title"] = "Patients";
 }
@@ -7,64 +7,27 @@
 @Html.AntiForgeryToken()
 
 <div class="container-fluid">
-    <!-- Header with Actions -->
-    <div class="row mb-3">
-        <div class="col-md-12">
-            <div class="d-flex justify-content-between align-items-center">
-                <h2><i class="fas fa-users"></i> Patients</h2>
-                <div>
-                    <button class="btn btn-success" onclick="showCreate()">
-                        <i class="fas fa-plus"></i> Add New Patient
-                    </button>
-                </div>
-            </div>
-            <hr />
-        </div>
-    </div>
-
-    <!-- Search -->
-    <div class="row mb-3">
-        <div class="col-md-12">
-            <div class="card shadow-sm">
-                <div class="card-body">
-                    <div class="input-group">
-                        <input type="text" id="searchInput" class="form-control" 
-                               placeholder="Search by name, phone..." 
-                               onkeypress="if(event.keyCode==13) performSearch()" />
-                        <button class="btn btn-primary" onclick="performSearch()">
-                            <i class="fas fa-search"></i> Search
-                        </button>
-                        <button class="btn btn-secondary" onclick="clearSearch()">
-                            <i class="fas fa-times"></i> Clear
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2><i class="fas fa-users me-2"></i>Patients</h2>
+        <button class="btn btn-success" onclick="showCreate()">
+            <i class="fas fa-plus me-1"></i> Add New Patient
+        </button>
     </div>
 
     <!-- Grid -->
-    <div class="row">
-        <div class="col-md-12">
-            <div class="card shadow-sm">
-                <div class="card-body" id="gridContainer">
-                    @await Html.PartialAsync("_PatientsGrid", Model)
-                </div>
-            </div>
+    <div class="card shadow-sm">
+        <div class="card-body" id="gridContainer">
+            @await Html.PartialAsync("_PatientsGrid", Model)
         </div>
     </div>
 </div>
 
 @section Scripts {
     <script>
-        $(document).ready(function() {
-            // Listen for modal success events
-            $(document).on('modalSuccess', function(event, response) {
-                // Refresh the grid when patient is created/updated/deleted
-                refreshGrid();
-            });
-
-            console.log('Patients page initialized');
+        // Reload the grid after a modal form is submitted successfully
+        $(document).on('modalSuccess', function () {
+            refreshGrid();
         });
 
         // Show Create Form using Global Modal
@@ -90,108 +53,81 @@
             );
         }
 
-        // Delete Patient - Using toastr warning confirmation
+        // Delete Patient - Using SweetAlert2 confirmation
         function deletePatient(id, name) {
-            toastr.warning(
-                '<div style="margin-top: 10px;">' +
-                '<p style="margin-bottom: 15px; font-size: 14px;">Are you sure you want to delete <strong>' + name + '</strong>?</p>' +
-                '<p style="margin-bottom: 15px; color: #dc3545; font-size: 13px;"><i class="fas fa-exclamation-triangle"></i> This action cannot be undone!</p>' +
-                '<button type="button" class="btn btn-danger btn-sm me-2" onclick="confirmDeletePatient(\'' + id + '\', \'' + name + '\')">Yes, Delete</button>' +
-                '<button type="button" class="btn btn-secondary btn-sm" onclick="toastr.clear()">Cancel</button>' +
-                '</div>',
-                'Delete Patient?',
-                {
-                    closeButton: false,
-                    timeOut: 0,
-                    extendedTimeOut: 0,
-                    tapToDismiss: false,
-                    allowHtml: true,
-                    positionClass: "toast-top-center",
-                    toastClass: "toastr-confirm"
+            Swal.fire({
+                title: 'Are you sure?',
+                html: `You are about to delete <strong>${name}</strong>.<br/>You won't be able to revert this!`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Yes, delete it!',
+                cancelButtonText: 'Cancel',
+                reverseButtons: true,
+                focusCancel: true
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    confirmDeletePatient(id);
                 }
-            );
+            });
         }
 
         // Confirm Delete Patient
-        function confirmDeletePatient(id, name) {
-            toastr.clear();
-            
+        function confirmDeletePatient(id) {
             $.ajax({
-                url: '@Url.Action("DeleteConfirmed")',
+                url: '@Url.Action("DeleteConfirmed")/' + id,
                 type: 'POST',
                 data: {
-                    id: id,
                     __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
                 },
                 success: function(response) {
                     if (response.success) {
-                        toastr.success(response.message);
+                        Swal.fire({
+                            title: 'Deleted!',
+                            text: response.message || 'Patient has been deleted successfully.',
+                            icon: 'success',
+                            timer: 2000,
+                            showConfirmButton: false
+                        });
                         refreshGrid();
                     } else {
-                        toastr.error(response.message);
+                        Swal.fire({
+                            title: 'Error!',
+                            text: response.message || 'Delete failed! Please try again.',
+                            icon: 'error'
+                        });
                     }
                 },
                 error: function() {
-                    toastr.error('Failed to delete patient. Please try again.');
+                    Swal.fire({
+                        title: 'Error!',
+                        text: 'Delete failed! Please try again.',
+                        icon: 'error'
+                    });
                 }
             });
-        }
-
-        // Perform Search
-        function performSearch() {
-            var searchTerm = $('#searchInput').val();
-            $.ajax({
-                url: '@Url.Action("GetPatientsGrid")',
-                type: 'GET',
-                data: { searchString: searchTerm },
-                beforeSend: function() {
-                    $('#gridContainer').css('opacity', '0.5');
-                },
-                success: function(html) {
-                    $('#gridContainer').html(html).css('opacity', '1');
-                },
-                error: function() {
-                    $('#gridContainer').css('opacity', '1');
-                    toastr.error('Search failed. Please try again.');
-                }
-            });
-        }
-
-        // Clear Search
-        function clearSearch() {
-            $('#searchInput').val('');
-            refreshGrid();
         }
 
         // Refresh Grid
         function refreshGrid() {
-            var searchTerm = $('#searchInput').val();
-            $.ajax({
-                url: '@Url.Action("GetPatientsGrid")',
-                type: 'GET',
-                data: { searchString: searchTerm },
-                beforeSend: function() {
-                    $('#gridContainer').css('opacity', '0.5');
-                },
-                success: function(html) {
-                    $('#gridContainer').html(html).css('opacity', '1');
-                },
-                error: function() {
-                    $('#gridContainer').css('opacity', '1');
-                }
-            });
+            var gridElement = document.getElementById('patients-grid');
+            if (gridElement && typeof MvcGrid !== 'undefined') {
+                new MvcGrid(gridElement).reload();
+            } else {
+                console.error('MvcGrid not found or not loaded');
+                location.reload(); // Fallback: reload entire page
+            }
         }
+
+        // MVC Grid events
+        document.addEventListener('mvc-grid-init', (e) => {
+            const grid = e.detail.grid;
+            if (grid.element.id === 'patients-grid') {
+                grid.element.addEventListener('reloadend', () => {
+                    console.log('Patients grid reloaded.');
+                });
+            }
+        });
     </script>
-    
-    <style>
-        /* Custom toastr confirmation styles */
-        .toastr-confirm {
-            width: 400px !important;
-            padding: 20px !important;
-        }
-        
-        .toastr-confirm .toast-message {
-            padding: 0 !important;
-        }
-    </style>
 }

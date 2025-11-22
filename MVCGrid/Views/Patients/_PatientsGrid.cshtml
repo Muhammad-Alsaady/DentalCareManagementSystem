@@ -1,123 +1,32 @@
-@model List<DentalCareManagmentSystem.Application.DTOs.PatientDto>
+@model IEnumerable<DentalCareManagmentSystem.Application.DTOs.PatientDto>
 @using NonFactors.Mvc.Grid
-@using System.Text
 
-@{
-    var grid = new Grid<DentalCareManagmentSystem.Application.DTOs.PatientDto>(Model)
+@(Html.Grid(Model)
+    .Build(columns =>
     {
-        Name = "PatientsGrid",
-        Id = "PatientsGrid",
-        EmptyText = "No patients found",
-        FilterMode = GridFilterMode.Header
-    };
+        columns.Add(model => model.FullName).Titled("Patient").Filterable(true).Sortable(true);
+        columns.Add(model => model.Phone).Titled("Phone").Filterable(true).Sortable(true);
+        columns.Add(model => model.Age).Titled("Age").Css("text-center").Sortable(true);
+        columns.Add(model => model.Gender).Titled("Gender").Css("text-center").Filterable(true).Sortable(true);
+        columns.Add(model => model.TotalDue).Titled("Total Due").Css("text-end").Encoded(false).Sortable(true)
+            .RenderedAs(model => $"<span class='fw-bold {(model.TotalDue > 0 ? "text-danger" : "text-success")}'>{model.TotalDue:C}</span>");
 
-    // Full Name - 30%
-    grid.Columns.Add(model => model.FullName)
-        .Titled("Full Name")
-        .Css("col-fullname")
-        .Filterable(true)
-        .Sortable(true);
-
-    // Phone - 20%
-    grid.Columns.Add(model => model.Phone)
-        .Titled("Phone")
-        .Css("col-phone")
-        .Filterable(true)
-        .Sortable(true);
-
-    // Age - 12%
-    grid.Columns.Add(model => model.Age)
-        .Titled("Age")
-        .Css("text-center col-age")
-        .Filterable(false)
-        .Sortable(true);
-
-    // Gender - 15%
-    grid.Columns.Add(model => model.Gender)
-        .Titled("Gender")
-        .Css("text-center col-gender")
-        .RenderedAs(model => model?.Gender)
-        .Filterable(true)
-        .Sortable(true);
-
-    // Actions - 23%
-    grid.Columns.Add(model => model.Id)
-        .Titled("Actions")
-        .Css("text-center col-actions")
-        .Encoded(false)
-        .RenderedAs(model => GetActionButtons(model))
-        .Filterable(false)
-        .Sortable(false);
-
-    grid.Pager = new GridPager<DentalCareManagmentSystem.Application.DTOs.PatientDto>(grid)
+        columns.Add(model => model.Id).Titled("Actions").Encoded(false).Filterable(false).Sortable(false)
+            .RenderedAs(model => $@"
+                <div class='btn-group btn-group-sm'>
+                    <button type='button' class='btn btn-info' onclick='showDetails(""{model.Id}"")' title='Patient Details'><i class='fas fa-eye'></i></button>
+                    <button type='button' class='btn btn-primary' onclick='showEdit(""{model.Id}"")' title='Edit Patient'><i class='fas fa-edit'></i></button>
+                    <button type='button' class='btn btn-success' onclick='createAppointment(""{model.Id}"", ""{model.FullName}"")' title='New Appointment'><i class='fas fa-calendar-plus'></i></button>
+                    <button type='button' class='btn btn-danger' onclick='deletePatient(""{model.Id}"", ""{model.FullName}"")' title='Delete Patient'><i class='fas fa-trash'></i></button>
+                </div>");
+    })
+    .Id("patients-grid")
+    .Using(GridFilterMode.Header)
+    .Empty("No patients found")
+    .Pageable(pager =>
     {
-        PartialViewName = "MvcGrid/_Pager",
-        PageSizes = new Dictionary<int, string> { 
-            { 10, "10 rows" }, 
-            { 20, "20 rows" }, 
-            { 50, "50 rows" }, 
-            { 100, "100 rows" }
-        },
-        ShowPageSizes = true,
-        RowsPerPage = 20,
-        PagesToDisplay = 5
-    };
-}
-
-@functions {
-    // string GetGenderBadge(string gender)
-    // {
-    //     var badgeClass = gender?.ToLower() switch
-    //     {
-    //         "male" => "bg-primary",
-    //         "female" => "bg-danger",
-    //         _ => "bg-secondary"
-    //     };
-    //     var icon = gender?.ToLower() switch
-    //     {
-    //         "male" => "<i class='fas fa-mars'></i>",
-    //         "female" => "<i class='fas fa-venus'></i>",
-    //         _ => ""
-    //     };
-    //     return $"<span class='badge {badgeClass}'>{icon} {gender}</span>";
-    // }
-
-    string GetActionButtons(DentalCareManagmentSystem.Application.DTOs.PatientDto model)
-    {
-        var sb = new StringBuilder();
-        sb.Append("<div class='btn-group btn-group-sm' role='group'>");
-        
-        // Details button
-        sb.Append($"<button type='button' onclick='showDetails(\"{model.Id}\")' class='btn btn-info btn-sm' title='View Details'>");
-        sb.Append("<i class='fas fa-eye'></i>");
-        sb.Append("</button>");
-        
-        // Edit button
-        sb.Append($"<button type='button' onclick='showEdit(\"{model.Id}\")' class='btn btn-primary btn-sm' title='Edit'>");
-        sb.Append("<i class='fas fa-edit'></i>");
-        sb.Append("</button>");
-        
-        // Create Appointment button
-        sb.Append($"<button type='button' onclick='createAppointment(\"{model.Id}\", \"{model.FullName}\")' class='btn btn-success btn-sm' title='Create Appointment'>");
-        sb.Append("<i class='fas fa-calendar-plus'></i>");
-        sb.Append("</button>");
-        
-        // Delete button - Direct delete with confirmation
-        sb.Append($"<button type='button' onclick='deletePatient(\"{model.Id}\", \"{model.FullName}\")' class='btn btn-danger btn-sm' title='Delete'>");
-        sb.Append("<i class='fas fa-trash'></i>");
-        sb.Append("</button>");
-        
-        sb.Append("</div>");
-        return sb.ToString();
-    }
-}
-
-@await Html.PartialAsync("MvcGrid/_Grid", grid)
-
-<style>
-    .col-fullname { width: 30%; }
-    .col-phone { width: 20%; }
-    .col-age { width: 12%; }
-    .col-gender { width: 15%; }
-    .col-actions { width: 23%; }
-</style>
+        pager.PageSizes = new Dictionary<int, string> { { 0, "All" }, { 10, "10" }, { 20, "20" }, { 50, "50" } };
+        pager.ShowPageSizes = true;
+        pager.RowsPerPage = 20;
+    })
+)

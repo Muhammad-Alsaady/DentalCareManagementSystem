@@ -31,28 +31,14 @@ public class PatientsController : Controller
     }
 
 
-    public IActionResult Index(string searchString)
+    public IActionResult Index()
     {
-        var patients = _patientService.GetAll();
-
-        if (!String.IsNullOrEmpty(searchString))
-        {
-            patients = patients.Where(s => (s.FullName != null && s.FullName.Contains(searchString)) || (s.Phone != null && s.Phone.Contains(searchString)));
-        }
-
-        var patientDtos = patients.Select(p => new PatientDto
-        {
-            Id = p.Id,
-            FullName = p.FullName,
-            Phone = p.Phone,
-            Age = p.Age,
-            Gender = p.Gender.ToString()
-        }).ToList();
-
-        return View(patientDtos);
+        var patients = _patientService.GetPatientsWithTotalDue();
+        return View(patients);
     }
 
     [HttpGet]
+    [NonAction] // No longer used directly, the grid's AJAX calls the Index action.
     public IActionResult GetPatientsGrid(string searchString)
     {
         var patients = _patientService.GetPatientsWithTotalDue().ToList();
@@ -136,7 +122,12 @@ public class PatientsController : Controller
     public IActionResult DeleteConfirmed(Guid id)
     {
         var patient = _patientService.GetById(id);
-        if (patient != null)
+        if (patient == null)
+        {
+            return Json(new { success = false, message = "Patient not found." });
+        }
+
+        try
         {
             _patientService.Delete(id);
             return Json(new { 
@@ -144,7 +135,14 @@ public class PatientsController : Controller
                 message = $"Patient '{patient.FullName}' has been deleted successfully!" 
             });
         }
-        return Json(new { success = false, message = "Patient not found." });
+        catch (Exception ex) // In a real app, you might catch a specific DbUpdateException
+        {
+            // Log the exception ex
+            return Json(new { 
+                success = false, 
+                message = $"Could not delete patient '{patient.FullName}'. They may have existing appointments or payments." 
+            });
+        }
     }
 
     public IActionResult Details(Guid id)

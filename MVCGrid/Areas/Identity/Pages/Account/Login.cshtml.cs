@@ -31,8 +31,8 @@ namespace MVCGrid.Areas.Identity.Pages.Account
         public class InputModel
         {
             [Required]
-            [EmailAddress]
-            public string Email { get; set; }
+            [Display(Name = "Email or Username")]
+            public string EmailOrUsername { get; set; }
 
             [Required]
             [DataType(DataType.Password)]
@@ -67,9 +67,23 @@ namespace MVCGrid.Areas.Identity.Pages.Account
 
             if (ModelState.IsValid)
             {
-                // This doesn't count login failures towards account lockout
-                // To enable password failures to trigger account lockout, set lockoutOnFailure: true
-                var result = await _signInManager.PasswordSignInAsync(Input.Email, Input.Password, Input.RememberMe, lockoutOnFailure: false);
+                // Determine if input is email or username
+                var userName = Input.EmailOrUsername;
+                
+                // If input looks like an email, find the username by email
+                if (Input.EmailOrUsername.Contains("@"))
+                {
+                    var userManager = _signInManager.UserManager;
+                    var user = await userManager.FindByEmailAsync(Input.EmailOrUsername);
+                    if (user != null)
+                    {
+                        userName = user.UserName;
+                    }
+                }
+
+                // Try to sign in with username
+                var result = await _signInManager.PasswordSignInAsync(userName, Input.Password, Input.RememberMe, lockoutOnFailure: false);
+                
                 if (result.Succeeded)
                 {
                     _logger.LogInformation("User logged in.");

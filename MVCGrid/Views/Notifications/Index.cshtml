@@ -198,7 +198,7 @@
         // Update Paid Amount
         function updatePaidAmount(appointmentId, paidAmount) {
             if (!paidAmount || paidAmount < 0) {
-                showAlert('Invalid paid amount', 'error');
+                toastr.error('Invalid paid amount');
                 return;
             }
 
@@ -212,7 +212,7 @@
                 },
                 success: function(response) {
                     if (response.success) {
-                        showAlert(response.message, 'success');
+                        toastr.success(response.message);
                         // Update the remainder display
                         $('#remainder-' + appointmentId).text('$' + response.remainder.toFixed(2));
                         
@@ -225,12 +225,12 @@
                             remainderElement.addClass('text-success');
                         }
                     } else {
-                        showAlert(response.message, 'error');
+                        toastr.error(response.message);
                     }
                 },
                 error: function(xhr) {
                     console.error('Error updating paid amount:', xhr);
-                    showAlert('Failed to update paid amount', 'error');
+                    toastr.error('Failed to update paid amount');
                 }
             });
         }
@@ -257,7 +257,7 @@
                 },
                 error: function(xhr) {
                     console.error('Error filtering appointments:', xhr);
-                    showAlert('Failed to filter appointments', 'error');
+                    toastr.error('Failed to filter appointments');
                 }
             });
         }
@@ -275,7 +275,7 @@
                 },
                 error: function(xhr) {
                     console.error('Error loading patient form:', xhr);
-                    showAlert('Failed to load patient form', 'error');
+                    toastr.error('Failed to load patient form');
                 }
             });
         }
@@ -300,7 +300,7 @@
                 },
                 error: function(xhr) {
                     console.error('Error loading appointment form:', xhr);
-                    showAlert('Failed to load appointment form', 'error');
+                    toastr.error('Failed to load appointment form');
                 }
             });
         }
@@ -323,16 +323,16 @@
                     },
                     success: function(response) {
                         if (response.success) {
-                            showAlert(response.message, 'success');
+                            toastr.success(response.message);
                             refreshGrid();
                             loadQueue();
                         } else {
-                            showAlert(response.message, 'error');
+                            toastr.error(response.message);
                         }
                     },
                     error: function(xhr) {
                         console.error('Error completing appointment:', xhr);
-                        showAlert('Failed to complete appointment', 'error');
+                        toastr.error('Failed to complete appointment');
                     }
                 });
             }
@@ -376,7 +376,7 @@
                 },
                 error: function(xhr) {
                     console.error('Error loading queue:', xhr);
-                    showAlert('Failed to load queue', 'error');
+                    toastr.error('Failed to load queue');
                 }
             });
         }
@@ -406,30 +406,9 @@
                 },
                 error: function(xhr) {
                     console.error('Error refreshing grid:', xhr);
-                    showAlert('Failed to refresh grid', 'error');
+                    toastr.error('Failed to refresh grid');
                 }
             });
-        }
-
-        // Show Alert
-        function showAlert(message, type) {
-            var alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
-            var iconClass = type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle';
-            var alertHtml = `
-                <div class="alert ${alertClass} alert-dismissible fade show" role="alert">
-                    <i class="fas ${iconClass}"></i> ${message}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                </div>
-            `;
-            
-            $('#alertContainer').html(alertHtml);
-            
-            // Auto-hide after 5 seconds
-            setTimeout(function() {
-                $('#alertContainer .alert').fadeOut(function() {
-                    $(this).remove();
-                });
-            }, 5000);
         }
 
         // Handle form submissions in modal
@@ -446,7 +425,7 @@
                 contentType: false,
                 success: function(response) {
                     if (response.success) {
-                        showAlert(response.message, 'success');
+                        toastr.success(response.message);
                         bootstrap.Modal.getInstance(document.getElementById('actionModal')).hide();
                         refreshGrid();
                     } else {
@@ -455,7 +434,7 @@
                 },
                 error: function(xhr) {
                     console.error('Error submitting form:', xhr);
-                    showAlert('Failed to submit form', 'error');
+                    toastr.error('Failed to submit form');
                 }
             });
         });

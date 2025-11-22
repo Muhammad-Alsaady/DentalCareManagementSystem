@@ -36,6 +36,7 @@ public class PaymentsController : Controller
     /// Get payments grid partial (for AJAX refresh)
     /// </summary>
     [HttpGet]
+    [NonAction]
     public IActionResult GetPaymentsGrid(DateTime? startDate = null, DateTime? endDate = null)
     {
         var payments = _paymentService.GetAllPayments(startDate, endDate);

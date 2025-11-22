@@ -1,8 +1,6 @@
-@model List<DentalCareManagmentSystem.Application.DTOs.AppointmentDto>
+@model IEnumerable<DentalCareManagmentSystem.Application.DTOs.AppointmentDto>
 @{
     ViewData["Title"] = "Appointments";
-    var selectedDate = ViewBag.SelectedDate as DateTime? ?? DateTime.Today;
-    var selectedStatus = ViewBag.SelectedStatus as string ?? "";
 }
 
 @* Anti-forgery token for delete operations *@
@@ -10,87 +8,26 @@
 
 <div class="container-fluid">
     <!-- Header -->
-    <div class="row mb-3">
-        <div class="col-md-12">
-            <div class="d-flex justify-content-between align-items-center">
-                <h2><i class="fas fa-calendar-alt"></i> Appointments</h2>
-                <div>
-                    <button class="btn btn-success" onclick="showCreate()">
-                        <i class="fas fa-plus"></i> New Appointment
-                    </button>
-                </div>
-            </div>
-            <hr />
-        </div>
-    </div>
-
-    <!-- Filters -->
-    <div class="row mb-3">
-        <div class="col-md-12">
-            <div class="card shadow-sm">
-                <div class="card-body">
-                    <form id="filterForm" class="row g-3">
-                        <div class="col-md-4">
-                            <label class="form-label">Date</label>
-                            <input type="date" id="filterDate" class="form-control" 
-                                   value="@selectedDate.ToString("yyyy-MM-dd")" />
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label">Status</label>
-                            <select id="filterStatus" class="form-select">
-                                <option value="">All</option>
-                                <option value="Scheduled" selected="@(selectedStatus == "Scheduled")">Scheduled</option>
-                                <option value="Notified" selected="@(selectedStatus == "Notified")">Notified</option>
-                                <option value="Completed" selected="@(selectedStatus == "Completed")">Completed</option>
-                                <option value="Cancelled" selected="@(selectedStatus == "Cancelled")">Cancelled</option>
-                            </select>
-                        </div>
-                        <div class="col-md-4 d-flex align-items-end">
-                            <button type="button" class="btn btn-primary me-2" onclick="applyFilters()">
-                                <i class="fas fa-filter"></i> Apply
-                            </button>
-                            <button type="button" class="btn btn-secondary" onclick="clearFilters()">
-                                <i class="fas fa-times"></i> Clear
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2><i class="fas fa-calendar-alt me-2"></i>Appointments</h2>
+        <button class="btn btn-success" onclick="showCreate()">
+            <i class="fas fa-plus me-1"></i> New Appointment
+        </button>
     </div>
 
     <!-- Grid -->
-    <div class="row">
-        <div class="col-md-12">
-            <div class="card shadow-sm">
-                <div class="card-body" id="gridContainer">
-                    @await Html.PartialAsync("_AppointmentsGrid", Model)
-                </div>
-            </div>
+    <div class="card shadow-sm">
+        <div class="card-body" id="gridContainer">
+            @await Html.PartialAsync("_AppointmentsGrid", Model)
         </div>
     </div>
 </div>
 
 @section Scripts {
     <script>
-        $(document).ready(function() {
-            // Enable auto-refresh every 30 seconds
-            UIHelpers.enableAutoRefresh(
-                'AppointmentsGrid',
-                '#gridContainer',
-                '@Url.Action("GetAppointmentsGrid")',
-                {
-                    date: $('#filterDate').val(),
-                    status: $('#filterStatus').val()
-                }
-            );
-
-            // Listen for modal success events
-            $(document).on('modalSuccess', function(event, response) {
-                refreshAppointments();
-            });
-
-            console.log('Appointments page initialized');
+        // Reload the grid after a modal form is submitted successfully
+        $(document).on('modalSuccess', function () {
+            refreshGrid();
         });
 
         // Show Create Form using Global Modal
@@ -102,149 +39,104 @@
         function showEdit(id) {
             ModalLoader.load('@Url.Action("Edit")/' + id, 'Edit Appointment');
         }
-
-        // Delete Appointment - Using toastr warning confirmation
-        function deleteAppointment(id, patientName) {
-            toastr.warning(
-                '<div style="margin-top: 10px;">' +
-                '<p style="margin-bottom: 15px; font-size: 14px;">Delete appointment for <strong>' + patientName + '</strong>?</p>' +
-                '<p style="margin-bottom: 15px; color: #dc3545; font-size: 13px;"><i class="fas fa-exclamation-triangle"></i> This action cannot be undone!</p>' +
-                '<button type="button" class="btn btn-danger btn-sm me-2" onclick="confirmDeleteAppointment(\'' + id + '\')">Yes, Delete</button>' +
-                '<button type="button" class="btn btn-secondary btn-sm" onclick="toastr.clear()">Cancel</button>' +
-                '</div>',
-                'Delete Appointment?',
-                {
-                    closeButton: false,
-                    timeOut: 0,
-                    extendedTimeOut: 0,
-                    tapToDismiss: false,
-                    allowHtml: true,
-                    positionClass: "toast-top-center",
-                    toastClass: "toastr-confirm"
-                }
-            );
-        }
-
-        // Confirm Delete Appointment
-        function confirmDeleteAppointment(id) {
-            toastr.clear();
-            
-            $.ajax({
-                url: '@Url.Action("DeleteConfirmed")',
-                type: 'POST',
-                data: {
-                    id: id,
-                    __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
-                },
-                success: function(response) {
-                    if (response.success) {
-                        toastr.success(response.message);
-                        refreshAppointments();
-                    } else {
-                        toastr.error(response.message);
-                    }
-                },
-                error: function() {
-                    toastr.error('Failed to delete appointment. Please try again.');
-                }
-            });
-        }
-
+        
         // Show Details using Global Modal
         function showDetails(id) {
             ModalLoader.load('@Url.Action("Details")/' + id, 'Appointment Details');
         }
 
+        // Delete Appointment - Using SweetAlert2 confirmation
+        function deleteAppointment(id, patientName) {
+            Swal.fire({
+                title: 'Are you sure?',
+                html: `You are about to delete the appointment for <strong>${patientName}</strong>.<br/>You won't be able to revert this!`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Yes, delete it!',
+                cancelButtonText: 'Cancel',
+                reverseButtons: true,
+                focusCancel: true
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    confirmDeleteAppointment(id);
+                }
+            });
+        }
+
+        // Confirm Delete Appointment
+        function confirmDeleteAppointment(id) {
+            $.ajax({
+                url: '@Url.Action("DeleteConfirmed")/' + id,
+                type: 'POST',
+                data: {
+                    __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                },
+                success: function(response) {
+                    if (response.success) {
+                        Swal.fire({
+                            title: 'Deleted!',
+                            text: response.message || 'Appointment has been deleted successfully.',
+                            icon: 'success',
+                            timer: 2000,
+                            showConfirmButton: false
+                        });
+                        refreshGrid();
+                    } else {
+                        Swal.fire({
+                            title: 'Error!',
+                            text: response.message || 'Delete failed! Please try again.',
+                            icon: 'error'
+                        });
+                    }
+                },
+                error: function() {
+                    Swal.fire({
+                        title: 'Error!',
+                        text: 'Delete failed! Please try again.',
+                        icon: 'error'
+                    });
+                }
+            });
+        }
+
         // Update Status
         function updateStatus(id, status) {
-            toastr.warning(
-                '<div style="margin-top: 10px;">' +
-                '<p style="margin-bottom: 15px; font-size: 14px;">Change status to <strong>' + status + '</strong>?</p>' +
-                '<button type="button" class="btn btn-primary btn-sm me-2" onclick="confirmUpdateStatus(\'' + id + '\', \'' + status + '\')">Yes, Change</button>' +
-                '<button type="button" class="btn btn-secondary btn-sm" onclick="toastr.clear()">Cancel</button>' +
-                '</div>',
-                'Update Status?',
-                {
-                    closeButton: false,
-                    timeOut: 0,
-                    extendedTimeOut: 0,
-                    tapToDismiss: false,
-                    allowHtml: true,
-                    positionClass: "toast-top-center",
-                    toastClass: "toastr-confirm"
-                }
-            );
+            UIHelpers.showConfirmation('Update Status?', `Change status to <strong>${status}</strong>?`, function () {
+                confirmUpdateStatus(id, status);
+            }, 'btn-primary');
         }
 
         function confirmUpdateStatus(id, status) {
-            toastr.clear();
             UIHelpers.ajaxAction(
                 '@Url.Action("UpdateStatus")',
                 { id: id, status: status },
                 function(response) {
-                    refreshAppointments();
+                    // On success, the grid will be refreshed by the global handler
+                    refreshGrid();
                 }
             );
         }
 
-        // Apply Filters
-        function applyFilters() {
-            const date = $('#filterDate').val();
-            const status = $('#filterStatus').val();
-            
-            // Update grid with filters
-            $.ajax({
-                url: '@Url.Action("GetAppointmentsGrid")',
-                type: 'GET',
-                data: { date: date, status: status },
-                beforeSend: function() {
-                    $('#gridContainer').css('opacity', '0.5');
-                },
-                success: function(html) {
-                    $('#gridContainer').html(html).css('opacity', '1');
-                },
-                error: function() {
-                    $('#gridContainer').css('opacity', '1');
-                    toastr.error('Failed to apply filters.');
-                }
+        // Refresh Appointments Grid
+        function refreshGrid() {
+            var gridElement = document.getElementById('AppointmentsGrid');
+            if (gridElement && typeof MvcGrid !== 'undefined') {
+                new MvcGrid(gridElement).reload();
+            } else {
+                console.error('MvcGrid not found or not loaded');
+                location.reload(); // Fallback: reload entire page
+            }
+        }
+
+        // MVC Grid events
+        document.addEventListener('mvc-grid-init', (e) => {
+            const grid = e.detail.grid;
+            grid.element.addEventListener('reloadend', () => {
+                // You can add any logic here that needs to run after the grid reloads
+                console.log('Appointments grid reloaded.');
             });
-
-            // Update auto-refresh with new filters
-            UIHelpers.enableAutoRefresh(
-                'AppointmentsGrid',
-                '#gridContainer',
-                '@Url.Action("GetAppointmentsGrid")',
-                { date: date, status: status }
-            );
-        }
-
-        // Clear Filters
-        function clearFilters() {
-            $('#filterDate').val('@DateTime.Today.ToString("yyyy-MM-dd")');
-            $('#filterStatus').val('');
-            applyFilters();
-        }
-
-        // Refresh Appointments
-        function refreshAppointments() {
-            applyFilters();
-        }
-
-        // Cleanup on page unload
-        $(window).on('beforeunload', function() {
-            UIHelpers.disableAutoRefresh('AppointmentsGrid');
         });
     </script>
-    
-    <style>
-        /* Custom toastr confirmation styles */
-        .toastr-confirm {
-            width: 400px !important;
-            padding: 20px !important;
-        }
-        
-        .toastr-confirm .toast-message {
-            padding: 0 !important;
-        }
-    </style>
 }

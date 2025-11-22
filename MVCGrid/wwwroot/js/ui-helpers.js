@@ -3,6 +3,14 @@
  * Provides AJAX form handling, grid refresh, and alert management
  */
 
+// Configure toastr globally
+toastr.options = {
+    "closeButton": true,
+    "progressBar": true,
+    "positionClass": "toast-top-right",
+    "timeOut": "3000"
+};
+
 // Global configuration
 const UIHelpers = {
     autoRefreshInterval: 15000, // 15 seconds
@@ -243,14 +251,30 @@ const UIHelpers = {
     },
 
     /**
-     * Confirm action with custom message
+     * Confirm action with SweetAlert2
+     * @param {string} title - The title of the confirmation
      * @param {string} message - Confirmation message
      * @param {function} onConfirm - Callback if user confirms
+     * @param {string} confirmButtonClass - CSS class for confirm button (not used in Swal, kept for compatibility)
      */
-    confirm: function(message, onConfirm) {
-        if (confirm(message)) {
-            onConfirm();
-        }
+    showConfirmation: function(title, message, onConfirm, confirmButtonClass) {
+        Swal.fire({
+            title: title || 'Confirm Action',
+            html: message,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Yes, proceed',
+            cancelButtonText: 'Cancel',
+            reverseButtons: true
+        }).then((result) => {
+            if (result.isConfirmed) {
+                if (onConfirm) {
+                    onConfirm();
+                }
+            }
+        });
     },
 
     /**
@@ -279,6 +303,127 @@ const UIHelpers = {
             },
             error: function() {
                 UIHelpers.showAlert('Action failed.', 'danger');
+            }
+        });
+    },
+
+    /**
+     * Shows a toastr confirmation dialog.
+     * @param {string} title - The title of the confirmation.
+     * @param {string} message - The message/question to ask.
+     * @param {function} onConfirm - The function to call when the user clicks 'Yes'.
+     * @param {string} confirmButtonClass - CSS class for the confirm button.
+     * @param {string} confirmButtonText - Optional text for the confirm button.
+     * @param {string} cancelButtonText - Optional text for the cancel button.
+     */
+    showConfirmation: function(title, message, onConfirm, confirmButtonClass, confirmButtonText, cancelButtonText) {
+        confirmButtonText = confirmButtonText || 'Yes';
+        cancelButtonText = cancelButtonText || 'Cancel';
+        confirmButtonClass = confirmButtonClass || 'btn-primary';
+
+        const buttons = `
+            <div class="mt-3 text-center">
+                <button type="button" class="btn ${confirmButtonClass} btn-sm me-2" id="toastr-confirm-btn">${confirmButtonText}</button>
+                <button type="button" class="btn btn-secondary btn-sm" id="toastr-cancel-btn">${cancelButtonText}</button>
+            </div>`;
+
+        // Show the toast
+        const toastrInstance = toastr.warning(message + buttons, title, {
+            closeButton: false,
+            timeOut: 0,
+            extendedTimeOut: 0,
+            tapToDismiss: false,
+            allowHtml: true,
+            preventDuplicates: true,
+            positionClass: "toast-top-center",
+            toastClass: "toastr-confirm",
+            onShown: function(toast) {
+                const confirmBtn = toast.find('#toastr-confirm-btn');
+                const cancelBtn = toast.find('#toastr-cancel-btn');
+
+                confirmBtn.on('click', function() {
+                    if (onConfirm) {
+                        onConfirm();
+                    }
+                    toastr.clear(toast);
+                });
+
+                cancelBtn.on('click', function() {
+                    toastr.clear(toast);
+                });
+            }
+        });
+    },
+
+    /**
+     * Shows a standardized delete confirmation dialog using SweetAlert2.
+     * @param {string} title - The title of the confirmation.
+     * @param {string} message - The message/question to ask.
+     * @param {function} onConfirm - The function to call when the user clicks 'Yes, Delete'.
+     */
+    showDeleteConfirmation: function(title, message, onConfirm) {
+        Swal.fire({
+            title: title || 'Are you sure?',
+            html: message || "You won't be able to revert this!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: 'Yes, delete it!',
+            cancelButtonText: 'Cancel',
+            reverseButtons: true,
+            focusCancel: true
+        }).then((result) => {
+            if (result.isConfirmed) {
+                if (onConfirm) {
+                    onConfirm();
+                }
+            }
+        });
+    },
+
+    /**
+     * Standardized delete function with toastr confirmation
+     * @param {string} url - The URL to post the delete request to
+     * @param {string} rowId - The ID of the row/item to delete (optional, for fadeOut)
+     * @param {string} gridName - The name of the MVC Grid to reload (optional)
+     * @param {string} itemName - The name of the item being deleted (for messages)
+     */
+    deleteItem: function(url, rowId, gridName, itemName) {
+        itemName = itemName || 'item';
+        
+        if (!confirm(`Are you sure you want to delete this ${itemName}?`)) {
+            return;
+        }
+
+        $.ajax({
+            url: url,
+            type: 'POST',
+            data: {
+                __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+            },
+            success: function(response) {
+                if (response.success) {
+                    toastr.success(response.message || 'Deleted successfully!');
+
+                    // Remove row with fade effect if rowId provided
+                    if (rowId) {
+                        $("#row-" + rowId).fadeOut(300);
+                    }
+
+                    // Reload MVC Grid if gridName provided
+                    if (gridName && typeof MvcGrid !== 'undefined') {
+                        const gridElement = document.getElementById(gridName);
+                        if (gridElement) {
+                            new MvcGrid(gridElement).reload();
+                        }
+                    }
+                } else {
+                    toastr.error(response.message || 'Delete failed! Please try again.');
+                }
+            },
+            error: function() {
+                toastr.error('Delete failed! Please try again.');
             }
         });
     },

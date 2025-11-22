@@ -1,55 +1,106 @@
-@model List<DentalCareManagmentSystem.Application.DTOs.PaymentTransactionDto>
+@model IEnumerable<DentalCareManagmentSystem.Application.DTOs.PaymentTransactionDto>
 @{
     ViewData["Title"] = "Payment History";
 }
 
+@* Anti-forgery token for delete operations *@
+@Html.AntiForgeryToken()
+
 <div class="container-fluid">
-    <div class="row mb-3">
-        <div class="col-md-12">
-            <div class="d-flex justify-content-between align-items-center">
-                <h2><i class="fas fa-money-bill-wave"></i> Payment History</h2>
-                <div>
-                    <button class="btn btn-outline-primary" onclick="UIHelpers.reloadGridPartial('#gridContainer', '@Url.Action("GetPaymentsGrid")')">
-                        <i class="fas fa-sync-alt"></i> Refresh
-                    </button>
-                </div>
-            </div>
-            <hr />
-        </div>
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2><i class="fas fa-money-bill-wave me-2"></i>Payment History</h2>
+        <button class="btn btn-success" onclick="showAddPayment()">
+            <i class="fas fa-plus me-1"></i> Add Payment
+        </button>
     </div>
 
-    <div class="row">
-        <div class="col-md-12">
-            <div class="card shadow-sm">
-                <div class="card-body" id="gridContainer">
-                    @await Html.PartialAsync("_PaymentHistoryGrid", Model)
-                </div>
-            </div>
+    <!-- Grid -->
+    <div class="card shadow-sm">
+        <div class="card-body" id="gridContainer">
+            @await Html.PartialAsync("_PaymentHistoryGrid", Model)
         </div>
     </div>
 </div>
 
 @section Scripts {
     <script>
-        $(document).ready(function() {
-            // Enable auto-refresh every 15 seconds
-            UIHelpers.enableAutoRefresh(
-                'PaymentHistoryGrid',
-                '#gridContainer',
-                '@Url.Action("GetPaymentsGrid")'
-            );
+        // Reload the grid after a modal form is submitted successfully
+        $(document).on('modalSuccess', function () {
+            refreshGrid();
         });
 
-        function deletePayment(paymentId) {
-            UIHelpers.loadModal(
-                '@Url.Action("DeletePayment", "Payments")' + '?id=' + paymentId,
-                'Delete Payment'
-            );
+        // Show Add Payment Form using Global Modal
+        function showAddPayment() {
+            ModalLoader.load('@Url.Action("AddPayment")', 'Add Payment');
         }
 
-        // Cleanup on page unload
-        $(window).on('beforeunload', function() {
-            UIHelpers.disableAutoRefresh('PaymentHistoryGrid');
-        });
+        // Delete Payment - Using SweetAlert2 confirmation
+        function deletePayment(id) {
+            Swal.fire({
+                title: 'Are you sure?',
+                html: 'You are about to delete this payment record.<br/>You won\'t be able to revert this!',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Yes, delete it!',
+                cancelButtonText: 'Cancel',
+                reverseButtons: true,
+                focusCancel: true
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    confirmDeletePayment(id);
+                }
+            });
+        }
+
+        // Confirm Delete Payment
+        function confirmDeletePayment(id) {
+            $.ajax({
+                url: '@Url.Action("DeletePaymentConfirmed")',
+                type: 'POST',
+                data: {
+                    id: id,
+                    __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                },
+                success: function(response) {
+                    if (response.success) {
+                        Swal.fire({
+                            title: 'Deleted!',
+                            text: response.message || 'Payment has been deleted successfully.',
+                            icon: 'success',
+                            timer: 2000,
+                            showConfirmButton: false
+                        });
+                        refreshGrid();
+                    } else {
+                        Swal.fire({
+                            title: 'Error!',
+                            text: response.message || 'Delete failed! Please try again.',
+                            icon: 'error'
+                        });
+                    }
+                },
+                error: function() {
+                    Swal.fire({
+                        title: 'Error!',
+                        text: 'Delete failed! Please try again.',
+                        icon: 'error'
+                    });
+                }
+            });
+        }
+
+        // Refresh Grid
+        function refreshGrid() {
+            const gridElement = document.getElementById('PaymentHistoryGrid');
+            if (gridElement && typeof MvcGrid !== 'undefined') {
+                new MvcGrid(gridElement).reload();
+            } else {
+                console.error('MvcGrid not found or not loaded');
+                location.reload(); // Fallback: reload entire page
+            }
+        }
     </script>
 }

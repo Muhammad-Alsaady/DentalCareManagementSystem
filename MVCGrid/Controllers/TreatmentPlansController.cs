@@ -33,7 +33,7 @@ public class TreatmentPlansController : Controller
     [HttpGet]
     public IActionResult Index()
     {
-        var treatmentPlans = _treatmentPlanService.GetAll().ToList();
+        var treatmentPlans = _treatmentPlanService.GetAll();
         return View(treatmentPlans);
     }
 

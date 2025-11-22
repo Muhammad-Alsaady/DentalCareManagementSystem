@@ -235,49 +235,58 @@
             );
         }
 
-        // Delete Appointment - Using toastr warning confirmation
+        // Delete Appointment - Using SweetAlert2 confirmation
         function deleteAppointment(id, patientName) {
-            toastr.warning(
-                '<div style="margin-top: 10px;">' +
-                '<p style="margin-bottom: 15px; font-size: 14px;">Delete appointment for <strong>' + patientName + '</strong>?</p>' +
-                '<p style="margin-bottom: 15px; color: #dc3545; font-size: 13px;"><i class="fas fa-exclamation-triangle"></i> This action cannot be undone!</p>' +
-                '<button type="button" class="btn btn-danger btn-sm me-2" onclick="confirmDeleteAppointment(\'' + id + '\')">Yes, Delete</button>' +
-                '<button type="button" class="btn btn-secondary btn-sm" onclick="toastr.clear()">Cancel</button>' +
-                '</div>',
-                'Delete Appointment?',
-                {
-                    closeButton: false,
-                    timeOut: 0,
-                    extendedTimeOut: 0,
-                    tapToDismiss: false,
-                    allowHtml: true,
-                    positionClass: "toast-top-center",
-                    toastClass: "toastr-confirm"
+            Swal.fire({
+                title: 'Are you sure?',
+                html: `You are about to delete the appointment for <strong>${patientName}</strong>.<br/>You won't be able to revert this!`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Yes, delete it!',
+                cancelButtonText: 'Cancel',
+                reverseButtons: true,
+                focusCancel: true
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    confirmDeleteAppointment(id);
                 }
-            );
+            });
         }
 
         // Confirm Delete Appointment
         function confirmDeleteAppointment(id) {
-            toastr.clear();
-            
             $.ajax({
-                url: '@Url.Action("DeleteConfirmed", "Appointments")',
+                url: '@Url.Action("DeleteConfirmed", "Appointments")/' + id,
                 type: 'POST',
                 data: {
-                    id: id,
                     __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
                 },
                 success: function(response) {
                     if (response.success) {
-                        toastr.success(response.message);
+                        Swal.fire({
+                            title: 'Deleted!',
+                            text: response.message || 'Appointment has been deleted successfully.',
+                            icon: 'success',
+                            timer: 2000,
+                            showConfirmButton: false
+                        });
                         manualRefresh();
                     } else {
-                        toastr.error(response.message);
+                        Swal.fire({
+                            title: 'Error!',
+                            text: response.message || 'Delete failed! Please try again.',
+                            icon: 'error'
+                        });
                     }
                 },
                 error: function() {
-                    toastr.error('Failed to delete appointment. Please try again.');
+                    Swal.fire({
+                        title: 'Error!',
+                        text: 'Delete failed! Please try again.',
+                        icon: 'error'
+                    });
                 }
             });
         }
@@ -565,16 +574,6 @@
             .stat-number {
                 font-size: 2rem;
             }
-        }
-        
-        /* Custom toastr confirmation styles */
-        .toastr-confirm {
-            width: 400px !important;
-            padding: 20px !important;
-        }
-        
-        .toastr-confirm .toast-message {
-            padding: 0 !important;
         }
     </style>
 }

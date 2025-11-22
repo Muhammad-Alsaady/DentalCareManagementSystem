@@ -66,21 +66,50 @@
 
 <script>
     function submitDeleteForm(id) {
-        $.ajax({
-            url: '@Url.Action("DeleteConfirmed")/' + id,
-            type: 'POST',
-            data: $('#deleteForm').serialize(),
-            success: function(result) {
-                if (result.success) {
-                    crudModal.hide();
-                    showAlert(result.message, 'success');
-                    refreshGrid();
-                } else {
-                    showAlert(result.message, 'error');
-                }
-            },
-            error: function() {
-                showAlert('An error occurred while deleting the person', 'error');
+        Swal.fire({
+            title: 'Are you sure?',
+            html: 'You are about to delete this person.<br/>You won\'t be able to revert this!',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: 'Yes, delete it!',
+            cancelButtonText: 'Cancel',
+            reverseButtons: true,
+            focusCancel: true
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $.ajax({
+                    url: '@Url.Action("DeleteConfirmed")/' + id,
+                    type: 'POST',
+                    data: $('#deleteForm').serialize(),
+                    success: function(result) {
+                        if (result.success) {
+                            crudModal.hide();
+                            Swal.fire({
+                                title: 'Deleted!',
+                                text: result.message || 'Person has been deleted successfully.',
+                                icon: 'success',
+                                timer: 2000,
+                                showConfirmButton: false
+                            });
+                            refreshGrid();
+                        } else {
+                            Swal.fire({
+                                title: 'Error!',
+                                text: result.message || 'Delete failed! Please try again.',
+                                icon: 'error'
+                            });
+                        }
+                    },
+                    error: function() {
+                        Swal.fire({
+                            title: 'Error!',
+                            text: 'Delete failed! Please try again.',
+                            icon: 'error'
+                        });
+                    }
+                });
             }
         });
         

@@ -53,7 +53,7 @@ namespace DentalCareManagmentSystem.Infrastructure.Migrations
 
                     b.HasIndex("PatientId");
 
-                    b.ToTable("Appointments", (string)null);
+                    b.ToTable("Appointments");
                 });
 
             modelBuilder.Entity("DentalCareManagmentSystem.Domain.Entities.AuditLog", b =>
@@ -84,7 +84,7 @@ namespace DentalCareManagmentSystem.Infrastructure.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("AuditLogs", (string)null);
+                    b.ToTable("AuditLogs");
                 });
 
             modelBuilder.Entity("DentalCareManagmentSystem.Domain.Entities.DiagnosisNote", b =>
@@ -111,7 +111,7 @@ namespace DentalCareManagmentSystem.Infrastructure.Migrations
 
                     b.HasIndex("PatientId");
 
-                    b.ToTable("DiagnosisNotes", (string)null);
+                    b.ToTable("DiagnosisNotes");
                 });
 
             modelBuilder.Entity("DentalCareManagmentSystem.Domain.Entities.NotificationLog", b =>
@@ -135,7 +135,7 @@ namespace DentalCareManagmentSystem.Infrastructure.Migrations
 
                     b.HasIndex("NotifiedById");
 
-                    b.ToTable("NotificationLogs", (string)null);
+                    b.ToTable("NotificationLogs");
                 });
 
             modelBuilder.Entity("DentalCareManagmentSystem.Domain.Entities.Patient", b =>
@@ -167,7 +167,7 @@ namespace DentalCareManagmentSystem.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Patients", (string)null);
+                    b.ToTable("Patients");
                 });
 
             modelBuilder.Entity("DentalCareManagmentSystem.Domain.Entities.PatientImage", b =>
@@ -195,7 +195,7 @@ namespace DentalCareManagmentSystem.Infrastructure.Migrations
 
                     b.HasIndex("PatientId");
 
-                    b.ToTable("PatientImages", (string)null);
+                    b.ToTable("PatientImages");
                 });
 
             modelBuilder.Entity("DentalCareManagmentSystem.Domain.Entities.PaymentTransaction", b =>
@@ -233,7 +233,7 @@ namespace DentalCareManagmentSystem.Infrastructure.Migrations
 
                     b.HasIndex("PatientId");
 
-                    b.ToTable("PaymentTransactions", (string)null);
+                    b.ToTable("PaymentTransactions");
                 });
 
             modelBuilder.Entity("DentalCareManagmentSystem.Domain.Entities.PriceListItem", b =>
@@ -256,7 +256,7 @@ namespace DentalCareManagmentSystem.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("PriceListItems", (string)null);
+                    b.ToTable("PriceListItems");
                 });
 
             modelBuilder.Entity("DentalCareManagmentSystem.Domain.Entities.TreatmentItem", b =>
@@ -286,7 +286,7 @@ namespace DentalCareManagmentSystem.Infrastructure.Migrations
 
                     b.HasIndex("TreatmentPlanId");
 
-                    b.ToTable("TreatmentItems", (string)null);
+                    b.ToTable("TreatmentItems");
                 });
 
             modelBuilder.Entity("DentalCareManagmentSystem.Domain.Entities.TreatmentPlan", b =>
@@ -313,7 +313,7 @@ namespace DentalCareManagmentSystem.Infrastructure.Migrations
 
                     b.HasIndex("PatientId");
 
-                    b.ToTable("TreatmentPlans", (string)null);
+                    b.ToTable("TreatmentPlans");
                 });
 
             modelBuilder.Entity("DentalCareManagmentSystem.Domain.Entities.User", b =>

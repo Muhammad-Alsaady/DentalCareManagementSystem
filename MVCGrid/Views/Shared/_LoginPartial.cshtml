@@ -8,7 +8,22 @@
     var user = await UserManager.GetUserAsync(User);
     var userRoles = await UserManager.GetRolesAsync(user);
     var roleName = userRoles.FirstOrDefault() ?? "User";
-    
+
+    @if (SignInManager.IsSignedIn(User))
+    {
+        if (user != null)
+        {
+
+            <span class="text-white me-3">
+                @user.UserName (@roleName)
+            </span>
+        }
+    }
+    else
+    {
+        <a class="btn btn-outline-light" asp-area="Identity" asp-page="/Account/Login">Login</a>
+    }
+
     <div class="topbar-user-menu">
         <div class="dropdown">
             <button class="user-dropdown-toggle" type="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
