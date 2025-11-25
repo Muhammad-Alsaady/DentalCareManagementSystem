@@ -8,6 +8,6 @@ namespace DentalCareManagmentSystem.Domain.Interfaces
 {
     public interface IVisitable
     {
-        void Accept(IVisitor visitor);
+        void Accept(IVisitor visitor);//اللي تاخد visitor
     }
 }

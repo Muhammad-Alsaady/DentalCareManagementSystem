@@ -10,7 +10,7 @@ namespace DentalCareManagmentSystem.Domain.Visitors
 {
     public class DiscountVisitor : IVisitor
     {
-        private readonly decimal _discountPercentage; // مثال: 10 = 10%
+        private readonly decimal _discountPercentage; 
 
         public DiscountVisitor(decimal discountPercentage)
         {
