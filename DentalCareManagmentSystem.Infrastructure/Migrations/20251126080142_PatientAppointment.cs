@@ -5,20 +5,17 @@
 namespace DentalCareManagmentSystem.Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class AddPaidAmountToAppointment : Migration
+    public partial class PatientAppointment : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-
 
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-
-
 
         }
     }

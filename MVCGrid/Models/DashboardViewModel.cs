@@ -12,4 +12,6 @@ public class DashboardViewModel
     public decimal TotalRevenueThisMonth { get; set; }
     public decimal OutstandingBalance { get; set; }
     public int PatientsWithOutstandingBalance { get; set; }
+    public List<PatientAppointmentDto> TodaysPatientAppointments { get; set; } = new();
+    public List<PatientAppointmentDto> AllPatientAppointments { get; set; } = new();
 }

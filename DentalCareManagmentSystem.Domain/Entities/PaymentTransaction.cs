@@ -12,6 +12,7 @@ public class PaymentTransaction
     public Guid PatientId { get; set; }
     
     public Guid? AppointmentId { get; set; }
+    public Guid? PatientAppointmentId { get; set; }
     
     [Column(TypeName = "decimal(18, 2)")]
     public decimal Amount { get; set; }
@@ -23,8 +24,10 @@ public class PaymentTransaction
     public string? Notes { get; set; }
     
     public DateTime CreatedAt { get; set; }
-    
+
     // Navigation properties
+    public virtual PatientAppointment? PatientAppointment { get; set; }
+
     public virtual Patient? Patient { get; set; }
     public virtual Appointment? Appointment { get; set; }
     public virtual User? CreatedByUser { get; set; }

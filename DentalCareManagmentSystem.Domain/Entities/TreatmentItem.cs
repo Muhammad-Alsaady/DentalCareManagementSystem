@@ -8,6 +8,7 @@ public class TreatmentItem : IVisitable
     public Guid Id { get; set; }
     public Guid TreatmentPlanId { get; set; }
     public Guid PriceListItemId { get; set; }
+    public Guid PatientAppointmentId { get; set; }
 
     public string? NameSnapshot { get; set; }
     public decimal PriceSnapshot { get; set; }
@@ -19,6 +20,7 @@ public class TreatmentItem : IVisitable
     public virtual TreatmentPlan? TreatmentPlan { get; set; }
 
     public virtual PriceListItem? PriceListItem { get; set; }
+    public virtual PatientAppointment? PatientAppointment { get; set; }
 
     public void Accept(IVisitor visitor)
     {

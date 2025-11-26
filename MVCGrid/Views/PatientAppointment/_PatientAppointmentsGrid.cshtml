@@ -1,0 +1,75 @@
+﻿@model List<DentalCareManagmentSystem.Application.DTOs.PatientAppointmentDto>
+
+@using NonFactors.Mvc.Grid
+@using System.Text
+
+@{
+    var grid = new Grid<DentalCareManagmentSystem.Application.DTOs.PatientAppointmentDto>(Model)
+    {
+        Name = "PatientAppointmentsGrid",
+        Id = "PatientAppointmentsGrid",
+        EmptyText = "No appointments found",
+        FilterMode = GridFilterMode.Header
+    };
+
+    // Full Name
+    grid.Columns.Add(m => m.FullName)
+        .Titled("Patient")
+        .Filterable(true)
+        .Sortable(true);
+
+    // Date
+    grid.Columns.Add(m => m.Date)
+        .Titled("Date")
+        .RenderedAs(m => m.Date.ToString("yyyy-MM-dd"))
+        .Filterable(true)
+        .Sortable(true);
+
+    // Start time
+    grid.Columns.Add(m => m.StartTime)
+        .Titled("Start")
+        .RenderedAs(m => m.StartTime.ToString(@"hh\:mm"));
+
+    // End time
+    grid.Columns.Add(m => m.EndTime)
+        .Titled("End")
+        .RenderedAs(m => m.EndTime.ToString(@"hh\:mm"));
+
+    // Status
+    grid.Columns.Add(m => m.Status)
+        .Titled("Status")
+        .Filterable(true)
+        .Sortable(true);
+
+    // Actions
+    grid.Columns.Add(m => m.Id)
+        .Titled("Actions")
+        .Encoded(false)
+        .RenderedAs(m => GetButtons(m))
+        .Filterable(false)
+        .Sortable(false);
+
+    grid.Pager = new GridPager<DentalCareManagmentSystem.Application.DTOs.PatientAppointmentDto>(grid)
+    {
+        PartialViewName = "MvcGrid/_Pager",
+        RowsPerPage = 20
+    };
+}
+
+@functions {
+    string GetButtons(DentalCareManagmentSystem.Application.DTOs.PatientAppointmentDto m)
+    {
+        var sb = new StringBuilder();
+
+        sb.Append("<div class='btn-group btn-group-sm'>");
+
+        sb.Append($"<button onclick='showEdit(\"{m.Id}\")' class='btn btn-primary'><i class='fas fa-edit'></i></button>");
+        sb.Append($"<button onclick='showDelete(\"{m.Id}\")' class='btn btn-danger'><i class='fas fa-trash'></i></button>");
+
+        sb.Append("</div>");
+
+        return sb.ToString();
+    }
+}
+
+@await Html.PartialAsync("MvcGrid/_Grid", grid)

@@ -1,6 +1,7 @@
-using DentalCareManagmentSystem.Domain.Entities;
+﻿using DentalCareManagmentSystem.Domain.Entities;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using System.Reflection.Emit;
 
 namespace DentalCareManagmentSystem.Infrastructure.Data;
 
@@ -9,6 +10,8 @@ public class ClinicDbContext : IdentityDbContext<User>
     public ClinicDbContext(DbContextOptions<ClinicDbContext> options) : base(options)
     {
     }
+    public DbSet<PatientAppointment> PatientAppointments { get; set; }
+
 
     public DbSet<Patient> Patients { get; set; }
     public DbSet<Appointment> Appointments { get; set; }
@@ -80,5 +83,17 @@ public class ClinicDbContext : IdentityDbContext<User>
             .WithMany()
             .HasForeignKey(pt => pt.CreatedBy)
             .OnDelete(DeleteBehavior.Restrict);
+        builder.Entity<TreatmentPlan>()
+       .HasOne(tp => tp.PatientAppointment)
+       .WithMany()
+       .HasForeignKey(tp => tp.PatientAppointmentId)
+       .OnDelete(DeleteBehavior.NoAction); // أو Use DeleteBehavior.Restrict
+
+        // إذا كان لديك علاقات أخرى، أضيفيها هنا أيضاً
+        builder.Entity<TreatmentItem>()
+            .HasOne(ti => ti.TreatmentPlan)
+            .WithMany(tp => tp.Items)
+            .HasForeignKey(ti => ti.TreatmentPlanId)
+            .OnDelete(DeleteBehavior.Cascade); // هذا عادةً يكون مقبول
     }
 }

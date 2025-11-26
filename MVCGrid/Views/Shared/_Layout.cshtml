@@ -4,7 +4,7 @@
     {
         MenuItem.Create("Dashboard", Url.Action("Index", "Home"), "fas fa-home"),
         MenuItem.Create("Patients", Url.Action("Index", "Patients"), "fas fa-users"),
-        MenuItem.Create("Appointments", Url.Action("Index", "Appointments"), "fas fa-calendar-alt"),
+        MenuItem.Create("Appointments", Url.Action("Index", "PatientAppointment"), "fas fa-calendar-alt"),
         MenuItem.Create("Payments", Url.Action("Index", "Payments"), "fas fa-money-bill-wave", true),
         MenuItem.Create("Notifications", Url.Action("Index", "Notifications"), "fas fa-bell"),
         MenuItem.Create("Treatment Plans", Url.Action("Index", "TreatmentPlans"), "fas fa-medkit"),
@@ -26,6 +26,7 @@
     <link rel="stylesheet" href="~/css/login-partial.css" />
     <link rel="stylesheet" href="~/css/layout.css" />
     <link rel="stylesheet" href="~/css/topbar.css" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/footable/3.1.6/footable.bootstrap.min.css" rel="stylesheet" />
     @await RenderSectionAsync("Styles", required: false)
 </head>
 <body>
@@ -41,7 +42,7 @@
             </span>
         </div>
         <div class="topbar-center">
-            <a href="@Url.Action("TodaysPatients", "Appointments")" class="btn btn-todays-patients">
+            <a href="@Url.Action("Index", "Home")" class="btn btn-todays-patients">
                 <i class="fas fa-calendar-day"></i>
                 <span class="btn-text">Today's Patients</span>
             </a>

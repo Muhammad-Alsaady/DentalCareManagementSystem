@@ -4,6 +4,8 @@ using DentalCareManagmentSystem.Infrastructure.Services;
 using DentalCareManagmentSystem.Domain.Entities;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using DentalCareManagmentSystem.Application.Mapper;
+using Microsoft.Extensions.DependencyInjection;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -19,6 +21,8 @@ builder.Services.AddDefaultIdentity<User>(options => options.SignIn.RequireConfi
 builder.Services.AddControllersWithViews();
 
 // Register Application Services
+builder.Services.AddScoped<IPatientAppointmentService, PatientAppointmentService>();
+
 builder.Services.AddScoped<IPatientService, PatientService>();
 builder.Services.AddScoped<IAppointmentService, AppointmentService>();
 builder.Services.AddScoped<IDiagnosisService, DiagnosisService>();
@@ -28,7 +32,10 @@ builder.Services.AddScoped<ITreatmentPlanService, TreatmentPlanService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IPaymentService, PaymentService>();
-
+builder.Services.AddAutoMapper(cfg =>
+{
+    cfg.AddProfile<AppointmentProfile>();
+});
 // Add SignalR for real-time notifications
 builder.Services.AddSignalR();
 

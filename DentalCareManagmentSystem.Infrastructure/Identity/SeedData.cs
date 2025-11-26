@@ -1,5 +1,6 @@
 ﻿
 using DentalCareManagmentSystem.Domain.Entities;
+using DentalCareManagmentSystem.Domain.Enums;
 using DentalCareManagmentSystem.Infrastructure.Data;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
@@ -27,6 +28,8 @@ public static class SeedData
         await CreateUser(userManager, "admin@clinic.local", "Admin@123", "SystemAdmin", "Admin User");
         await CreateUser(userManager, "doctor@clinic.local", "Doctor@123", "Doctor", "Doctor User");
         await CreateUser(userManager, "reception@clinic.local", "Reception@123", "Receptionist", "Receptionist User");
+        SeedPatientAppointments(context); // أضيفي هذا السطر
+
     }
     public static void SeedTreatmentPlans(ClinicDbContext context)
     {
@@ -58,6 +61,93 @@ public static class SeedData
             };
 
             context.TreatmentPlans.AddRange(plan1, plan2);
+            context.SaveChanges();
+        }
+    }
+    public static void SeedPatientAppointments(ClinicDbContext context)
+    {
+        if (!context.PatientAppointments.Any())
+        {
+            var appointments = new List<PatientAppointment>
+        {
+            new PatientAppointment
+            {
+                Id = Guid.NewGuid(),
+                FullName = "أحمد محمد",
+                Age = 35,
+                Phone = "01012345678",
+                Gender = Gender.Male,
+                Notes = "كشف دوري",
+                CreatedAt = DateTime.UtcNow,
+                IsActive = true,
+                Date = DateTime.Today.AddDays(1),
+                StartTime = new TimeSpan(10, 0, 0),
+                EndTime = new TimeSpan(11, 0, 0),
+                Status = AppointmentStatus.Scheduled
+            },
+            new PatientAppointment
+            {
+                Id = Guid.NewGuid(),
+                FullName = "فاطمة علي",
+                Age = 28,
+                Phone = "01087654321",
+                Gender = Gender.Female,
+                Notes = "علاج تقويم",
+                CreatedAt = DateTime.UtcNow,
+                IsActive = true,
+                Date = DateTime.Today.AddDays(2),
+                StartTime = new TimeSpan(14, 0, 0),
+                EndTime = new TimeSpan(15, 0, 0),
+                Status = AppointmentStatus.Scheduled
+            },
+            new PatientAppointment
+            {
+                Id = Guid.NewGuid(),
+                FullName = "محمد إبراهيم",
+                Age = 45,
+                Phone = "01055556666",
+                Gender = Gender.Male,
+                Notes = "حشو عصب",
+                CreatedAt = DateTime.UtcNow,
+                IsActive = true,
+                Date = DateTime.Today.AddDays(3),
+                StartTime = new TimeSpan(9, 30, 0),
+                EndTime = new TimeSpan(10, 30, 0),
+                Status = AppointmentStatus.Scheduled
+            },
+            new PatientAppointment
+            {
+                Id = Guid.NewGuid(),
+                FullName = "سارة خالد",
+                Age = 22,
+                Phone = "01011112222",
+                Gender = Gender.Female,
+                Notes = "تنظيف أسنان",
+                CreatedAt = DateTime.UtcNow,
+                IsActive = true,
+                Date = DateTime.Today,
+                StartTime = new TimeSpan(11, 0, 0),
+                EndTime = new TimeSpan(12, 0, 0),
+                Status = AppointmentStatus.Scheduled
+            },
+            new PatientAppointment
+            {
+                Id = Guid.NewGuid(),
+                FullName = "يوسف أحمد",
+                Age = 60,
+                Phone = "01033334444",
+                Gender = Gender.Male,
+                Notes = "تركيب طقم أسنان",
+                CreatedAt = DateTime.UtcNow.AddDays(-1),
+                IsActive = true,
+                Date = DateTime.Today.AddDays(-1),
+                StartTime = new TimeSpan(16, 0, 0),
+                EndTime = new TimeSpan(17, 0, 0),
+                Status = AppointmentStatus.Completed
+            }
+        };
+
+            context.PatientAppointments.AddRange(appointments);
             context.SaveChanges();
         }
     }

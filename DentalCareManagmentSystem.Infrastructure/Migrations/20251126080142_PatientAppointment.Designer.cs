@@ -4,6 +4,7 @@ using DentalCareManagmentSystem.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DentalCareManagmentSystem.Infrastructure.Migrations
 {
     [DbContext(typeof(ClinicDbContext))]
-    partial class ClinicDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251126080142_PatientAppointment")]
+    partial class PatientAppointment
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -74,9 +77,6 @@ namespace DentalCareManagmentSystem.Infrastructure.Migrations
                     b.Property<string>("EntityName")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<Guid?>("PatientAppointmentId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<DateTime>("Timestamp")
                         .HasColumnType("datetime2");
 
@@ -84,8 +84,6 @@ namespace DentalCareManagmentSystem.Infrastructure.Migrations
                         .HasColumnType("nvarchar(450)");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("PatientAppointmentId");
 
                     b.HasIndex("UserId");
 
@@ -107,17 +105,12 @@ namespace DentalCareManagmentSystem.Infrastructure.Migrations
                     b.Property<string>("Note")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<Guid>("PatientAppointmentId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<Guid>("PatientId")
                         .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
 
                     b.HasIndex("DoctorId");
-
-                    b.HasIndex("PatientAppointmentId");
 
                     b.HasIndex("PatientId");
 
@@ -139,16 +132,11 @@ namespace DentalCareManagmentSystem.Infrastructure.Migrations
                     b.Property<string>("NotifiedById")
                         .HasColumnType("nvarchar(450)");
 
-                    b.Property<Guid>("PatientAppointmentId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.HasKey("Id");
 
                     b.HasIndex("AppointmentId");
 
                     b.HasIndex("NotifiedById");
-
-                    b.HasIndex("PatientAppointmentId");
 
                     b.ToTable("NotificationLogs");
                 });
@@ -185,50 +173,6 @@ namespace DentalCareManagmentSystem.Infrastructure.Migrations
                     b.ToTable("Patients");
                 });
 
-            modelBuilder.Entity("DentalCareManagmentSystem.Domain.Entities.PatientAppointment", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<int>("Age")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("Date")
-                        .HasColumnType("datetime2");
-
-                    b.Property<TimeSpan>("EndTime")
-                        .HasColumnType("time");
-
-                    b.Property<string>("FullName")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("Gender")
-                        .HasColumnType("int");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("Notes")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Phone")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<TimeSpan>("StartTime")
-                        .HasColumnType("time");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("PatientAppointments");
-                });
-
             modelBuilder.Entity("DentalCareManagmentSystem.Domain.Entities.PatientImage", b =>
                 {
                     b.Property<Guid>("Id")
@@ -241,9 +185,6 @@ namespace DentalCareManagmentSystem.Infrastructure.Migrations
                     b.Property<string>("FilePath")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<Guid>("PatientAppointmentId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<Guid>("PatientId")
                         .HasColumnType("uniqueidentifier");
 
@@ -254,8 +195,6 @@ namespace DentalCareManagmentSystem.Infrastructure.Migrations
                         .HasColumnType("datetime2");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("PatientAppointmentId");
 
                     b.HasIndex("PatientId");
 
@@ -283,9 +222,6 @@ namespace DentalCareManagmentSystem.Infrastructure.Migrations
                     b.Property<string>("Notes")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<Guid?>("PatientAppointmentId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<Guid>("PatientId")
                         .HasColumnType("uniqueidentifier");
 
@@ -297,8 +233,6 @@ namespace DentalCareManagmentSystem.Infrastructure.Migrations
                     b.HasIndex("AppointmentId");
 
                     b.HasIndex("CreatedBy");
-
-                    b.HasIndex("PatientAppointmentId");
 
                     b.HasIndex("PatientId");
 
@@ -337,9 +271,6 @@ namespace DentalCareManagmentSystem.Infrastructure.Migrations
                     b.Property<string>("NameSnapshot")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<Guid>("PatientAppointmentId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<Guid>("PriceListItemId")
                         .HasColumnType("uniqueidentifier");
 
@@ -353,8 +284,6 @@ namespace DentalCareManagmentSystem.Infrastructure.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("PatientAppointmentId");
 
                     b.HasIndex("PriceListItemId");
 
@@ -378,22 +307,12 @@ namespace DentalCareManagmentSystem.Infrastructure.Migrations
                     b.Property<bool>("IsCompleted")
                         .HasColumnType("bit");
 
-                    b.Property<Guid>("PatientAppointmentId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid?>("PatientAppointmentId1")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<Guid>("PatientId")
                         .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
 
                     b.HasIndex("CreatedById");
-
-                    b.HasIndex("PatientAppointmentId");
-
-                    b.HasIndex("PatientAppointmentId1");
 
                     b.HasIndex("PatientId");
 
@@ -618,15 +537,9 @@ namespace DentalCareManagmentSystem.Infrastructure.Migrations
 
             modelBuilder.Entity("DentalCareManagmentSystem.Domain.Entities.AuditLog", b =>
                 {
-                    b.HasOne("DentalCareManagmentSystem.Domain.Entities.PatientAppointment", "PatientAppointment")
-                        .WithMany()
-                        .HasForeignKey("PatientAppointmentId");
-
                     b.HasOne("DentalCareManagmentSystem.Domain.Entities.User", "User")
                         .WithMany()
                         .HasForeignKey("UserId");
-
-                    b.Navigation("PatientAppointment");
 
                     b.Navigation("User");
                 });
@@ -637,12 +550,6 @@ namespace DentalCareManagmentSystem.Infrastructure.Migrations
                         .WithMany()
                         .HasForeignKey("DoctorId");
 
-                    b.HasOne("DentalCareManagmentSystem.Domain.Entities.PatientAppointment", "PatientAppointment")
-                        .WithMany("DiagnosisNotes")
-                        .HasForeignKey("PatientAppointmentId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("DentalCareManagmentSystem.Domain.Entities.Patient", "Patient")
                         .WithMany("DiagnosisNotes")
                         .HasForeignKey("PatientId")
@@ -652,8 +559,6 @@ namespace DentalCareManagmentSystem.Infrastructure.Migrations
                     b.Navigation("Doctor");
 
                     b.Navigation("Patient");
-
-                    b.Navigation("PatientAppointment");
                 });
 
             modelBuilder.Entity("DentalCareManagmentSystem.Domain.Entities.NotificationLog", b =>
@@ -668,27 +573,13 @@ namespace DentalCareManagmentSystem.Infrastructure.Migrations
                         .WithMany()
                         .HasForeignKey("NotifiedById");
 
-                    b.HasOne("DentalCareManagmentSystem.Domain.Entities.PatientAppointment", "PatientAppointment")
-                        .WithMany()
-                        .HasForeignKey("PatientAppointmentId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.Navigation("Appointment");
 
                     b.Navigation("NotifiedBy");
-
-                    b.Navigation("PatientAppointment");
                 });
 
             modelBuilder.Entity("DentalCareManagmentSystem.Domain.Entities.PatientImage", b =>
                 {
-                    b.HasOne("DentalCareManagmentSystem.Domain.Entities.PatientAppointment", "PatientAppointment")
-                        .WithMany("PatientImages")
-                        .HasForeignKey("PatientAppointmentId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("DentalCareManagmentSystem.Domain.Entities.Patient", "Patient")
                         .WithMany("PatientImages")
                         .HasForeignKey("PatientId")
@@ -696,8 +587,6 @@ namespace DentalCareManagmentSystem.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("Patient");
-
-                    b.Navigation("PatientAppointment");
                 });
 
             modelBuilder.Entity("DentalCareManagmentSystem.Domain.Entities.PaymentTransaction", b =>
@@ -712,10 +601,6 @@ namespace DentalCareManagmentSystem.Infrastructure.Migrations
                         .HasForeignKey("CreatedBy")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("DentalCareManagmentSystem.Domain.Entities.PatientAppointment", "PatientAppointment")
-                        .WithMany("PaymentTransactions")
-                        .HasForeignKey("PatientAppointmentId");
-
                     b.HasOne("DentalCareManagmentSystem.Domain.Entities.Patient", "Patient")
                         .WithMany("PaymentTransactions")
                         .HasForeignKey("PatientId")
@@ -727,18 +612,10 @@ namespace DentalCareManagmentSystem.Infrastructure.Migrations
                     b.Navigation("CreatedByUser");
 
                     b.Navigation("Patient");
-
-                    b.Navigation("PatientAppointment");
                 });
 
             modelBuilder.Entity("DentalCareManagmentSystem.Domain.Entities.TreatmentItem", b =>
                 {
-                    b.HasOne("DentalCareManagmentSystem.Domain.Entities.PatientAppointment", "PatientAppointment")
-                        .WithMany()
-                        .HasForeignKey("PatientAppointmentId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("DentalCareManagmentSystem.Domain.Entities.PriceListItem", "PriceListItem")
                         .WithMany()
                         .HasForeignKey("PriceListItemId")
@@ -751,8 +628,6 @@ namespace DentalCareManagmentSystem.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("PatientAppointment");
-
                     b.Navigation("PriceListItem");
 
                     b.Navigation("TreatmentPlan");
@@ -764,16 +639,6 @@ namespace DentalCareManagmentSystem.Infrastructure.Migrations
                         .WithMany()
                         .HasForeignKey("CreatedById");
 
-                    b.HasOne("DentalCareManagmentSystem.Domain.Entities.PatientAppointment", "PatientAppointment")
-                        .WithMany()
-                        .HasForeignKey("PatientAppointmentId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
-
-                    b.HasOne("DentalCareManagmentSystem.Domain.Entities.PatientAppointment", null)
-                        .WithMany("TreatmentPlans")
-                        .HasForeignKey("PatientAppointmentId1");
-
                     b.HasOne("DentalCareManagmentSystem.Domain.Entities.Patient", "Patient")
                         .WithMany("TreatmentPlans")
                         .HasForeignKey("PatientId")
@@ -783,8 +648,6 @@ namespace DentalCareManagmentSystem.Infrastructure.Migrations
                     b.Navigation("CreatedBy");
 
                     b.Navigation("Patient");
-
-                    b.Navigation("PatientAppointment");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
@@ -842,17 +705,6 @@ namespace DentalCareManagmentSystem.Infrastructure.Migrations
                 {
                     b.Navigation("Appointments");
 
-                    b.Navigation("DiagnosisNotes");
-
-                    b.Navigation("PatientImages");
-
-                    b.Navigation("PaymentTransactions");
-
-                    b.Navigation("TreatmentPlans");
-                });
-
-            modelBuilder.Entity("DentalCareManagmentSystem.Domain.Entities.PatientAppointment", b =>
-                {
                     b.Navigation("DiagnosisNotes");
 
                     b.Navigation("PatientImages");
