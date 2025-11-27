@@ -21,7 +21,12 @@ builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 builder.Services.AddDefaultIdentity<User>(options => options.SignIn.RequireConfirmedAccount = false)
     .AddRoles<IdentityRole>()
     .AddEntityFrameworkStores<ClinicDbContext>();
-builder.Services.AddControllersWithViews();
+
+// Add Localization Services
+builder.Services.AddLocalization(options => options.ResourcesPath = "Resources");
+builder.Services.AddControllersWithViews()
+    .AddViewLocalization(Microsoft.AspNetCore.Mvc.Razor.LanguageViewLocationExpanderFormat.Suffix)
+    .AddDataAnnotationsLocalization();
 
 // Register Application Services
 builder.Services.AddScoped<IPatientAppointmentService, PatientAppointmentService>();
@@ -76,6 +81,8 @@ else
 }
 
 app.UseHttpsRedirection();
+
+// Configure Localization
 var supportedCultures = new[] { "en", "ar" };
 var localizationOptions = new RequestLocalizationOptions()
     .SetDefaultCulture("en")
@@ -83,6 +90,7 @@ var localizationOptions = new RequestLocalizationOptions()
     .AddSupportedUICultures(supportedCultures);
 
 app.UseRequestLocalization(localizationOptions);
+
 app.UseRouting();
 
 app.UseAuthentication();
