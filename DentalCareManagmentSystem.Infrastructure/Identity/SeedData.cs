@@ -1,5 +1,4 @@
-﻿
-using DentalCareManagmentSystem.Domain.Entities;
+﻿using DentalCareManagmentSystem.Domain.Entities;
 using DentalCareManagmentSystem.Domain.Enums;
 using DentalCareManagmentSystem.Infrastructure.Data;
 using Microsoft.AspNetCore.Identity;
@@ -28,8 +27,10 @@ public static class SeedData
         await CreateUser(userManager, "admin@clinic.local", "Admin@123", "SystemAdmin", "Admin User");
         await CreateUser(userManager, "doctor@clinic.local", "Doctor@123", "Doctor", "Doctor User");
         await CreateUser(userManager, "reception@clinic.local", "Reception@123", "Receptionist", "Receptionist User");
-        SeedPatientAppointments(context); // أضيفي هذا السطر
-
+        
+        // Seed data
+        SeedPatientAppointments(context);
+        SeedTreatmentPlans(context);
     }
     public static void SeedTreatmentPlans(ClinicDbContext context)
     {

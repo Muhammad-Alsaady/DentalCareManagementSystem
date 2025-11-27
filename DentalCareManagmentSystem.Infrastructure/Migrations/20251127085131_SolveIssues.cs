@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace DentalCareManagmentSystem.Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class last : Migration
+    public partial class SolveIssues : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)

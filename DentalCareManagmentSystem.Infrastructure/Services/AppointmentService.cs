@@ -59,8 +59,8 @@ public class AppointmentService : IAppointmentService
                 EndTime = a.EndTime,
                 Status = a.Status.ToString(),
                 Notes = a.Notes,
-                PaidAmount = a.PaidAmount, // Read from database (updated by PaymentService only)
-                TotalCost = a.Patient != null 
+                PaidAmount = a.PaidAmount ?? 0, // Read from database (updated by PaymentService only)
+                TotalCost = a.Patient != null
                     ? a.Patient.TreatmentPlans
                         .Where(tp => !tp.IsCompleted)
                         .SelectMany(tp => tp.Items)
@@ -176,7 +176,7 @@ public class AppointmentService : IAppointmentService
             appointment.Date = appointmentDto.Date;
             appointment.StartTime = appointmentDto.StartTime;
             appointment.EndTime = appointmentDto.EndTime;
-            if (appointmentDto.Status != null) 
+            if (appointmentDto.Status != null)
             {
                 appointment.Status = Enum.Parse<AppointmentStatus>(appointmentDto.Status);
             }

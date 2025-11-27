@@ -3,10 +3,6 @@ using DentalCareManagmentSystem.Application.Interfaces;
 using DentalCareManagmentSystem.Domain.Enums;
 using DentalCareManagmentSystem.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace DentalCareManagmentSystem.Infrastructure.Services;
 
@@ -79,7 +75,7 @@ public class NotificationService : INotificationService
             EndTime = a.EndTime,
             Status = a.Status.ToString(),
             Notes = a.Notes,
-            PaidAmount = a.PaidAmount,
+            PaidAmount = a.PaidAmount ?? 0,
             TotalCost = a.Patient?.TreatmentPlans
                 .Where(tp => !tp.IsCompleted)
                 .SelectMany(tp => tp.Items)
@@ -111,7 +107,7 @@ public class NotificationService : INotificationService
                 EndTime = a.EndTime,
                 Status = a.Status.ToString(),
                 Notes = a.Notes,
-                PaidAmount = a.PaidAmount,
+                PaidAmount = a.PaidAmount ?? 0,
                 TotalCost = a.Patient?.TreatmentPlans
                     .Where(tp => !tp.IsCompleted)
                     .SelectMany(tp => tp.Items)
