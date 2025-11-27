@@ -1,7 +1,6 @@
 /**
  * Global Modal Loader - Unified modal system for entire application
- * Replaces all individual modals with a single, consistent modal experience
- * FIXED: Proper reset, z-index handling, and timing for sequential modals
+ * FIXED: All syntax errors, duplicate variables, and modal conflicts resolved
  */
 
 var ModalLoader = (function() {
@@ -16,7 +15,6 @@ var ModalLoader = (function() {
     var bodyElement;
     var footerElement;
     var loadingSpinner;
-    var currentBackdrop = null;
 
     /**
      * Initialize modal elements
@@ -31,9 +29,10 @@ var ModalLoader = (function() {
         loadingSpinner = document.getElementById('modalLoadingSpinner');
 
         if (modalElement) {
+            // Create modal with correct settings
             modal = new bootstrap.Modal(modalElement, {
-                backdrop: 'static',
-                keyboard: false,
+                backdrop: true,  // Allow clicking outside to close
+                keyboard: true,  // Allow ESC key to close
                 focus: true
             });
 
@@ -44,11 +43,13 @@ var ModalLoader = (function() {
             
             // Listen for modal shown event
             modalElement.addEventListener('shown.bs.modal', function() {
-                // Focus first input
-                var firstInput = bodyElement.querySelector('input:not([type=hidden]), select, textarea');
-                if (firstInput) {
-                    firstInput.focus();
-                }
+                // Focus first input after modal is fully shown
+                setTimeout(function() {
+                    var firstInput = bodyElement.querySelector('input:not([type=hidden]), select, textarea');
+                    if (firstInput) {
+                        firstInput.focus();
+                    }
+                }, 150);
             });
         }
     }
@@ -85,8 +86,10 @@ var ModalLoader = (function() {
             titleLoaderElement.style.display = 'inline-block';
         }
         
-        // Remove any stray backdrops
-        removeAllBackdrops();
+        // Remove any stray backdrops after Bootstrap finishes its animation
+        setTimeout(function() {
+            removeAllBackdrops();
+        }, 350);
         
         // Re-enable body scroll
         document.body.classList.remove('modal-open');
@@ -102,7 +105,6 @@ var ModalLoader = (function() {
         backdrops.forEach(function(backdrop) {
             backdrop.remove();
         });
-        currentBackdrop = null;
     }
 
     /**
@@ -240,13 +242,26 @@ var ModalLoader = (function() {
             // Remove any existing submit handlers
             $(form).off('submit');
             
+            // Parse validation for the form (only if validator is available)
+            if (typeof $.validator !== 'undefined' && $.validator.unobtrusive) {
+                $.validator.unobtrusive.parse(form);
+            }
+            
             // Add AJAX submit handler
             $(form).on('submit', function(e) {
                 e.preventDefault();
                 
+                var $form = $(this);
+                
+                // Validate form first (only if validator is available)
+                if (typeof $form.valid === 'function' && !$form.valid()) {
+                    return false;
+                }
+                
                 var formData = new FormData(this);
-                var submitUrl = $(this).attr('action');
-                var submitBtn = $(this).find('button[type=submit]');
+                var submitUrl = $form.attr('action');
+                var submitBtn = $form.find('button[type=submit]');
+                var originalBtnText = submitBtn.html();
                 
                 // Disable submit button
                 submitBtn.prop('disabled', true);
@@ -261,30 +276,30 @@ var ModalLoader = (function() {
                     success: function(response) {
                         // Re-enable button
                         submitBtn.prop('disabled', false);
-                        submitBtn.html(submitBtn.data('original-text') || 'Save');
+                        submitBtn.html(originalBtnText);
                         
-                        if (response.success) {
-                            // Close modal
-                            closeModal();
-                            
-                            // Show success message
-                            if (response.message) {
-                                UIHelpers.showAlert(response.message, 'success');
+                        // Handle JSON response
+                        if (typeof response === 'object' && response.success !== undefined) {
+                            if (response.success) {
+                                // Close modal
+                                closeModal();
+                                
+                                // Show success message
+                                if (response.message && typeof UIHelpers !== 'undefined') {
+                                    UIHelpers.showAlert(response.message, 'success');
+                                }
+                                
+                                // Trigger custom event with response data
+                                $(document).trigger('modalSuccess', [response]);
+                            } else {
+                                // Show error message
+                                if (response.message && typeof UIHelpers !== 'undefined') {
+                                    UIHelpers.showAlert(response.message, 'danger');
+                                }
                             }
-                            
-                            // Reload grids if specified
-                            if (response.reloadGrid) {
-                                UIHelpers.initGrids();
-                            }
-                            
-                            // Custom callback
-                            if (response.callback && typeof window[response.callback] === 'function') {
-                                window[response.callback](response);
-                            }
-                            
-                            // Trigger custom event with response data
-                            $(document).trigger('modalSuccess', [response]);
-                        } else {
+                        } 
+                        // Handle partial view response (validation errors)
+                        else if (typeof response === 'string') {
                             // Replace modal content with updated form (showing validation errors)
                             if (bodyElement) {
                                 bodyElement.innerHTML = response;
@@ -295,22 +310,29 @@ var ModalLoader = (function() {
                     error: function(xhr) {
                         // Re-enable button
                         submitBtn.prop('disabled', false);
-                        submitBtn.html(submitBtn.data('original-text') || 'Save');
+                        submitBtn.html(originalBtnText);
                         
                         var errorMsg = 'An error occurred. Please try again.';
+                        
                         if (xhr.responseJSON && xhr.responseJSON.message) {
                             errorMsg = xhr.responseJSON.message;
+                        } else if (xhr.responseText) {
+                            // Check if it's HTML (validation errors)
+                            if (xhr.responseText.indexOf('<') !== -1) {
+                                if (bodyElement) {
+                                    bodyElement.innerHTML = xhr.responseText;
+                                }
+                                initializeModalForms();
+                                return;
+                            }
                         }
-                        UIHelpers.showAlert(errorMsg, 'danger');
+                        
+                        if (typeof UIHelpers !== 'undefined') {
+                            UIHelpers.showAlert(errorMsg, 'danger');
+                        }
                     }
                 });
             });
-            
-            // Store original button text
-            var submitBtn = $(form).find('button[type=submit]');
-            if (!submitBtn.data('original-text')) {
-                submitBtn.data('original-text', submitBtn.html());
-            }
         });
     }
 
@@ -331,10 +353,12 @@ var ModalLoader = (function() {
         }
 
         // Reinitialize tooltips
-        var tooltipTriggerList = [].slice.call(bodyElement.querySelectorAll('[data-bs-toggle="tooltip"]'));
-        tooltipTriggerList.map(function(tooltipTriggerEl) {
-            return new bootstrap.Tooltip(tooltipTriggerEl);
-        });
+        if (bodyElement) {
+            var tooltipTriggerList = [].slice.call(bodyElement.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            tooltipTriggerList.map(function(tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl);
+            });
+        }
     }
 
     /**
@@ -343,10 +367,6 @@ var ModalLoader = (function() {
     function closeModal() {
         if (modal) {
             modal.hide();
-            // Force cleanup
-            setTimeout(function() {
-                cleanupModal();
-            }, 300);
         }
     }
 
@@ -374,7 +394,6 @@ var ModalLoader = (function() {
     // Initialize on DOM ready
     $(document).ready(function() {
         init();
-        console.log('Global Modal Loader initialized with z-index: 11000');
     });
 
     // Public API

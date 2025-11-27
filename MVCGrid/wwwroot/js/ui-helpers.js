@@ -1,6 +1,7 @@
 /**
  * UI Helpers for Dental Care Management System
  * Provides AJAX form handling, grid refresh, and alert management
+ * FIXED: Removed conflicting modal code, using only ModalLoader
  */
 
 // Global configuration
@@ -10,14 +11,25 @@ const UIHelpers = {
 
     /**
      * Initialize AJAX form handler for a specific form selector
+     * This is now deprecated - forms in ModalLoader handle their own submissions
+     * Kept for backward compatibility with non-modal forms
      * @param {string} formSelector - jQuery selector for the form
      * @param {function} onSuccess - Callback function on successful submission
      */
     ajaxFormHandler: function(formSelector, onSuccess) {
         $(document).on('submit', formSelector, function(e) {
+            // Check if this form is inside the global modal
+            var $form = $(this);
+            var isInsideGlobalModal = $form.closest('#globalModal').length > 0;
+            
+            // If inside global modal, let ModalLoader handle it
+            if (isInsideGlobalModal) {
+                return; // ModalLoader will handle this
+            }
+            
+            // Only handle forms outside the modal
             e.preventDefault();
             
-            const $form = $(this);
             const $submitBtn = $form.find('button[type="submit"]');
             const originalBtnText = $submitBtn.html();
             
@@ -35,25 +47,12 @@ const UIHelpers = {
                         if (response.success) {
                             UIHelpers.showAlert(response.message, 'success');
                             
-                            // Close modal if exists
-                            const modal = bootstrap.Modal.getInstance($form.closest('.modal')[0]);
-                            if (modal) {
-                                modal.hide();
-                            }
-                            
                             // Execute success callback
                             if (onSuccess) {
                                 onSuccess(response);
                             }
                         } else {
                             UIHelpers.showAlert(response.message, 'danger');
-                        }
-                    }
-                    // Handle partial view response (validation errors)
-                    else {
-                        const $modalBody = $form.closest('.modal-body');
-                        if ($modalBody.length > 0) {
-                            $modalBody.html(response);
                         }
                     }
                 },
@@ -66,8 +65,6 @@ const UIHelpers = {
                     $submitBtn.prop('disabled', false).html(originalBtnText);
                 }
             });
-            
-            return false;
         });
     },
 
@@ -86,13 +83,14 @@ const UIHelpers = {
             </div>
         `;
         
-        const $alertContainer = $('#alertContainer');
+        let $alertContainer = $('#alertContainer');
         if ($alertContainer.length === 0) {
             // Create alert container if it doesn't exist
-            $('body').append('<div id="alertContainer" style="position: fixed; top: 80px; right: 20px; z-index: 9999; min-width: 300px;"></div>');
+            $('body').append('<div id="alertContainer" style="position: fixed; top: 80px; right: 20px; z-index: 99999; min-width: 300px;"></div>');
+            $alertContainer = $('#alertContainer');
         }
         
-        $('#alertContainer').append(alertHtml);
+        $alertContainer.append(alertHtml);
         
         // Auto-remove after 5 seconds
         setTimeout(function() {
@@ -203,48 +201,27 @@ const UIHelpers = {
     },
 
     /**
-     * Load content into modal
+     * Load content into modal - USES GLOBAL MODALLOADER
      * @param {string} url - URL to load
      * @param {string} modalTitle - Title for the modal
+     * @param {object} options - Additional options
      */
-    loadModal: function(url, modalTitle) {
-        $.ajax({
-            url: url,
-            type: 'GET',
-            success: function(html) {
-                const modalId = 'actionModal';
-                let $modal = $(`#${modalId}`);
-                
-                // Create modal if it doesn't exist
-                if ($modal.length === 0) {
-                    const modalHtml = `
-                        <div class="modal fade" id="${modalId}" tabindex="-1">
-                            <div class="modal-dialog modal-lg">
-                                <div class="modal-content" id="modalContainer">
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                    $('body').append(modalHtml);
-                    $modal = $(`#${modalId}`);
-                }
-                
-                // Set content
-                $('#modalContainer').html(html);
-                
-                // Update title if provided
-                if (modalTitle) {
-                    $('#modalContainer .modal-title').text(modalTitle);
-                }
-                
-                // Show modal
-                const modal = new bootstrap.Modal($modal[0]);
-                modal.show();
-            },
-            error: function() {
-                UIHelpers.showAlert('Failed to load content.', 'danger');
-            }
-        });
+    loadModal: function(url, modalTitle, options) {
+        if (typeof ModalLoader !== 'undefined') {
+            ModalLoader.load(url, modalTitle, options);
+        } else {
+            console.error('ModalLoader not found. Make sure modal-loader.js is included before ui-helpers.js');
+            UIHelpers.showAlert('Modal system not available', 'danger');
+        }
+    },
+
+    /**
+     * Close the global modal
+     */
+    closeModal: function() {
+        if (typeof ModalLoader !== 'undefined') {
+            ModalLoader.close();
+        }
     },
 
     /**
@@ -329,6 +306,12 @@ window.UIHelpers = UIHelpers;
 // Initialize grids on document ready
 $(document).ready(function() {
     UIHelpers.initGrids();
+    
+    // Listen for modalSuccess event to refresh grids
+    $(document).on('modalSuccess', function(event, response) {
+        // Optionally refresh grids after modal success
+        console.log('Modal success event received', response);
+    });
     
     // Reinitialize grids after any AJAX complete
     $(document).ajaxComplete(function() {

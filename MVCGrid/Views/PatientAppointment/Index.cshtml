@@ -59,138 +59,47 @@
     </div>
 </div>
 
-<!-- Modal -->
-<div class="modal fade" id="crudModal" tabindex="-1" aria-labelledby="crudModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="crudModalLabel">Appointment</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body" id="crudModalBody">
-                <!-- Dynamic content will be loaded here -->
-            </div>
-        </div>
-    </div>
-</div>
-
 @section Scripts {
-    <partial name="_ValidationScriptsPartial" />
     <script>
-        let crudModal;
-
         $(document).ready(function () {
-            // Initialize Bootstrap modal
-            var modalElement = document.getElementById('crudModal');
-            crudModal = new bootstrap.Modal(modalElement, {
-                keyboard: true,
-                backdrop: true,
-                focus: true
+            // Listen for modal success event to refresh grid
+            $(document).on('modalSuccess', function(event, response) {
+                console.log('Appointment saved successfully, refreshing grid...');
+                refreshGrid();
             });
-
-            // Setup form submission handler
-            setupFormHandler();
         });
 
-        function setupFormHandler() {
-            $(document).on('submit', '.appointment-form', function (e) {
-                e.preventDefault();
-                
-                var $form = $(this);
-                
-                // Validate form
-                if (!$form.valid()) {
-                    return false;
-                }
-
-                var formData = $form.serialize();
-                var url = $form.attr('action') || '@Url.Action("Create", "PatientAppointment")';
-                
-                $.ajax({
-                    url: url,
-                    type: 'POST',
-                    data: formData,
-                    success: function (response) {
-                        if (response.success) {
-                            UIHelpers.showAlert(response.message, 'success');
-                            crudModal.hide();
-                            refreshGrid();
-                        } else {
-                            UIHelpers.showAlert(response.message || 'An error occurred', 'danger');
-                        }
-                    },
-                    error: function (xhr, status, error) {
-                        UIHelpers.showAlert('Error: ' + error, 'danger');
-                    }
-                });
-            });
-        }
-
+        // Show Create Form
         function showCreate() {
-            $.get('@Url.Action("Create", "PatientAppointment")')
-                .done(function (data) {
-                    $('#crudModalBody').html(data);
-                    $('#crudModalLabel').text('Add Patient Appointment');
-                    crudModal.show();
-                    
-                    // Initialize validation
-                    var form = $('#crudModalBody').find('form');
-                    $.validator.unobtrusive.parse(form);
-                })
-                .fail(function (xhr, status, error) {
-                    UIHelpers.showAlert('Error loading form: ' + error, 'danger');
-                });
+            UIHelpers.loadModal('@Url.Action("Create", "PatientAppointment")', 'Add Patient Appointment');
         }
 
+        // Show Edit Form
         function showEdit(id) {
-            $.get('@Url.Action("Edit", "PatientAppointment")/' + id)
-                .done(function (data) {
-                    $('#crudModalBody').html(data);
-                    $('#crudModalLabel').text('Edit Appointment');
-                    crudModal.show();
-                    
-                    // Initialize validation
-                    var form = $('#crudModalBody').find('form');
-                    $.validator.unobtrusive.parse(form);
-                })
-                .fail(function (xhr, status, error) {
-                    UIHelpers.showAlert('Error loading form: ' + error, 'danger');
-                });
+            UIHelpers.loadModal('@Url.Action("Edit", "PatientAppointment")/' + id, 'Edit Appointment');
         }
 
+        // Show Delete Confirmation
         function showDelete(id) {
-            $.get('@Url.Action("Delete", "PatientAppointment")/' + id)
-                .done(function (data) {
-                    $('#crudModalBody').html(data);
-                    $('#crudModalLabel').text('Delete Appointment');
-                    crudModal.show();
-                })
-                .fail(function (xhr, status, error) {
-                    UIHelpers.showAlert('Error loading form: ' + error, 'danger');
-                });
+            UIHelpers.loadModal('@Url.Action("Delete", "PatientAppointment")/' + id, 'Delete Appointment');
         }
 
+        // Refresh Grid
         function refreshGrid() {
-            $.get('@Url.Action("GetAppointmentsGrid", "PatientAppointment")')
-                .done(function (data) {
-                    $('#gridContainer').html(data);
-                })
-                .fail(function () {
-                    UIHelpers.showAlert('Failed to refresh grid', 'danger');
-                });
+            UIHelpers.reloadGridPartial('#gridContainer', '@Url.Action("GetAppointmentsGrid", "PatientAppointment")');
         }
 
+        // Perform Search
         function performSearch() {
             var searchTerm = $("#searchInput").val();
-            $.get('@Url.Action("GetAppointmentsGrid", "PatientAppointment")', { searchString: searchTerm })
-                .done(function (data) {
-                    $('#gridContainer').html(data);
-                })
-                .fail(function () {
-                    UIHelpers.showAlert('Search failed', 'danger');
-                });
+            UIHelpers.reloadGridPartial(
+                '#gridContainer',
+                '@Url.Action("GetAppointmentsGrid", "PatientAppointment")',
+                { searchString: searchTerm }
+            );
         }
 
+        // Clear Search
         function clearSearch() {
             $("#searchInput").val("");
             refreshGrid();

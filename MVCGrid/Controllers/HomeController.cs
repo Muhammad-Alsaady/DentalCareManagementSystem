@@ -120,6 +120,23 @@ public class HomeController : Controller
 
         return View(viewModel);
     }
+
+    /// <summary>
+    /// Get appointments grid for dashboard (AJAX refresh)
+    /// </summary>
+    [HttpGet]
+    public async Task<IActionResult> GetAppointmentsGrid(string searchString = null)
+    {
+        var entities = await _patientAppointmentService.GetAllAsync();
+        if (!string.IsNullOrEmpty(searchString))
+        {
+            entities = entities.Where(x => x.FullName != null && 
+                                          x.FullName.Contains(searchString, StringComparison.OrdinalIgnoreCase)).ToList();
+        }
+        var dtos = _mapper.Map<List<PatientAppointmentDto>>(entities);
+        return PartialView("~/Views/PatientAppointment/_PatientAppointmentsGrid.cshtml", dtos);
+    }
+
     public IActionResult Privacy()
     {
         return View();

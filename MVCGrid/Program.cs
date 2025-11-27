@@ -47,7 +47,7 @@ using (var scope = app.Services.CreateScope())
     var services = scope.ServiceProvider;
     try
     {
-        await DentalCareManagmentSystem.Infrastructure.Identity.SeedData.Initialize(services);
+        DentalCareManagmentSystem.Infrastructure.Identity.SeedData.Initialize(services).Wait();
     }
     catch (Exception ex)
     {
@@ -78,7 +78,7 @@ app.MapStaticAssets();
 
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Notifications}/{action=Index}/{id?}")
+    pattern: "{controller=Home}/{action=Index}/{id?}")
     ;
 
 app.MapRazorPages()
