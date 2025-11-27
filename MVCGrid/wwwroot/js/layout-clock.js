@@ -3,12 +3,12 @@
  * Updates every second in the topbar
  */
 
-(function() {
+(function () {
     'use strict';
 
     function updateClock() {
         const now = new Date();
-        
+
         // Format options
         const options = {
             weekday: 'short',
@@ -20,10 +20,10 @@
             second: '2-digit',
             hour12: true
         };
-        
+
         // Format the date and time
         const formattedDateTime = now.toLocaleString('en-US', options);
-        
+
         // Update the clock element
         const clockElement = document.getElementById('liveClock');
         if (clockElement) {
@@ -32,13 +32,13 @@
     }
 
     // Initialize clock when DOM is ready
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function () {
         // Update immediately
         updateClock();
-        
+
         // Update every second
         setInterval(updateClock, 1000);
-        
+
         console.log('Live clock initialized');
     });
 })();

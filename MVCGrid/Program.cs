@@ -1,10 +1,13 @@
 using DentalCareManagmentSystem.Application.Interfaces;
+using DentalCareManagmentSystem.Application.Mapper;
+using DentalCareManagmentSystem.Domain.Entities;
+using DentalCareManagmentSystem.Domain.Interfaces;
+using DentalCareManagmentSystem.Domain.Services;
+using DentalCareManagmentSystem.Domain.Visitors;
 using DentalCareManagmentSystem.Infrastructure.Data;
 using DentalCareManagmentSystem.Infrastructure.Services;
-using DentalCareManagmentSystem.Domain.Entities;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using DentalCareManagmentSystem.Application.Mapper;
 using Microsoft.Extensions.DependencyInjection;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -32,6 +35,10 @@ builder.Services.AddScoped<ITreatmentPlanService, TreatmentPlanService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IPaymentService, PaymentService>();
+
+builder.Services.AddScoped<DiscountService>();
+builder.Services.AddScoped<IDiscountVisitorFactory, DiscountVisitorFactory>();
+
 builder.Services.AddAutoMapper(cfg =>
 {
     cfg.AddProfile<AppointmentProfile>();

@@ -7,7 +7,8 @@ using Microsoft.EntityFrameworkCore;
 
 namespace DentalManagementSystem.Controllers;
 
-[Authorize(Roles = "Doctor,SystemAdmin")]
+//[Authorize(Roles = "Doctor,SystemAdmin")]
+[Authorize]
 public class TreatmentPlansController : Controller
 {
     private readonly ITreatmentPlanService _treatmentPlanService;
