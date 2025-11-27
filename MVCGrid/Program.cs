@@ -48,6 +48,21 @@ builder.Services.AddSignalR();
 
 var app = builder.Build();
 
+// Seed data
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    try
+    {
+        DentalCareManagmentSystem.Infrastructure.Identity.SeedData.Initialize(services).Wait();
+    }
+    catch (Exception ex)
+    {
+        var logger = services.GetRequiredService<ILogger<Program>>();
+        logger.LogError(ex, "An error occurred while seeding the database.");
+    }
+}
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
@@ -77,7 +92,7 @@ app.MapStaticAssets();
 
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Notifications}/{action=Index}/{id?}")
+    pattern: "{controller=Home}/{action=Index}/{id?}")
     ;
 
 app.MapRazorPages()

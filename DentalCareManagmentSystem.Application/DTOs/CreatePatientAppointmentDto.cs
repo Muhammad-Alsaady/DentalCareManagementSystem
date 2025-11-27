@@ -36,12 +36,18 @@ namespace DentalCareManagmentSystem.Application.DTOs
 
         [Required]
         public TimeSpan EndTime { get; set; }
+        
+        // Payment Information
+        [Range(0, double.MaxValue)]
+        public decimal TotalCost { get; set; } = 0;
+        
+        [Range(0, double.MaxValue)]
+        public decimal PaidAmount { get; set; } = 0;
     }
+    
     public class EditPatientAppointmentDto : CreatePatientAppointmentDto
     {
         [Required]
         public Guid Id { get; set; }
     }
-
-
 }

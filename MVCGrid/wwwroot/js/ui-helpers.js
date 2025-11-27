@@ -16,20 +16,20 @@ const UIHelpers = {
      * @param {string} formSelector - jQuery selector for the form
      * @param {function} onSuccess - Callback function on successful submission
      */
-    ajaxFormHandler: function (formSelector, onSuccess) {
-        $(document).on('submit', formSelector, function (e) {
+    ajaxFormHandler: function(formSelector, onSuccess) {
+        $(document).on('submit', formSelector, function(e) {
             // Check if this form is inside the global modal
             var $form = $(this);
             var isInsideGlobalModal = $form.closest('#globalModal').length > 0;
-
+            
             // If inside global modal, let ModalLoader handle it
             if (isInsideGlobalModal) {
                 return; // ModalLoader will handle this
             }
-
+            
             // Only handle forms outside the modal
             e.preventDefault();
-
+            
             const $submitBtn = $form.find('button[type="submit"]');
             const originalBtnText = $submitBtn.html();
 
@@ -46,7 +46,7 @@ const UIHelpers = {
                     if (typeof response === 'object') {
                         if (response.success) {
                             UIHelpers.showAlert(response.message, 'success');
-
+                            
                             // Execute success callback
                             if (onSuccess) {
                                 onSuccess(response);
@@ -82,16 +82,16 @@ const UIHelpers = {
                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
         `;
-
+        
         let $alertContainer = $('#alertContainer');
         if ($alertContainer.length === 0) {
             // Create alert container if it doesn't exist
             $('body').append('<div id="alertContainer" style="position: fixed; top: 80px; right: 20px; z-index: 99999; min-width: 300px;"></div>');
             $alertContainer = $('#alertContainer');
         }
-
+        
         $alertContainer.append(alertHtml);
-
+        
         // Auto-remove after 5 seconds
         setTimeout(function () {
             $('#alertContainer .alert').first().fadeOut('slow', function () {
@@ -206,7 +206,7 @@ const UIHelpers = {
      * @param {string} modalTitle - Title for the modal
      * @param {object} options - Additional options
      */
-    loadModal: function (url, modalTitle, options) {
+    loadModal: function(url, modalTitle, options) {
         if (typeof ModalLoader !== 'undefined') {
             ModalLoader.load(url, modalTitle, options);
         } else {
@@ -218,7 +218,7 @@ const UIHelpers = {
     /**
      * Close the global modal
      */
-    closeModal: function () {
+    closeModal: function() {
         if (typeof ModalLoader !== 'undefined') {
             ModalLoader.close();
         }
@@ -306,13 +306,13 @@ window.UIHelpers = UIHelpers;
 // Initialize grids on document ready
 $(document).ready(function () {
     UIHelpers.initGrids();
-
+    
     // Listen for modalSuccess event to refresh grids
-    $(document).on('modalSuccess', function (event, response) {
+    $(document).on('modalSuccess', function(event, response) {
         // Optionally refresh grids after modal success
         console.log('Modal success event received', response);
     });
-
+    
     // Reinitialize grids after any AJAX complete
     $(document).ajaxComplete(function () {
         UIHelpers.initGrids();

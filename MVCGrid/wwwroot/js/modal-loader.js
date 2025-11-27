@@ -42,9 +42,9 @@ var ModalLoader = (function () {
             });
 
             // Listen for modal shown event
-            modalElement.addEventListener('shown.bs.modal', function () {
+            modalElement.addEventListener('shown.bs.modal', function() {
                 // Focus first input after modal is fully shown
-                setTimeout(function () {
+                setTimeout(function() {
                     var firstInput = bodyElement.querySelector('input:not([type=hidden]), select, textarea');
                     if (firstInput) {
                         firstInput.focus();
@@ -85,12 +85,12 @@ var ModalLoader = (function () {
         if (titleLoaderElement) {
             titleLoaderElement.style.display = 'inline-block';
         }
-
+        
         // Remove any stray backdrops after Bootstrap finishes its animation
-        setTimeout(function () {
+        setTimeout(function() {
             removeAllBackdrops();
         }, 350);
-
+        
         // Re-enable body scroll
         document.body.classList.remove('modal-open');
         document.body.style.overflow = '';
@@ -241,28 +241,28 @@ var ModalLoader = (function () {
         forms.forEach(function (form) {
             // Remove any existing submit handlers
             $(form).off('submit');
-
+            
             // Parse validation for the form (only if validator is available)
             if (typeof $.validator !== 'undefined' && $.validator.unobtrusive) {
                 $.validator.unobtrusive.parse(form);
             }
-
+            
             // Add AJAX submit handler
             $(form).on('submit', function (e) {
                 e.preventDefault();
-
+                
                 var $form = $(this);
-
+                
                 // Validate form first (only if validator is available)
                 if (typeof $form.valid === 'function' && !$form.valid()) {
                     return false;
                 }
-
+                
                 var formData = new FormData(this);
                 var submitUrl = $form.attr('action');
                 var submitBtn = $form.find('button[type=submit]');
                 var originalBtnText = submitBtn.html();
-
+                
                 // Disable submit button
                 submitBtn.prop('disabled', true);
                 submitBtn.html('<i class="fas fa-spinner fa-spin"></i> Saving...');
@@ -277,18 +277,18 @@ var ModalLoader = (function () {
                         // Re-enable button
                         submitBtn.prop('disabled', false);
                         submitBtn.html(originalBtnText);
-
+                        
                         // Handle JSON response
                         if (typeof response === 'object' && response.success !== undefined) {
                             if (response.success) {
                                 // Close modal
                                 closeModal();
-
+                                
                                 // Show success message
                                 if (response.message && typeof UIHelpers !== 'undefined') {
                                     UIHelpers.showAlert(response.message, 'success');
                                 }
-
+                                
                                 // Trigger custom event with response data
                                 $(document).trigger('modalSuccess', [response]);
                             } else {
@@ -297,7 +297,7 @@ var ModalLoader = (function () {
                                     UIHelpers.showAlert(response.message, 'danger');
                                 }
                             }
-                        }
+                        } 
                         // Handle partial view response (validation errors)
                         else if (typeof response === 'string') {
                             // Replace modal content with updated form (showing validation errors)
@@ -311,9 +311,9 @@ var ModalLoader = (function () {
                         // Re-enable button
                         submitBtn.prop('disabled', false);
                         submitBtn.html(originalBtnText);
-
+                        
                         var errorMsg = 'An error occurred. Please try again.';
-
+                        
                         if (xhr.responseJSON && xhr.responseJSON.message) {
                             errorMsg = xhr.responseJSON.message;
                         } else if (xhr.responseText) {
@@ -326,7 +326,7 @@ var ModalLoader = (function () {
                                 return;
                             }
                         }
-
+                        
                         if (typeof UIHelpers !== 'undefined') {
                             UIHelpers.showAlert(errorMsg, 'danger');
                         }
@@ -355,7 +355,7 @@ var ModalLoader = (function () {
         // Reinitialize tooltips
         if (bodyElement) {
             var tooltipTriggerList = [].slice.call(bodyElement.querySelectorAll('[data-bs-toggle="tooltip"]'));
-            tooltipTriggerList.map(function (tooltipTriggerEl) {
+            tooltipTriggerList.map(function(tooltipTriggerEl) {
                 return new bootstrap.Tooltip(tooltipTriggerEl);
             });
         }

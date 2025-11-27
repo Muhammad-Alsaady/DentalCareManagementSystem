@@ -1,61 +1,144 @@
 ﻿@model DentalCareManagmentSystem.Application.DTOs.EditPatientAppointmentDto
-<form class="appointment-form" id="editForm">
+
+<!-- Form content only - Modal structure provided by global modal -->
+<form class="appointment-form" id="editForm" action="@Url.Action("Edit", "PatientAppointment")" method="post">
     @Html.AntiForgeryToken()
 
+    <input type="hidden" asp-for="Id" />
+
     <div class="row">
-        <input type="hidden" asp-for="Id" />
-
         <div class="col-md-6 mb-3">
-            <label asp-for="FullName" class="form-label">Patient Name</label>
-            <input asp-for="FullName" class="form-control" required />
-        </div>
-
-        <div class="col-md-6 mb-3">
-            <label asp-for="Phone" class="form-label">Phone</label>
-            <input asp-for="Phone" class="form-control" required />
-        </div>
-
-        <div class="col-md-4 mb-3">
-            <label asp-for="Age" class="form-label">Age</label>
-            <input asp-for="Age" class="form-control" required />
-        </div>
-
-        <div class="col-md-4 mb-3">
-            <label asp-for="Gender" class="form-label">Gender</label>
-            <select asp-for="Gender" class="form-control">
-                <option value="">Select...</option>
-                <option value="0">Male</option>
-                <option value="1">Female</option>
-            </select>
-        </div>
-
-        <div class="col-md-4 mb-3">
-            <label asp-for="Date" class="form-label">Date</label>
-            <input asp-for="Date" type="date" class="form-control" required />
+            <label asp-for="FullName" class="form-label">Patient Name <span class="text-danger">*</span></label>
+            <input asp-for="FullName" class="form-control" placeholder="Enter patient name" required />
+            <span asp-validation-for="FullName" class="text-danger"></span>
         </div>
 
         <div class="col-md-6 mb-3">
-            <label asp-for="StartTime" class="form-label">Start Time</label>
-            <input asp-for="StartTime" type="time" class="form-control" required />
-        </div>
-
-        <div class="col-md-6 mb-3">
-            <label asp-for="EndTime" class="form-label">End Time</label>
-            <input asp-for="EndTime" type="time" class="form-control" required />
-        </div>
-
-        <div class="col-md-12 mb-3">
-            <label asp-for="Notes" class="form-label">Notes</label>
-            <textarea asp-for="Notes" class="form-control"></textarea>
+            <label asp-for="Phone" class="form-label">Phone <span class="text-danger">*</span></label>
+            <input asp-for="Phone" type="tel" class="form-control" placeholder="Enter phone number" required />
+            <span asp-validation-for="Phone" class="text-danger"></span>
         </div>
     </div>
 
-    <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-        <button class="btn btn-success">Edit</button>
+    <div class="row">
+        <div class="col-md-4 mb-3">
+            <label asp-for="Age" class="form-label">Age <span class="text-danger">*</span></label>
+            <input asp-for="Age" type="number" class="form-control" placeholder="Age" min="1" max="150" required />
+            <span asp-validation-for="Age" class="text-danger"></span>
+        </div>
+
+        <div class="col-md-4 mb-3">
+            <label asp-for="Gender" class="form-label">Gender <span class="text-danger">*</span></label>
+            <select asp-for="Gender" class="form-control" required>
+                <option value="">-- Select Gender --</option>
+                <option value="0">Male</option>
+                <option value="1">Female</option>
+            </select>
+            <span asp-validation-for="Gender" class="text-danger"></span>
+        </div>
+
+        <div class="col-md-4 mb-3">
+            <label asp-for="Date" class="form-label">Date <span class="text-danger">*</span></label>
+            <input asp-for="Date" type="date" class="form-control" required />
+            <span asp-validation-for="Date" class="text-danger"></span>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6 mb-3">
+            <label asp-for="StartTime" class="form-label">Start Time <span class="text-danger">*</span></label>
+            <input asp-for="StartTime" type="time" class="form-control" required />
+            <span asp-validation-for="StartTime" class="text-danger"></span>
+        </div>
+
+        <div class="col-md-6 mb-3">
+            <label asp-for="EndTime" class="form-label">End Time <span class="text-danger">*</span></label>
+            <input asp-for="EndTime" type="time" class="form-control" required />
+            <span asp-validation-for="EndTime" class="text-danger"></span>
+        </div>
+    </div>
+    
+    <!-- Payment Information Section -->
+    <div class="row">
+        <div class="col-md-12">
+            <hr />
+            <h6><i class="fas fa-dollar-sign"></i> Payment Information</h6>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-4 mb-3">
+            <label asp-for="TotalCost" class="form-label">Total Cost</label>
+            <div class="input-group">
+                <span class="input-group-text">$</span>
+                <input asp-for="TotalCost" type="number" step="0.01" min="0" class="form-control" id="totalCost" onchange="calculateRemainder()" />
+            </div>
+            <span asp-validation-for="TotalCost" class="text-danger"></span>
+        </div>
+
+        <div class="col-md-4 mb-3">
+            <label asp-for="PaidAmount" class="form-label">Paid Amount</label>
+            <div class="input-group">
+                <span class="input-group-text">$</span>
+                <input asp-for="PaidAmount" type="number" step="0.01" min="0" class="form-control" id="paidAmount" onchange="calculateRemainder()" />
+            </div>
+            <span asp-validation-for="PaidAmount" class="text-danger"></span>
+        </div>
+        
+        <div class="col-md-4 mb-3">
+            <label class="form-label">Remainder</label>
+            <div class="input-group">
+                <span class="input-group-text">$</span>
+                <input type="text" class="form-control" id="remainder" readonly style="font-weight: bold;" />
+            </div>
+            <small class="text-muted">Calculated automatically</small>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-12 mb-3">
+            <label asp-for="Notes" class="form-label">Notes</label>
+            <textarea asp-for="Notes" class="form-control" rows="3" placeholder="Additional notes..."></textarea>
+            <span asp-validation-for="Notes" class="text-danger"></span>
+        </div>
+    </div>
+
+    <!-- Footer Buttons -->
+    <div class="d-flex justify-content-end gap-2 mt-3 pt-3 border-top">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+            <i class="fas fa-times"></i> Cancel
+        </button>
+        <button type="submit" class="btn btn-primary">
+            <i class="fas fa-save"></i> Update Appointment
+        </button>
     </div>
 </form>
 
 <script>
+    // Enable client-side validation
     $.validator.unobtrusive.parse('#editForm');
+    
+    // Calculate remainder on page load
+    $(document).ready(function() {
+        calculateRemainder();
+    });
+    
+    // Calculate remainder function
+    function calculateRemainder() {
+        var totalCost = parseFloat($('#totalCost').val()) || 0;
+        var paidAmount = parseFloat($('#paidAmount').val()) || 0;
+        var remainder = totalCost - paidAmount;
+        
+        var $remainder = $('#remainder');
+        $remainder.val(remainder.toFixed(2));
+        
+        // Change color based on remainder
+        if (remainder > 0) {
+            $remainder.css('color', '#dc3545'); // Red for outstanding balance
+        } else if (remainder < 0) {
+            $remainder.css('color', '#ffc107'); // Yellow for overpayment
+        } else {
+            $remainder.css('color', '#28a745'); // Green for fully paid
+        }
+    }
 </script>

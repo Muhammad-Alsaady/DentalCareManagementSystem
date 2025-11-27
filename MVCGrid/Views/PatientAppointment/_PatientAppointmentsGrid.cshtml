@@ -12,38 +12,78 @@
         FilterMode = GridFilterMode.Header
     };
 
-    // Full Name
+    // Full Name (15%)
     grid.Columns.Add(m => m.FullName)
         .Titled("Patient")
+        .Css("col-patient-name")
         .Filterable(true)
         .Sortable(true);
 
-    // Date
+    // Phone (12%)
+    grid.Columns.Add(m => m.Phone)
+        .Titled("Phone")
+        .Css("col-phone")
+        .Filterable(true)
+        .Sortable(true);
+
+    // Date (10%)
     grid.Columns.Add(m => m.Date)
         .Titled("Date")
+        .Css("col-date text-center")
         .RenderedAs(m => m.Date.ToString("yyyy-MM-dd"))
         .Filterable(true)
         .Sortable(true);
 
-    // Start time
+    // Start time (8%)
     grid.Columns.Add(m => m.StartTime)
         .Titled("Start")
+        .Css("col-start-time text-center")
         .RenderedAs(m => m.StartTime.ToString(@"hh\:mm"));
 
-    // End time
+    // End time (8%)
     grid.Columns.Add(m => m.EndTime)
         .Titled("End")
+        .Css("col-end-time text-center")
         .RenderedAs(m => m.EndTime.ToString(@"hh\:mm"));
 
-    // Status
+    // Status (10%)
     grid.Columns.Add(m => m.Status)
         .Titled("Status")
+        .Css("col-status text-center")
+        .RenderedAs(m => GetStatusBadge(m.Status))
+        .Encoded(false)
         .Filterable(true)
         .Sortable(true);
 
-    // Actions
+    // Total Cost (8%)
+    grid.Columns.Add(m => m.TotalCost)
+        .Titled("Total")
+        .Css("col-total-cost text-end")
+        .Formatted("${0:N2}")
+        .Filterable(false)
+        .Sortable(true);
+
+    // Paid Amount (8%)
+    grid.Columns.Add(m => m.PaidAmount)
+        .Titled("Paid")
+        .Css("col-paid-amount text-end")
+        .Formatted("${0:N2}")
+        .Filterable(false)
+        .Sortable(true);
+
+    // Remainder (8%)
+    grid.Columns.Add(m => m.Remainder)
+        .Titled("Remainder")
+        .Css("col-remainder text-end")
+        .RenderedAs(m => GetRemainderDisplay(m))
+        .Encoded(false)
+        .Filterable(false)
+        .Sortable(true);
+
+    // Actions (13%)
     grid.Columns.Add(m => m.Id)
         .Titled("Actions")
+        .Css("col-actions text-center")
         .Encoded(false)
         .RenderedAs(m => GetButtons(m))
         .Filterable(false)
@@ -57,19 +97,61 @@
 }
 
 @functions {
+    string GetStatusBadge(DentalCareManagmentSystem.Domain.Enums.AppointmentStatus status)
+    {
+        string badgeClass = status switch
+        {
+            DentalCareManagmentSystem.Domain.Enums.AppointmentStatus.Scheduled => "bg-primary",
+            DentalCareManagmentSystem.Domain.Enums.AppointmentStatus.Completed => "bg-success",
+            DentalCareManagmentSystem.Domain.Enums.AppointmentStatus.Cancelled => "bg-danger",
+            DentalCareManagmentSystem.Domain.Enums.AppointmentStatus.NoShow => "bg-warning",
+            DentalCareManagmentSystem.Domain.Enums.AppointmentStatus.Notified => "bg-info",
+            _ => "bg-secondary"
+        };
+        
+        return $"<span class='badge {badgeClass}'>{status}</span>";
+    }
+    
+    string GetRemainderDisplay(DentalCareManagmentSystem.Application.DTOs.PatientAppointmentDto m)
+    {
+        var remainder = m.Remainder;
+        var cssClass = remainder > 0 ? "text-danger fw-bold" : "text-success";
+        return $"<span class='{cssClass}'>${remainder:N2}</span>";
+    }
+
     string GetButtons(DentalCareManagmentSystem.Application.DTOs.PatientAppointmentDto m)
     {
         var sb = new StringBuilder();
 
         sb.Append("<div class='btn-group btn-group-sm'>");
-
-        sb.Append($"<button onclick='showEdit(\"{m.Id}\")' class='btn btn-primary'><i class='fas fa-edit'></i></button>");
-        sb.Append($"<button onclick='showDelete(\"{m.Id}\")' class='btn btn-danger'><i class='fas fa-trash'></i></button>");
+        
+        sb.Append($"<button onclick='showDetails(\"{m.Id}\")' class='btn btn-info' title='Details'><i class='fas fa-info-circle'></i></button>");
+        sb.Append($"<button onclick='showEdit(\"{m.Id}\")' class='btn btn-primary' title='Edit'><i class='fas fa-edit'></i></button>");
+        sb.Append($"<button onclick='showDelete(\"{m.Id}\")' class='btn btn-danger' title='Delete'><i class='fas fa-trash'></i></button>");
 
         sb.Append("</div>");
 
         return sb.ToString();
     }
 }
+
+<style>
+    /* Column Width Distribution */
+    .mvc-grid table {
+        table-layout: fixed;
+        width: 100%;
+    }
+
+    .col-patient-name { width: 15%; }
+    .col-phone { width: 12%; }
+    .col-date { width: 10%; }
+    .col-start-time { width: 8%; }
+    .col-end-time { width: 8%; }
+    .col-status { width: 10%; }
+    .col-total-cost { width: 8%; }
+    .col-paid-amount { width: 8%; }
+    .col-remainder { width: 8%; }
+    .col-actions { width: 13%; }
+</style>
 
 @await Html.PartialAsync("MvcGrid/_Grid", grid)
