@@ -1,0 +1,17 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+	<data name="ModalTitle" xml:space="preserve"><value>إنشاء خطة علاجية - {0}</value></data>
+	<data name="Patient" xml:space="preserve"><value>المريض:</value></data>
+	<data name="AppointmentID" xml:space="preserve"><value>رقم الموعد:</value></data>
+	<data name="Date" xml:space="preserve"><value>التاريخ:</value></data>
+	<data name="TreatmentItems" xml:space="preserve"><value>العناصر العلاجية</value></data>
+	<data name="ServiceName" xml:space="preserve"><value>اسم الخدمة</value></data>
+	<data name="Price" xml:space="preserve"><value>السعر ($)</value></data>
+	<data name="Quantity" xml:space="preserve"><value>الكمية</value></data>
+	<data name="Total" xml:space="preserve"><value>الإجمالي</value></data>
+	<data name="AddService" xml:space="preserve"><value>إضافة خدمة</value></data>
+	<data name="TotalCost" xml:space="preserve"><value>إجمالي التكلفة:</value></data>
+	<data name="CancelButton" xml:space="preserve"><value>إلغاء</value></data>
+	<data name="SaveButton" xml:space="preserve"><value>حفظ والمتابعة للدفع</value></data>
+	<data name="ValidationAddItem" xml:space="preserve"><value>يرجى إضافة عنصر علاجي واحد على الأقل.</value></data>
+</root>

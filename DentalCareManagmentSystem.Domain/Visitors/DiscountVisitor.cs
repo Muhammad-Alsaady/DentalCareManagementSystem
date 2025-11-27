@@ -10,7 +10,7 @@ namespace DentalCareManagmentSystem.Domain.Visitors
 {
     public class DiscountVisitor : IVisitor
     {
-        private readonly decimal _discountPercentage; 
+        private readonly decimal _discountPercentage;
 
         public DiscountVisitor(decimal discountPercentage)
         {
@@ -19,10 +19,9 @@ namespace DentalCareManagmentSystem.Domain.Visitors
 
         public void Visit(TreatmentItem item)
         {
-            // Apply discount
+            // Apply discount to the price snapshot
             var discountAmount = item.PriceSnapshot * (_discountPercentage / 100m);
             item.PriceSnapshot -= discountAmount;
         }
     }
-
 }

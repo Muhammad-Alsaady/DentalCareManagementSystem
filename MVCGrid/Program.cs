@@ -61,6 +61,13 @@ else
 }
 
 app.UseHttpsRedirection();
+var supportedCultures = new[] { "en", "ar" };
+var localizationOptions = new RequestLocalizationOptions()
+    .SetDefaultCulture("en")
+    .AddSupportedCultures(supportedCultures)
+    .AddSupportedUICultures(supportedCultures);
+
+app.UseRequestLocalization(localizationOptions);
 app.UseRouting();
 
 app.UseAuthentication();

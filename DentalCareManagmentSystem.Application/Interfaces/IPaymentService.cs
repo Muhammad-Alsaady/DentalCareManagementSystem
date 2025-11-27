@@ -1,4 +1,5 @@
-using DentalCareManagmentSystem.Application.DTOs;
+﻿using DentalCareManagmentSystem.Application.DTOs;
+using DentalCareManagmentSystem.Domain.Enums;
 
 namespace DentalCareManagmentSystem.Application.Interfaces;
 
@@ -7,64 +8,22 @@ namespace DentalCareManagmentSystem.Application.Interfaces;
 /// </summary>
 public interface IPaymentService
 {
-    /// <summary>
-    /// Add a new payment transaction (async with transaction support)
-    /// </summary>
     Task<PaymentTransactionDto> AddPaymentAsync(CreatePaymentDto payment, string createdBy);
-    
-    /// <summary>
-    /// Get all payments for a specific patient
-    /// </summary>
-    List<PaymentTransactionDto> GetPatientPayments(Guid patientId);
-    
-    /// <summary>
-    /// Get payment summary for a patient including total costs and balances
-    /// </summary>
-    PatientPaymentSummaryDto GetPatientPaymentSummary(Guid patientId);
-    
-    /// <summary>
-    /// Get total amount paid by a patient
-    /// </summary>
-    decimal GetTotalPaid(Guid patientId);
-    
-    /// <summary>
-    /// Get remaining balance for a patient
-    /// </summary>
-    decimal GetRemainingBalance(Guid patientId);
-    
-    /// <summary>
-    /// Get a specific payment by ID
-    /// </summary>
-    PaymentTransactionDto? GetPaymentById(Guid paymentId);
-    
-    /// <summary>
-    /// Delete a payment transaction (async with transaction support)
-    /// </summary>
+    Task<PaymentTransactionDto> AddPaymentAsync(CreatePaymentDto payment, string createdBy, DiscountType? discountType, decimal? discountValue);
     Task DeletePaymentAsync(Guid paymentId, string deletedBy);
-    
-    /// <summary>
-    /// Get total revenue for a date range
-    /// </summary>
-    decimal GetTotalRevenue(DateTime? startDate = null, DateTime? endDate = null);
-    
-    /// <summary>
-    /// Get revenue by month
-    /// </summary>
-    Dictionary<string, decimal> GetRevenueByMonth(int year);
-    
-    /// <summary>
-    /// Get all payments with filters
-    /// </summary>
-    List<PaymentTransactionDto> GetAllPayments(DateTime? startDate = null, DateTime? endDate = null);
-    
-    /// <summary>
-    /// Get patients with outstanding balances
-    /// </summary>
-    List<PatientPaymentSummaryDto> GetPatientsWithOutstandingBalance();
-    
-    /// <summary>
-    /// Recalculate payment totals for a patient and update all related appointments
-    /// This ensures consistency between PaymentTransactions and Appointment.PaidAmount
-    /// </summary>
     Task RecalculatePaymentTotalsAsync(Guid patientId);
+
+    // الدوال الجديدة للخصم المرن
+    Task ApplyDiscountAsync(ApplyDiscountRequest request);
+
+    // دوال الاستعلام
+    List<PaymentTransactionDto> GetPatientPayments(Guid patientId);
+    PatientPaymentSummaryDto GetPatientPaymentSummary(Guid patientId);
+    decimal GetTotalPaid(Guid patientId);
+    decimal GetRemainingBalance(Guid patientId);
+    PaymentTransactionDto? GetPaymentById(Guid paymentId);
+    decimal GetTotalRevenue(DateTime? startDate = null, DateTime? endDate = null);
+    Dictionary<string, decimal> GetRevenueByMonth(int year);
+    List<PaymentTransactionDto> GetAllPayments(DateTime? startDate = null, DateTime? endDate = null);
+    List<PatientPaymentSummaryDto> GetPatientsWithOutstandingBalance();
 }

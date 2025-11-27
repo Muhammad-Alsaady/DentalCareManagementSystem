@@ -1,0 +1,19 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+	<data name="ModalTitle" xml:space="preserve"><value>Create Treatment Plan - {0}</value></data>
+	<data name="Patient" xml:space="preserve"><value>Patient:</value></data>
+	<data name="AppointmentID" xml:space="preserve"><value>Appointment ID:</value></data>
+	<data name="Date" xml:space="preserve"><value>Date:</value></data>
+	<data name="TreatmentItems" xml:space="preserve"><value>Treatment Items</value></data>
+	<data name="ServiceName" xml:space="preserve"><value>Service Name</value></data>
+	<data name="Price" xml:space="preserve"><value>Price ($)</value></data>
+	<data name="Quantity" xml:space="preserve"><value>Qty</value></data>
+	<data name="Total" xml:space="preserve"><value>Total</value></data>
+	<data name="AddService" xml:space="preserve"><value>Add Service</value></data>
+	<data name="TotalCost" xml:space="preserve"><value>Total Cost:</value></data>
+	<data name="CancelButton" xml:space="preserve"><value>Cancel</value></data>
+	<data name="SaveButton" xml:space="preserve">
+    <value>Save &amp; Proceed to Payment</value>
+</data>
+	<data name="ValidationAddItem" xml:space="preserve"><value>Please add at least one treatment item.</value></data>
+</root>

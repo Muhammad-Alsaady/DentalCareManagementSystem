@@ -1,0 +1,36 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+	<data name="Title" xml:space="preserve">
+    <value>Clinic Reception</value>
+  </data>
+	<data name="TodaysAppointments" xml:space="preserve">
+    <value>Today's Appointments</value>
+  </data>
+	<data name="RefreshButton" xml:space="preserve">
+    <value>Refresh</value>
+  </data>
+	<data name="SearchPlaceholder" xml:space="preserve">
+    <value>Search by patient name...</value>
+  </data>
+	<data name="SearchButton" xml:space="preserve">
+    <value>Search</value>
+  </data>
+	<data name="ClearButton" xml:space="preserve">
+    <value>Clear</value>
+  </data>
+	<data name="AppointmentsHeader" xml:space="preserve">
+    <value>Today's Appointments - {0}</value>
+  </data>
+	<data name="PatientName" xml:space="preserve"><value>Patient Name</value></data>
+	<data name="Phone" xml:space="preserve"><value>Phone</value></data>
+	<data name="AppointmentTime" xml:space="preserve"><value>Appointment Time</value></data>
+	<data name="Status" xml:space="preserve"><value>Status</value></data>
+	<data name="Notes" xml:space="preserve"><value>Notes</value></data>
+	<data name="Actions" xml:space="preserve"><value>Actions</value></data>
+	<data name="TreatmentButton" xml:space="preserve"><value>Treatment</value></data>
+	<data name="PaymentButton" xml:space="preserve"><value>Payment</value></data>
+	<data name="ModalTreatmentTitle" xml:space="preserve"><value>Create Treatment Plan</value></data>
+	<data name="ModalPaymentTitle" xml:space="preserve"><value>Payment Processing</value></data>
+	<data name="ModalDetailsTitle" xml:space="preserve"><value>Appointment Details</value></data>
+	<data name="NoAppointments" xml:space="preserve"><value>No appointments found for today.</value></data>
+</root>

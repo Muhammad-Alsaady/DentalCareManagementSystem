@@ -1,7 +1,9 @@
-﻿@model List<DentalCareManagmentSystem.Application.DTOs.PatientAppointmentDto>
+﻿@using Microsoft.AspNetCore.Mvc.Localization
+@model List<DentalCareManagmentSystem.Application.DTOs.PatientAppointmentDto>
+@inject IViewLocalizer Localizer
 
 @{
-    ViewData["Title"] = "Patient Appointments";
+    ViewData["Title"] = Localizer["Title"];
 }
 
 <div class="container-fluid">
@@ -10,16 +12,15 @@
     <div class="row mb-3">
         <div class="col-md-12">
             <div class="d-flex justify-content-between align-items-center">
-                <h2><i class="fas fa-calendar-alt"></i> Patient Appointments</h2>
+                <h2><i class="fas fa-calendar-alt"></i> @Localizer["Title"]</h2>
 
                 <div>
                     <button class="btn btn-success" onclick="showCreate()">
-                        <i class="fas fa-plus"></i> Add Patient Appointment
+                        <i class="fas fa-plus"></i> @Localizer["AddButton"]
                     </button>
 
-
                     <button class="btn btn-outline-primary" onclick="refreshGrid()">
-                        <i class="fas fa-sync"></i> Refresh
+                        <i class="fas fa-sync"></i> @Localizer["RefreshButton"]
                     </button>
                 </div>
             </div>
@@ -34,13 +35,13 @@
                 <div class="card-body">
                     <div class="input-group">
                         <input type="text" id="searchInput" class="form-control"
-                               placeholder="Search by patient name..."
+                               placeholder="@Localizer["SearchPlaceholder"]"
                                onkeypress="if(event.keyCode==13) performSearch()" />
                         <button class="btn btn-primary" onclick="performSearch()">
-                            <i class="fas fa-search"></i> Search
+                            <i class="fas fa-search"></i> @Localizer["SearchButton"]
                         </button>
                         <button class="btn btn-secondary" onclick="clearSearch()">
-                            <i class="fas fa-times"></i> Clear
+                            <i class="fas fa-times"></i> @Localizer["ClearButton"]
                         </button>
                     </div>
                 </div>
@@ -66,7 +67,7 @@
         <div class="modal-content">
 
             <div class="modal-header">
-                <h5 class="modal-title" id="crudModalLabel">Appointment</h5>
+                <h5 class="modal-title" id="crudModalLabel">@Localizer["Appointment"]</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
 
@@ -78,24 +79,30 @@
 @section Scripts {
     <script>
         let crudModal;
+        const texts = {
+            addButton: '@Localizer["AddButton"]',
+            editButton: '@Localizer["EditButton"]',
+            deleteButton: '@Localizer["DeleteButton"]',
+            appointmentLabel: '@Localizer["Appointment"]',
+            searchPlaceholder: '@Localizer["SearchPlaceholder"]'
+        };
 
         $(document).ready(function () {
             crudModal = new bootstrap.Modal(document.getElementById('crudModal'));
             UIHelpers.ajaxFormHandler('.appointment-form', function () {
                 refreshGrid();
             });
-        });
-                      function showCreate() {
-            console.log('showCreate function called'); 
 
+            // تعيين placeholder للبحث
+            $("#searchInput").attr("placeholder", texts.searchPlaceholder);
+        });
+
+        function showCreate() {
             $.get('@Url.Action("Create", "PatientAppointment")')
                 .done(function (data) {
-                    console.log('Form data loaded:', data); 
                     $('#crudModalBody').html(data);
-                    $('#crudModalLabel').text('Add Patient Appointment');
+                    $('#crudModalLabel').text(texts.addButton);
                     $('#crudModal').modal('show');
-
-                    // إعادة تهيئة الـ validation
                     $.validator.unobtrusive.parse('#createForm');
                 })
                 .fail(function (xhr, status, error) {
@@ -105,11 +112,11 @@
         }
 
         function showEdit(id) {
-            UIHelpers.loadModal('@Url.Action("Edit", "PatientAppointment")/' + id, 'Edit Appointment');
+            UIHelpers.loadModal('@Url.Action("Edit", "PatientAppointment")/' + id, texts.editButton);
         }
 
         function showDelete(id) {
-            UIHelpers.loadModal('@Url.Action("Delete", "PatientAppointment")/' + id, 'Delete Appointment');
+            UIHelpers.loadModal('@Url.Action("Delete", "PatientAppointment")/' + id, texts.deleteButton);
         }
 
         function refreshGrid() {
@@ -125,21 +132,5 @@
             $("#searchInput").val("");
             refreshGrid();
         }
-
-
-        function refreshGrid() {
-            UIHelpers.reloadGridPartial("#gridContainer", '@Url.Action("GetAppointmentsGrid")');
-        }
-
-
-
-
-
-
-
-
-
-
-
     </script>
 }

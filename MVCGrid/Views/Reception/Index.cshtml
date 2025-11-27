@@ -1,0 +1,229 @@
+﻿@using DentalManagementSystem.Models
+@inject Microsoft.AspNetCore.Mvc.Localization.IViewLocalizer Localizer
+
+@using Microsoft.AspNetCore.Mvc.Localization
+@model List<PatientAppointmentViewModel>
+
+@inject IViewLocalizer Localizer
+
+@{
+    ViewData["Title"] = Localizer["Title"];
+}
+
+<div class="container-fluid">
+
+    <!-- Header -->
+    <div class="row mb-3">
+        <div class="col-md-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h2><i class="fas fa-calendar-alt"></i> @Localizer["TodaysAppointments"]</h2>
+
+                <div>
+                    <button class="btn btn-outline-primary" onclick="refreshGrid()">
+                        <i class="fas fa-sync"></i> @Localizer["RefreshButton"]
+                    </button>
+                </div>
+            </div>
+            <hr />
+        </div>
+    </div>
+
+    <!-- Search -->
+    <div class="row mb-3">
+        <div class="col-md-12">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <div class="input-group">
+                        <input type="text" id="searchInput" class="form-control"
+                               placeholder="@Localizer["SearchPlaceholder"]"
+                               onkeypress="if(event.keyCode==13) performSearch()" />
+                        <button class="btn btn-primary" onclick="performSearch()">
+                            <i class="fas fa-search"></i> @Localizer["SearchButton"]
+                        </button>
+                        <button class="btn btn-secondary" onclick="clearSearch()">
+                            <i class="fas fa-times"></i> @Localizer["ClearButton"]
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Appointments Table -->
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-list"></i> @(Localizer["AppointmentsHeader"].Value + " - " + DateTime.Today.ToString("dddd, MMMM dd, yyyy"))
+                    </h5>
+                </div>
+                <div class="card-body">
+                    @if (Model.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>@Localizer["PatientName"]</th>
+                                        <th>@Localizer["Phone"]</th>
+                                        <th>@Localizer["AppointmentTime"]</th>
+                                        <th>@Localizer["Status"]</th>
+                                        <th>@Localizer["Notes"]</th>
+                                        <th>@Localizer["Actions"]</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var appointment in Model)
+                                    {
+                                        <tr>
+                                            <td>@appointment.PatientName</td>
+                                            <td>@appointment.PhoneNumber</td>
+                                            <td>@appointment.AppointmentDate.ToString("hh:mm tt")</td>
+                                            <td>
+                                                <span class="badge @GetStatusBadge(appointment.Status)">
+                                                    @appointment.Status
+                                                </span>
+                                            </td>
+                                            <td>@(appointment.Notes?.Length > 50 ? appointment.Notes.Substring(0, 50) + "..." : appointment.Notes)</td>
+                                            <td>
+                                                <div class="btn-group btn-group-sm">
+                                                    <!-- Treatment Plan Button -->
+                                                    @if (appointment.Status == "Scheduled" || appointment.Status == "Notified")
+                                                    {
+                                                        <button class="btn btn-success" onclick="showTreatmentPlan('@appointment.Id')"
+                                                                title="@Localizer["TreatmentButton"]">
+                                                            <i class="fas fa-stethoscope"></i> @Localizer["TreatmentButton"]
+                                                        </button>
+                                                    }
+                                                    else if (appointment.Status == "UnderTreatment")
+                                                    {
+                                                        <button class="btn btn-warning" onclick="showPayment('@appointment.Id')"
+                                                                title="@Localizer["PaymentButton"]">
+                                                            <i class="fas fa-money-bill-wave"></i> @Localizer["PaymentButton"]
+                                                        </button>
+                                                    }
+
+                                                    <!-- View Details Button -->
+                                                    <button class="btn btn-info" onclick="showAppointmentDetails('@appointment.Id')">
+                                                        <i class="fas fa-eye"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-info text-center">
+                            <i class="fas fa-info-circle"></i>
+                            @Localizer["NoAppointments"]
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="crudModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="crudModalLabel">@Localizer["ModalDetailsTitle"]</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="crudModalBody"></div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let crudModal;
+
+        $(document).ready(function () {
+            crudModal = new bootstrap.Modal(document.getElementById('crudModal'));
+        });
+
+        function showTreatmentPlan(appointmentId) {
+            $.get('@Url.Action("GetTreatmentPlanForm", "Reception")?appointmentId=' + appointmentId)
+                .done(function (data) {
+                    $('#crudModalBody').html(data);
+                    $('#crudModalLabel').text('@Localizer["ModalTreatmentTitle"]');
+                    $('#crudModal').modal('show');
+                })
+                .fail(function (xhr, status, error) {
+                    console.error('Error loading treatment plan form:', error);
+                    alert('Error loading form: ' + error);
+                });
+        }
+
+        function showPayment(appointmentId) {
+            $.get('@Url.Action("GetPaymentForm", "Reception")?appointmentId=' + appointmentId)
+                .done(function (data) {
+                    $('#crudModalBody').html(data);
+                    $('#crudModalLabel').text('@Localizer["ModalPaymentTitle"]');
+                    $('#crudModal').modal('show');
+                })
+                .fail(function (xhr, status, error) {
+                    console.error('Error loading payment form:', error);
+                    alert('Error loading form: ' + error);
+                });
+        }
+
+        function showAppointmentDetails(appointmentId) {
+            $.get('@Url.Action("GetAppointmentDetails", "Reception")?appointmentId=' + appointmentId)
+                .done(function (data) {
+                    $('#crudModalBody').html(data);
+                    $('#crudModalLabel').text('@Localizer["ModalDetailsTitle"]');
+                    $('#crudModal').modal('show');
+                })
+                .fail(function (xhr, status, error) {
+                    console.error('Error loading details:', error);
+                    alert('Error loading details: ' + error);
+                });
+        }
+
+        function refreshGrid() {
+            window.location.reload();
+        }
+
+        function performSearch() {
+            let term = $("#searchInput").val().toLowerCase();
+            $('table tbody tr').each(function() {
+                let patientName = $(this).find('td:first').text().toLowerCase();
+                if (patientName.includes(term)) {
+                    $(this).show();
+                } else {
+                    $(this).hide();
+                }
+            });
+        }
+
+        function clearSearch() {
+            $("#searchInput").val("");
+            $('table tbody tr').show();
+        }
+    </script>
+}
+
+@functions {
+    string GetStatusBadge(string status)
+    {
+        return status switch
+        {
+            "Scheduled" => "bg-primary",
+            "Notified" => "bg-info",
+            "UnderTreatment" => "bg-warning",
+            "Completed" => "bg-success",
+            "Cancelled" => "bg-danger",
+            "NoShow" => "bg-secondary",
+            _ => "bg-secondary"
+        };
+    }
+}

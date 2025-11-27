@@ -1,0 +1,71 @@
+﻿@using Microsoft.AspNetCore.Mvc.Localization
+@model DentalCareManagmentSystem.Application.DTOs.PatientAppointmentDto
+
+@inject IViewLocalizer Localizer
+
+<div class="row">
+    <div class="col-md-6">
+        <h6>@Localizer["PatientInformation"]</h6>
+        <table class="table table-bordered table-sm">
+            <tr>
+                <th>@Localizer["Name"]</th>
+                <td>@Model.FullName</td>
+            </tr>
+            <tr>
+                <th>@Localizer["Phone"]</th>
+                <td>@Model.Phone</td>
+            </tr>
+            <tr>
+                <th>@Localizer["Gender"]</th>
+                <td>@Model.Gender</td>
+            </tr>
+        </table>
+    </div>
+    <div class="col-md-6">
+        <h6>@Localizer["AppointmentDetails"]</h6>
+        <table class="table table-bordered table-sm">
+            <tr>
+                <th>@Localizer["Date"]</th>
+                <td>@Model.Date.ToString("MM/dd/yyyy")</td>
+            </tr>
+            <tr>
+                <th>@Localizer["Time"]</th>
+                <td>@Model.StartTime.ToString(@"hh\:mm") - @Model.EndTime.ToString(@"hh\:mm")</td>
+            </tr>
+        </table>
+    </div>
+</div>
+
+@if (!string.IsNullOrEmpty(Model.Notes))
+{
+    <div class="row mt-3">
+        <div class="col-md-12">
+            <h6>@Localizer["Notes"]</h6>
+            <div class="card">
+                <div class="card-body">
+                    @Model.Notes
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<div class="modal-footer">
+    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">@Localizer["CloseButton"]</button>
+</div>
+
+@functions {
+    string GetStatusBadge(string status)
+    {
+        return status switch
+        {
+            "Scheduled" => "bg-primary",
+            "Notified" => "bg-info",
+            "UnderTreatment" => "bg-warning",
+            "Completed" => "bg-success",
+            "Cancelled" => "bg-danger",
+            "NoShow" => "bg-secondary",
+            _ => "bg-secondary"
+        };
+    }
+}

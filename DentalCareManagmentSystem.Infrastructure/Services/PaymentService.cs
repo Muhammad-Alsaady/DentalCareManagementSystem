@@ -1,40 +1,73 @@
-using DentalCareManagmentSystem.Application.DTOs;
+﻿using DentalCareManagmentSystem.Application.DTOs;
 using DentalCareManagmentSystem.Application.Interfaces;
 using DentalCareManagmentSystem.Domain.Entities;
+using DentalCareManagmentSystem.Domain.Enums;
+using DentalCareManagmentSystem.Domain.Interfaces;
+using DentalCareManagmentSystem.Domain.Services;
+using DentalCareManagmentSystem.Domain.Visitors;
 using DentalCareManagmentSystem.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
 
+
 namespace DentalCareManagmentSystem.Infrastructure.Services;
 
-/// <summary>
-/// Service for managing payment transactions with full ACID compliance
-/// Ensures Appointment.PaidAmount always matches sum of PaymentTransactions
-/// </summary>
 public class PaymentService : IPaymentService
 {
     private readonly ClinicDbContext _context;
+    private readonly DiscountService _discountService;
+    private readonly IDiscountVisitorFactory _discountVisitorFactory;
 
-    public PaymentService(ClinicDbContext context)
+    public PaymentService(
+        ClinicDbContext context,
+        DiscountService discountService,
+        IDiscountVisitorFactory discountVisitorFactory)
     {
         _context = context;
+        _discountService = discountService;
+        _discountVisitorFactory = discountVisitorFactory;
     }
 
     /// <summary>
-    /// Add payment with full transaction support and automatic recalculation
+    /// Add payment without discount
     /// </summary>
     public async Task<PaymentTransactionDto> AddPaymentAsync(CreatePaymentDto payment, string createdBy)
+    {
+        return await AddPaymentAsync(payment, createdBy, null, null);
+    }
+
+    /// <summary>
+    /// Add payment with flexible discount options
+    /// </summary>
+    public async Task<PaymentTransactionDto> AddPaymentAsync(
+        CreatePaymentDto payment,
+        string createdBy,
+        DiscountType? discountType = null,
+        decimal? discountValue = null)
     {
         if (payment.Amount <= 0)
         {
             throw new ArgumentException("Payment amount must be greater than zero.", nameof(payment.Amount));
         }
 
-        // Begin database transaction for atomicity
         using var transaction = await _context.Database.BeginTransactionAsync();
-        
+
         try
         {
+            // Apply discount if provided
+            if (discountType.HasValue && discountValue.HasValue)
+            {
+                var discountRequest = new ApplyDiscountRequest
+                {
+                    PatientId = payment.AppointmentId.HasValue ? null : payment.PatientId,
+                    AppointmentId = payment.AppointmentId,
+                    DiscountType = discountType.Value,
+                    DiscountValue = discountValue.Value
+                };
+
+                await ApplyDiscountAsync(discountRequest);
+            }
+
             var patient = await _context.Patients.FindAsync(payment.PatientId);
             if (patient == null)
             {
@@ -69,7 +102,7 @@ public class PaymentService : IPaymentService
             // Recalculate all payment totals for this patient
             await RecalculatePaymentTotalsAsync(payment.PatientId);
 
-            // Add audit log entry
+            // Add audit log entry with discount details
             var auditLog = new AuditLog
             {
                 Id = Guid.NewGuid(),
@@ -84,6 +117,8 @@ public class PaymentService : IPaymentService
                     PatientId = payment.PatientId,
                     AppointmentId = payment.AppointmentId,
                     Amount = payment.Amount,
+                    DiscountType = discountType?.ToString(),
+                    DiscountValue = discountValue,
                     PaymentDate = payment.PaymentDate,
                     Notes = payment.Notes
                 })
@@ -91,31 +126,102 @@ public class PaymentService : IPaymentService
             _context.AuditLogs.Add(auditLog);
             await _context.SaveChangesAsync();
 
-            // Commit transaction
             await transaction.CommitAsync();
 
             // Load navigation properties for DTO mapping
             await _context.Entry(paymentTransaction).Reference(pt => pt.Patient).LoadAsync();
-            await _context.Entry(paymentTransaction).Reference(pt => pt.CreatedByUser).LoadAsync();
+            if (paymentTransaction.CreatedByUser == null)
+            {
+                await _context.Entry(paymentTransaction).Reference(pt => pt.CreatedByUser).LoadAsync();
+            }
 
             return MapToDto(paymentTransaction);
         }
         catch
         {
-            // Rollback on any error
             await transaction.RollbackAsync();
             throw;
         }
     }
 
     /// <summary>
-    /// Delete payment with full transaction support and automatic recalculation
+    /// Apply discount with specified type and value
+    /// </summary>
+    public async Task ApplyDiscountAsync(ApplyDiscountRequest request)
+    {
+        if (request.PatientId.HasValue && request.AppointmentId.HasValue)
+        {
+            throw new ArgumentException("Specify either PatientId OR AppointmentId, not both");
+        }
+
+        // Create the appropriate visitor based on discount type
+        var discountVisitor = _discountVisitorFactory.CreateDiscountVisitor(
+            request.DiscountType,
+            request.DiscountValue);
+
+        IEnumerable<TreatmentItem> treatmentItems;
+
+        if (request.PatientId.HasValue)
+        {
+            treatmentItems = await _context.TreatmentItems
+                .Include(ti => ti.TreatmentPlan)
+                .Where(ti => ti.TreatmentPlan!.PatientId == request.PatientId.Value)
+                .ToListAsync();
+        }
+        else if (request.AppointmentId.HasValue)
+        {
+            treatmentItems = await _context.TreatmentItems
+                .Where(ti => ti.PatientAppointmentId == request.AppointmentId.Value)
+                .ToListAsync();
+        }
+        else
+        {
+            throw new ArgumentException("Either PatientId or AppointmentId must be provided");
+        }
+
+        // Apply discount using visitor pattern
+        _discountService.Apply(treatmentItems, discountVisitor);
+        await _context.SaveChangesAsync();
+    }
+
+    // الدوال القديمة للخصم يمكن حذفها أو تركها للتوافق مع الإصدارات القديمة
+    // لكن الأفضل إزالتها واستخدام الطريقة الجديدة
+
+    /// <summary>
+    /// Apply percentage discount to patient treatment items (Legacy method)
+    /// </summary>
+    private async Task ApplyDiscountToPatientTreatmentItemsAsync(Guid patientId, decimal discountPercentage)
+    {
+        var request = new ApplyDiscountRequest
+        {
+            PatientId = patientId,
+            DiscountType = DiscountType.Percentage,
+            DiscountValue = discountPercentage
+        };
+        await ApplyDiscountAsync(request);
+    }
+
+    /// <summary>
+    /// Apply percentage discount to appointment treatment items (Legacy method)
+    /// </summary>
+    private async Task ApplyDiscountToAppointmentTreatmentItemsAsync(Guid appointmentId, decimal discountPercentage)
+    {
+        var request = new ApplyDiscountRequest
+        {
+            AppointmentId = appointmentId,
+            DiscountType = DiscountType.Percentage,
+            DiscountValue = discountPercentage
+        };
+        await ApplyDiscountAsync(request);
+    }
+
+    /// <summary>
+    /// Delete payment with full transaction support
     /// </summary>
     public async Task DeletePaymentAsync(Guid paymentId, string deletedBy)
     {
-        // Begin database transaction for atomicity
         using var transaction = await _context.Database.BeginTransactionAsync();
-        
+
         try
         {
             var payment = await _context.PaymentTransactions.FindAsync(paymentId);
@@ -156,12 +262,10 @@ public class PaymentService : IPaymentService
             _context.AuditLogs.Add(auditLog);
             await _context.SaveChangesAsync();
 
-            // Commit transaction
             await transaction.CommitAsync();
         }
         catch
         {
-            // Rollback on any error
             await transaction.RollbackAsync();
             throw;
         }
@@ -169,28 +273,19 @@ public class PaymentService : IPaymentService
 
     /// <summary>
     /// CRITICAL: Recalculates payment totals for a patient
-    /// This is the SINGLE SOURCE OF TRUTH for Appointment.PaidAmount
-    /// Must be called after any payment add/delete operation
     /// </summary>
     public async Task RecalculatePaymentTotalsAsync(Guid patientId)
     {
-        // Get all appointments for this patient with row-level locking to prevent race conditions
         var appointments = await _context.Appointments
             .Where(a => a.PatientId == patientId)
             .ToListAsync();
 
-        // Get all payments for this patient
         var allPayments = await _context.PaymentTransactions
             .Where(pt => pt.PatientId == patientId)
             .ToListAsync();
 
-        // Strategy: 
-        // 1. If payment has AppointmentId ? assign to that appointment
-        // 2. If payment has no AppointmentId ? distribute across appointments or keep as patient-level credit
-
         foreach (var appointment in appointments)
         {
-            // Calculate paid amount for this specific appointment
             var appointmentPayments = allPayments
                 .Where(p => p.AppointmentId == appointment.Id)
                 .Sum(p => p.Amount);
@@ -198,7 +293,6 @@ public class PaymentService : IPaymentService
             appointment.PaidAmount = appointmentPayments;
         }
 
-        // Save all changes
         await _context.SaveChangesAsync();
     }
 
@@ -209,18 +303,20 @@ public class PaymentService : IPaymentService
             .Include(pt => pt.CreatedByUser)
             .Where(pt => pt.PatientId == patientId)
             .OrderByDescending(pt => pt.PaymentDate)
-            .AsEnumerable() // Execute query first, then map in memory
+            .AsEnumerable()
             .Select(pt => MapToDto(pt))
             .ToList();
     }
 
+    /// <summary>
+    /// Get patient payment summary with enhanced discount information
+    /// </summary>
     public PatientPaymentSummaryDto GetPatientPaymentSummary(Guid patientId)
     {
         var patient = _context.Patients
             .Include(p => p.TreatmentPlans)
-                .ThenInclude(tp => tp.Items)
+                .ThenInclude(tp => tp.Items!)
             .Include(p => p.PaymentTransactions)
-                .ThenInclude(pt => pt.CreatedByUser)
             .FirstOrDefault(p => p.Id == patientId);
 
         if (patient == null)
@@ -228,30 +324,29 @@ public class PaymentService : IPaymentService
             throw new ArgumentException("Patient not found.", nameof(patientId));
         }
 
-        // Calculate total cost from all treatment plans
-        var totalCost = patient.TreatmentPlans
-            .SelectMany(tp => tp.Items)
-            .Sum(i => i.LineTotal);
-
-        // Calculate total paid from all payment transactions (SOURCE OF TRUTH)
-        var totalPaid = patient.PaymentTransactions.Sum(pt => pt.Amount);
-
-        var payments = patient.PaymentTransactions
-            .OrderByDescending(pt => pt.PaymentDate)
-            .Select(pt => new PaymentTransactionDto
-            {
-                Id = pt.Id,
-                PatientId = pt.PatientId,
-                PatientName = patient.FullName,
-                AppointmentId = pt.AppointmentId,
-                Amount = pt.Amount,
-                PaymentDate = pt.PaymentDate,
-                Notes = pt.Notes,
-                CreatedBy = pt.CreatedBy,
-                CreatedByName = pt.CreatedByUser?.UserName,
-                CreatedAt = pt.CreatedAt
-            })
+        // Get all treatment items for this patient
+        var treatmentItems = patient.TreatmentPlans
+            .SelectMany(tp => tp.Items ?? new List<TreatmentItem>())
             .ToList();
+
+        // Calculate totals
+        var totalCost = treatmentItems.Sum(i => i.LineTotal);
+        var totalPaid = patient.PaymentTransactions.Sum(pt => pt.Amount);
+        var remainingBalance = totalCost - totalPaid;
+
+        // Get detailed treatment items with discount information
+        var treatmentItemDetails = treatmentItems.Select(ti => new TreatmentItemDetailDto
+        {
+            Id = ti.Id,
+            Name = ti.NameSnapshot ?? "Unknown",
+            OriginalPrice = ti.PriceSnapshot, // استخدام PriceSnapshot كسعر أصلي
+            FinalPrice = ti.PriceSnapshot,
+            Quantity = ti.Quantity,
+            LineTotal = ti.LineTotal,
+            DiscountAmount = 0 // يمكن تعديل هذا إذا كان لديك طريقة لحساب الخصم
+        }).ToList();
+
+        var payments = GetPatientPayments(patientId);
 
         return new PatientPaymentSummaryDto
         {
@@ -259,8 +354,10 @@ public class PaymentService : IPaymentService
             PatientName = patient.FullName,
             TotalCost = totalCost,
             TotalPaid = totalPaid,
-            RemainingBalance = totalCost - totalPaid,
-            Payments = payments
+            RemainingBalance = remainingBalance,
+            Payments = payments,
+            TreatmentItems = treatmentItemDetails,
+            TotalDiscount = 0 // يمكن تعديل هذا لاحقاً
         };
     }
 
@@ -275,7 +372,7 @@ public class PaymentService : IPaymentService
     {
         var totalCost = _context.TreatmentPlans
             .Where(tp => tp.PatientId == patientId)
-            .SelectMany(tp => tp.Items)
+            .SelectMany(tp => tp.Items!)
             .Sum(i => i.LineTotal);
 
         var totalPaid = GetTotalPaid(patientId);
@@ -358,7 +455,7 @@ public class PaymentService : IPaymentService
 
         return query
             .OrderByDescending(pt => pt.PaymentDate)
-            .AsEnumerable() // Execute query first, then map in memory
+            .AsEnumerable()
             .Select(pt => MapToDto(pt))
             .ToList();
     }
@@ -367,7 +464,7 @@ public class PaymentService : IPaymentService
     {
         var patients = _context.Patients
             .Include(p => p.TreatmentPlans)
-                .ThenInclude(tp => tp.Items)
+                .ThenInclude(tp => tp.Items!)
             .Include(p => p.PaymentTransactions)
             .Where(p => p.IsActive)
             .ToList();
@@ -377,7 +474,7 @@ public class PaymentService : IPaymentService
         foreach (var patient in patients)
         {
             var totalCost = patient.TreatmentPlans
-                .SelectMany(tp => tp.Items)
+                .SelectMany(tp => tp.Items!)
                 .Sum(i => i.LineTotal);
 
             var totalPaid = patient.PaymentTransactions.Sum(pt => pt.Amount);
@@ -401,7 +498,6 @@ public class PaymentService : IPaymentService
 
     /// <summary>
     /// Maps PaymentTransaction entity to DTO
-    /// STATIC method to avoid EF Core client projection memory leak
     /// </summary>
     private static PaymentTransactionDto MapToDto(PaymentTransaction payment)
     {
@@ -420,3 +516,4 @@ public class PaymentService : IPaymentService
         };
     }
 }
+

@@ -1,0 +1,12 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+	<data name="PatientInformation" xml:space="preserve"><value>Patient Information</value></data>
+	<data name="AppointmentDetails" xml:space="preserve"><value>Appointment Details</value></data>
+	<data name="Name" xml:space="preserve"><value>Name:</value></data>
+	<data name="Phone" xml:space="preserve"><value>Phone:</value></data>
+	<data name="Gender" xml:space="preserve"><value>Gender:</value></data>
+	<data name="Date" xml:space="preserve"><value>Date:</value></data>
+	<data name="Time" xml:space="preserve"><value>Time:</value></data>
+	<data name="Notes" xml:space="preserve"><value>Notes</value></data>
+	<data name="CloseButton" xml:space="preserve"><value>Close</value></data>
+</root>

@@ -1,0 +1,228 @@
+﻿@using DentalManagementSystem.Models
+@using Microsoft.AspNetCore.Mvc.Localization
+@model TreatmentPlanViewModel
+@inject IHtmlLocalizer<Views_Reception__CreateTreatmentPlan> Localizer
+
+<div class="modal-header">
+    <h5 class="modal-title">@string.Format(Localizer["ModalTitle"].Value, ViewBag.PatientName)</h5>
+    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+</div>
+
+<div class="modal-body">
+    <!-- Patient Information -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card bg-light">
+                <div class="card-body py-2">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <strong>@Localizer["Patient"].Value</strong> @ViewBag.PatientName
+                        </div>
+                        <div class="col-md-4">
+                            <strong>@Localizer["AppointmentID"].Value</strong> @Model.AppointmentId
+                        </div>
+                        <div class="col-md-4">
+                            <strong>@Localizer["Date"].Value</strong> @DateTime.Today.ToString("MM/dd/yyyy")
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Treatment Plan Form -->
+    <form class="treatment-form" id="treatmentForm" method="post" action="@Url.Action("CreateTreatmentPlan", "Reception")">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="AppointmentId" value="@Model.AppointmentId" />
+
+        <div class="card mb-3">
+            <div class="card-header bg-primary text-white">
+                <h6 class="card-title mb-0">
+                    <i class="fas fa-teeth"></i> @Localizer["TreatmentItems"].Value
+                </h6>
+            </div>
+            <div class="card-body">
+                <div id="treatmentItemsContainer">
+                    @if (Model.TreatmentItems.Any())
+                    {
+                        @for (int i = 0; i < Model.TreatmentItems.Count; i++)
+                        {
+                            <div class="treatment-item row mb-2 border p-2">
+                                <div class="col-md-5">
+                                    <label class="form-label small">@Localizer["ServiceName"].Value</label>
+                                    <input name="TreatmentItems[@i].Name"
+                                           value="@Model.TreatmentItems[i].Name"
+                                           class="form-control form-control-sm service-name"
+                                           placeholder="@Localizer["ServiceName"].Value" required />
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label small">@Localizer["Price"].Value</label>
+                                    <input name="TreatmentItems[@i].Price"
+                                           value="@Model.TreatmentItems[i].Price"
+                                           class="form-control form-control-sm price-input"
+                                           type="number" step="0.01" min="0" required />
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label small">@Localizer["Quantity"].Value</label>
+                                    <input name="TreatmentItems[@i].Quantity"
+                                           value="@Model.TreatmentItems[i].Quantity"
+                                           class="form-control form-control-sm quantity-input"
+                                           type="number" min="1" value="1" required />
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label small">@Localizer["Total"].Value</label>
+                                    <input type="text" class="form-control form-control-sm line-total" readonly
+                                           value="@(Model.TreatmentItems[i].LineTotal.ToString("F2"))" />
+                                </div>
+                                <div class="col-md-1 d-flex align-items-end">
+                                    <button type="button" class="btn btn-danger btn-sm remove-item"
+                                            style="@(i == 0 ? "display:none" : "")">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <!-- Empty item to start with -->
+                        <div class="treatment-item row mb-2 border p-2">
+                            <div class="col-md-5">
+                                <label class="form-label small">@Localizer["ServiceName"].Value</label>
+                                <input name="TreatmentItems[0].Name"
+                                       class="form-control form-control-sm service-name"
+                                       placeholder="@Localizer["ServiceName"].Value" required />
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label small">@Localizer["Price"].Value</label>
+                                <input name="TreatmentItems[0].Price"
+                                       class="form-control form-control-sm price-input"
+                                       type="number" step="0.01" min="0" required />
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label small">@Localizer["Quantity"].Value</label>
+                                <input name="TreatmentItems[0].Quantity"
+                                       class="form-control form-control-sm quantity-input"
+                                       type="number" min="1" value="1" required />
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label small">@Localizer["Total"].Value</label>
+                                <input type="text" class="form-control form-control-sm line-total" readonly value="0.00" />
+                            </div>
+                            <div class="col-md-1 d-flex align-items-end">
+                                <button type="button" class="btn btn-danger btn-sm remove-item" style="display:none">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    }
+                </div>
+
+                <button type="button" id="addItem" class="btn btn-primary btn-sm mt-2">
+                    <i class="fas fa-plus"></i> @Localizer["AddService"].Value
+                </button>
+
+                <!-- Cost Summary -->
+                <div class="row mt-3">
+                    <div class="col-md-12">
+                        <div class="card bg-light">
+                            <div class="card-body py-2">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <strong>@Localizer["TotalCost"].Value</strong>
+                                    <span id="totalCost" class="h6 text-success mb-0">$0.00</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">@Localizer["CancelButton"].Value</button>
+            <button type="submit" class="btn btn-success">@Localizer["SaveButton"].Value</button>
+        </div>
+    </form>
+</div>
+
+<script>
+    $(document).ready(function() {
+        calculateGrandTotal();
+
+        $(document).on('change', '.price-input, .quantity-input', function() {
+            calculateLineTotal($(this).closest('.treatment-item'));
+            calculateGrandTotal();
+        });
+
+        $('#addItem').click(function() {
+            addNewTreatmentItem();
+        });
+
+        $(document).on('click', '.remove-item', function() {
+            $(this).closest('.treatment-item').remove();
+            calculateGrandTotal();
+            reindexItems();
+        });
+
+        $('#treatmentForm').submit(function(e) {
+            if ($('.treatment-item').length === 0) {
+                e.preventDefault();
+                alert('@Localizer["ValidationAddItem"].Value');
+                return false;
+            }
+            return true;
+        });
+    });
+
+    function calculateLineTotal(item) {
+        const price = parseFloat(item.find('.price-input').val()) || 0;
+        const quantity = parseInt(item.find('.quantity-input').val()) || 0;
+        const lineTotal = price * quantity;
+        item.find('.line-total').val(lineTotal.toFixed(2));
+    }
+
+    function calculateGrandTotal() {
+        let total = 0;
+        $('.treatment-item').each(function() {
+            const lineTotal = parseFloat($(this).find('.line-total').val()) || 0;
+            total += lineTotal;
+        });
+        $('#totalCost').text('$' + total.toFixed(2));
+    }
+
+    function addNewTreatmentItem() {
+        const index = $('.treatment-item').length;
+        const newItem = `
+            <div class="treatment-item row mb-2 border p-2">
+                <div class="col-md-5">
+                    <input name="TreatmentItems[${index}].Name" class="form-control form-control-sm service-name" placeholder="${'${Localizer["ServiceName"].Value}'}" required />
+                </div>
+                <div class="col-md-2">
+                    <input name="TreatmentItems[${index}].Price" class="form-control form-control-sm price-input" type="number" step="0.01" min="0" placeholder="0.00" required />
+                </div>
+                <div class="col-md-2">
+                    <input name="TreatmentItems[${index}].Quantity" class="form-control form-control-sm quantity-input" type="number" min="1" value="1" required />
+                </div>
+                <div class="col-md-2">
+                    <input type="text" class="form-control form-control-sm line-total" readonly value="0.00" />
+                </div>
+                <div class="col-md-1 d-flex align-items-end">
+                    <button type="button" class="btn btn-danger btn-sm remove-item">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+        `;
+        $('#treatmentItemsContainer').append(newItem);
+    }
+
+    function reindexItems() {
+        $('.treatment-item').each(function(index) {
+            $(this).find('input[name*="Name"]').attr('name', `TreatmentItems[${index}].Name`);
+            $(this).find('input[name*="Price"]').attr('name', `TreatmentItems[${index}].Price`);
+            $(this).find('input[name*="Quantity"]').attr('name', `TreatmentItems[${index}].Quantity`);
+        });
+    }
+
+    $.validator.unobtrusive.parse('#treatmentForm');
+</script>

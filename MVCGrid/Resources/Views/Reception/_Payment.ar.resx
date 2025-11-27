@@ -1,0 +1,25 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+	<data name="ModalTitle" xml:space="preserve"><value>الدفع - {0}</value></data>
+	<data name="Patient" xml:space="preserve"><value>المريض:</value></data>
+	<data name="AppointmentID" xml:space="preserve"><value>رقم الموعد:</value></data>
+	<data name="TreatmentSummary" xml:space="preserve"><value>ملخص العلاج</value></data>
+	<data name="Service" xml:space="preserve"><value>الخدمة</value></data>
+	<data name="Price" xml:space="preserve"><value>السعر</value></data>
+	<data name="Quantity" xml:space="preserve"><value>الكمية</value></data>
+	<data name="Total" xml:space="preserve"><value>الإجمالي</value></data>
+	<data name="NoTreatmentItems" xml:space="preserve"><value>لا توجد عناصر علاجية</value></data>
+	<data name="Payment" xml:space="preserve"><value>الدفع</value></data>
+	<data name="TotalCost" xml:space="preserve"><value>إجمالي التكلفة:</value></data>
+	<data name="PaidAmount" xml:space="preserve"><value>المبلغ المدفوع:</value></data>
+	<data name="Remaining" xml:space="preserve"><value>المتبقي:</value></data>
+	<data name="PaymentCompleted" xml:space="preserve"><value>تم اكتمال الدفع</value></data>
+	<data name="PaymentAmount" xml:space="preserve"><value>مبلغ الدفع ($)</value></data>
+	<data name="PaymentDate" xml:space="preserve"><value>تاريخ الدفع</value></data>
+	<data name="Notes" xml:space="preserve"><value>ملاحظات</value></data>
+	<data name="ProcessPayment" xml:space="preserve"><value>إتمام الدفع</value></data>
+	<data name="MaxAmount" xml:space="preserve"><value>الحد الأقصى: ${0}</value></data>
+	<data name="NoPaymentHistory" xml:space="preserve"><value>لا يوجد تاريخ دفعات</value></data>
+	<data name="ExceedRemainingAlert" xml:space="preserve"><value>لا يمكن أن يتجاوز مبلغ الدفع الرصيد المتبقي ${0}</value></data>
+	<data name="ZeroAmountAlert" xml:space="preserve"><value>يجب أن يكون مبلغ الدفع أكبر من صفر.</value></data>
+</root>

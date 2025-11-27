@@ -1,0 +1,36 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+	<data name="Title" xml:space="preserve">
+    <value>استقبال العيادة</value>
+  </data>
+	<data name="TodaysAppointments" xml:space="preserve">
+    <value>مواعيد اليوم</value>
+  </data>
+	<data name="RefreshButton" xml:space="preserve">
+    <value>تحديث</value>
+  </data>
+	<data name="SearchPlaceholder" xml:space="preserve">
+    <value>ابحث باسم المريض...</value>
+  </data>
+	<data name="SearchButton" xml:space="preserve">
+    <value>بحث</value>
+  </data>
+	<data name="ClearButton" xml:space="preserve">
+    <value>مسح</value>
+  </data>
+	<data name="AppointmentsHeader" xml:space="preserve">
+    <value>مواعيد اليوم - {0}</value>
+  </data>
+	<data name="PatientName" xml:space="preserve"><value>اسم المريض</value></data>
+	<data name="Phone" xml:space="preserve"><value>الهاتف</value></data>
+	<data name="AppointmentTime" xml:space="preserve"><value>وقت الموعد</value></data>
+	<data name="Status" xml:space="preserve"><value>الحالة</value></data>
+	<data name="Notes" xml:space="preserve"><value>ملاحظات</value></data>
+	<data name="Actions" xml:space="preserve"><value>الإجراءات</value></data>
+	<data name="TreatmentButton" xml:space="preserve"><value>الخطة العلاجية</value></data>
+	<data name="PaymentButton" xml:space="preserve"><value>الدفع</value></data>
+	<data name="ModalTreatmentTitle" xml:space="preserve"><value>إنشاء خطة علاجية</value></data>
+	<data name="ModalPaymentTitle" xml:space="preserve"><value>معالجة الدفع</value></data>
+	<data name="ModalDetailsTitle" xml:space="preserve"><value>تفاصيل الموعد</value></data>
+	<data name="NoAppointments" xml:space="preserve"><value>لا توجد مواعيد لليوم.</value></data>
+</root>

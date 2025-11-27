@@ -1,9 +1,10 @@
 ﻿@using DentalManagementSystem.Models
+@using System.Globalization
 @{
     var menuItems = new List<MenuItem>
     {
         MenuItem.Create("Dashboard", Url.Action("Index", "Home"), "fas fa-home"),
-        MenuItem.Create("Patients", Url.Action("Index", "Patients"), "fas fa-users"),
+        MenuItem.Create("Patients", Url.Action("Index", "Reception"), "fas fa-users"),
         MenuItem.Create("Appointments", Url.Action("Index", "PatientAppointment"), "fas fa-calendar-alt"),
         MenuItem.Create("Payments", Url.Action("Index", "Payments"), "fas fa-money-bill-wave", true),
         MenuItem.Create("Notifications", Url.Action("Index", "Notifications"), "fas fa-bell"),
@@ -15,6 +16,12 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <style>
+        input, select, textarea {
+            pointer-events: auto !important;
+        }
+    </style>
+
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - Dental Care Management</title>
@@ -52,6 +59,36 @@
                 <i class="fas fa-clock"></i>
                 <span id="liveClock">Loading...</span>
             </div>
+            <!-- Language Switcher in Topbar Right -->
+            <div class="topbar-language ms-2">
+                <form id="changeLanguageForm" method="post" asp-controller="Home" asp-action="SetLanguage" class="d-inline">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="culture" id="cultureInput" value="" />
+                    <input type="hidden" name="returnUrl" value="@Context.Request.Path" />
+                    <div class="dropdown d-inline">
+                        <button class="btn btn-light btn-sm dropdown-toggle" type="button" id="languageDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-globe"></i> @CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.ToUpper()
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="languageDropdown">
+                            <li><a class="dropdown-item lang-option" href="#" data-culture="en">English</a></li>
+                            <li><a class="dropdown-item lang-option" href="#" data-culture="ar">العربية</a></li>
+                        </ul>
+                    </div>
+                </form>
+            </div>
+
+            <script>
+                $(document).ready(function () {
+                    $('.lang-option').click(function (e) {
+                        e.preventDefault();
+                        var culture = $(this).data('culture');
+                        $('#cultureInput').val(culture);
+                        $('#changeLanguageForm').submit();
+                    });
+                });
+            </script>
+
+
             <div class="topbar-divider"></div>
             <partial name="_LoginPartial" />
         </div>
@@ -74,6 +111,7 @@
     <div id="alertContainer"></div>
 
     <!-- Scripts -->
+
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 

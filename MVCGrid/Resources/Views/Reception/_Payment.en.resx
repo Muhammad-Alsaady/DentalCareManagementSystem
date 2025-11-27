@@ -1,0 +1,25 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+	<data name="ModalTitle" xml:space="preserve"><value>Payment - {0}</value></data>
+	<data name="Patient" xml:space="preserve"><value>Patient:</value></data>
+	<data name="AppointmentID" xml:space="preserve"><value>Appointment ID:</value></data>
+	<data name="TreatmentSummary" xml:space="preserve"><value>Treatment Summary</value></data>
+	<data name="Service" xml:space="preserve"><value>Service</value></data>
+	<data name="Price" xml:space="preserve"><value>Price</value></data>
+	<data name="Quantity" xml:space="preserve"><value>Qty</value></data>
+	<data name="Total" xml:space="preserve"><value>Total</value></data>
+	<data name="NoTreatmentItems" xml:space="preserve"><value>No treatment items found.</value></data>
+	<data name="Payment" xml:space="preserve"><value>Payment</value></data>
+	<data name="TotalCost" xml:space="preserve"><value>Total Cost:</value></data>
+	<data name="PaidAmount" xml:space="preserve"><value>Paid Amount:</value></data>
+	<data name="Remaining" xml:space="preserve"><value>Remaining:</value></data>
+	<data name="PaymentCompleted" xml:space="preserve"><value>Payment Completed</value></data>
+	<data name="PaymentAmount" xml:space="preserve"><value>Payment Amount ($)</value></data>
+	<data name="PaymentDate" xml:space="preserve"><value>Payment Date</value></data>
+	<data name="Notes" xml:space="preserve"><value>Notes</value></data>
+	<data name="ProcessPayment" xml:space="preserve"><value>Process Payment</value></data>
+	<data name="MaxAmount" xml:space="preserve"><value>Max: ${0}</value></data>
+	<data name="NoPaymentHistory" xml:space="preserve"><value>No payment history</value></data>
+	<data name="ExceedRemainingAlert" xml:space="preserve"><value>Payment amount cannot exceed the remaining balance of ${0}</value></data>
+	<data name="ZeroAmountAlert" xml:space="preserve"><value>Payment amount must be greater than zero.</value></data>
+</root>
