@@ -2,6 +2,7 @@
 
 @{
     ViewData["Title"] = "Patient Appointments";
+    var filterDate = ViewBag.FilterDate ?? DateTime.Today;
 }
 
 <div class="container-fluid">
@@ -26,21 +27,44 @@
         </div>
     </div>
 
-    <!-- Search -->
+    <!-- Date Filter and Search -->
     <div class="row mb-3">
         <div class="col-md-12">
             <div class="card shadow-sm">
                 <div class="card-body">
-                    <div class="input-group">
-                        <input type="text" id="searchInput" class="form-control"
-                               placeholder="Search by patient name..."
-                               onkeypress="if(event.keyCode==13) performSearch()" />
-                        <button class="btn btn-primary" onclick="performSearch()">
-                            <i class="fas fa-search"></i> Search
-                        </button>
-                        <button class="btn btn-secondary" onclick="clearSearch()">
-                            <i class="fas fa-times"></i> Clear
-                        </button>
+                    <div class="row align-items-center">
+                        <div class="col-md-4">
+                            <label for="appointmentDate" class="form-label fw-bold">
+                                <i class="fas fa-calendar"></i> Filter by Date:
+                            </label>
+                            <input type="date" 
+                                   id="appointmentDate" 
+                                   class="form-control" 
+                                   value="@filterDate.ToString("yyyy-MM-dd")" 
+                                   onchange="filterByDate(this.value)">
+                            <small class="text-muted">Leave blank to show all appointments</small>
+                        </div>
+                        <div class="col-md-1 text-center">
+                            <button class="btn btn-secondary" onclick="clearDateFilter()" title="Clear date filter">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                        <div class="col-md-7">
+                            <label class="form-label fw-bold">
+                                <i class="fas fa-search"></i> Search by Name:
+                            </label>
+                            <div class="input-group">
+                                <input type="text" id="searchInput" class="form-control"
+                                       placeholder="Search by patient name..."
+                                       onkeypress="if(event.keyCode==13) performSearch()" />
+                                <button class="btn btn-primary" onclick="performSearch()">
+                                    <i class="fas fa-search"></i> Search
+                                </button>
+                                <button class="btn btn-secondary" onclick="clearSearch()">
+                                    <i class="fas fa-times"></i> Clear
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -79,23 +103,78 @@
             UIHelpers.loadModal('@Url.Action("Edit", "PatientAppointment")/' + id, 'Edit Appointment');
         }
 
+        // Show Details
+        function showDetails(id) {
+            UIHelpers.loadModal('@Url.Action("Details", "PatientAppointment")/' + id, 'Patient Appointment Details');
+        }
+
         // Show Delete Confirmation
         function showDelete(id) {
             UIHelpers.loadModal('@Url.Action("Delete", "PatientAppointment")/' + id, 'Delete Appointment');
         }
 
+        // Filter by Date
+        function filterByDate(date) {
+            var searchTerm = $("#searchInput").val();
+            var params = {};
+            
+            if (date) {
+                params.filterDate = date;
+            }
+            if (searchTerm) {
+                params.searchString = searchTerm;
+            }
+            
+            UIHelpers.reloadGridPartial(
+                '#gridContainer',
+                '@Url.Action("GetAppointmentsGrid", "PatientAppointment")',
+                params
+            );
+        }
+
+        // Clear Date Filter
+        function clearDateFilter() {
+            $('#appointmentDate').val('');
+            filterByDate('');
+        }
+
         // Refresh Grid
         function refreshGrid() {
-            UIHelpers.reloadGridPartial('#gridContainer', '@Url.Action("GetAppointmentsGrid", "PatientAppointment")');
+            var date = $('#appointmentDate').val();
+            var searchTerm = $("#searchInput").val();
+            var params = {};
+            
+            if (date) {
+                params.filterDate = date;
+            }
+            if (searchTerm) {
+                params.searchString = searchTerm;
+            }
+            
+            UIHelpers.reloadGridPartial(
+                '#gridContainer',
+                '@Url.Action("GetAppointmentsGrid", "PatientAppointment")',
+                params
+            );
         }
 
         // Perform Search
         function performSearch() {
             var searchTerm = $("#searchInput").val();
+            var date = $('#appointmentDate').val();
+            var params = {};
+            
+            if (searchTerm) {
+                params.searchString = searchTerm;
+            }
+            if (date) {
+                params.filterDate = date;
+            }
+            
             UIHelpers.reloadGridPartial(
                 '#gridContainer',
                 '@Url.Action("GetAppointmentsGrid", "PatientAppointment")',
-                { searchString: searchTerm }
+                params
             );
         }
 

@@ -1,7 +1,13 @@
 ﻿@using DentalCareManagmentSystem.Domain.Enums
+@using DentalCareManagmentSystem.Domain.Entities
+@using Microsoft.AspNetCore.Identity
+@inject SignInManager<User> SignInManager
+@inject UserManager<User> UserManager
 @model DentalManagementSystem.Models.DashboardViewModel
 @{
     ViewData["Title"] = "Dashboard - Dental Care Management";
+    var user = await UserManager.GetUserAsync(User);
+    var isAdmin = user != null && await UserManager.IsInRoleAsync(user, "SystemAdmin");
 }
 
 <div class="container-fluid">
@@ -13,99 +19,102 @@
         </div>
     </div>
 
-    <!-- Statistics Cards -->
-    <div class="row mb-4">
-        <div class="col-md-3">
-            <div class="card bg-primary text-white shadow">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <h6 class="card-subtitle mb-2 opacity-75">Total Patients</h6>
-                            <h2 class="card-title mb-0">@Model.TotalPatients</h2>
-                        </div>
-                        <div>
-                            <i class="fas fa-users fa-3x opacity-50"></i>
+    @if (isAdmin)
+    {
+        <!-- Statistics Cards (Admin Only) -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card bg-primary text-white shadow">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="card-subtitle mb-2 opacity-75">Total Patients</h6>
+                                <h2 class="card-title mb-0">@Model.TotalPatients</h2>
+                            </div>
+                            <div>
+                                <i class="fas fa-users fa-3x opacity-50"></i>
+                            </div>
                         </div>
                     </div>
+                    <div class="card-footer bg-transparent border-0">
+                        <a href="@Url.Action("Index", "Patients")" class="text-white text-decoration-none">
+                            View Patients <i class="fas fa-arrow-right ms-1"></i>
+                        </a>
+                    </div>
                 </div>
-                <div class="card-footer bg-transparent border-0">
-                    <a href="@Url.Action("Index", "Patients")" class="text-white text-decoration-none">
-                        View Patients <i class="fas fa-arrow-right ms-1"></i>
-                    </a>
+            </div>
+
+            <div class="col-md-3">
+                <div class="card bg-success text-white shadow">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="card-subtitle mb-2 opacity-75">Today's Appointments</h6>
+                                <h2 class="card-title mb-0">@Model.TodayAppointments</h2>
+                            </div>
+                            <div>
+                                <i class="fas fa-calendar-check fa-3x opacity-50"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-footer bg-transparent border-0">
+                        <a href="#todaysAppointments" class="text-white text-decoration-none">
+                            View Today's <i class="fas fa-arrow-right ms-1"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-3">
+                <div class="card bg-warning text-white shadow">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="card-subtitle mb-2 opacity-75">Pending Appointments</h6>
+                                <h2 class="card-title mb-0">@Model.PendingAppointments</h2>
+                            </div>
+                            <div>
+                                <i class="fas fa-clock fa-3x opacity-50"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-footer bg-transparent border-0">
+                        <a href="#allAppointments" class="text-white text-decoration-none">
+                            View All <i class="fas fa-arrow-right ms-1"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-3">
+                <div class="card bg-info text-white shadow">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="card-subtitle mb-2 opacity-75">This Month Revenue</h6>
+                                <h2 class="card-title mb-0">$@Model.TotalRevenueThisMonth.ToString("N2")</h2>
+                            </div>
+                            <div>
+                                <i class="fas fa-dollar-sign fa-3x opacity-50"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-footer bg-transparent border-0">
+                        <small class="text-white-50">Outstanding: $@Model.OutstandingBalance.ToString("N2")</small>
+                    </div>
                 </div>
             </div>
         </div>
+    }
 
-        <div class="col-md-3">
-            <div class="card bg-success text-white shadow">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <h6 class="card-subtitle mb-2 opacity-75">Today's Appointments</h6>
-                            <h2 class="card-title mb-0">@Model.TodayAppointments</h2>
-                        </div>
-                        <div>
-                            <i class="fas fa-calendar-check fa-3x opacity-50"></i>
-                        </div>
-                    </div>
-                </div>
-                <div class="card-footer bg-transparent border-0">
-                    <a href="#todaysAppointments" class="text-white text-decoration-none">
-                        View Today's <i class="fas fa-arrow-right ms-1"></i>
-                    </a>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-md-3">
-            <div class="card bg-warning text-white shadow">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <h6 class="card-subtitle mb-2 opacity-75">Pending Appointments</h6>
-                            <h2 class="card-title mb-0">@Model.PendingAppointments</h2>
-                        </div>
-                        <div>
-                            <i class="fas fa-clock fa-3x opacity-50"></i>
-                        </div>
-                    </div>
-                </div>
-                <div class="card-footer bg-transparent border-0">
-                    <a href="#allAppointments" class="text-white text-decoration-none">
-                        View All <i class="fas fa-arrow-right ms-1"></i>
-                    </a>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-md-3">
-            <div class="card bg-info text-white shadow">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <h6 class="card-subtitle mb-2 opacity-75">This Month Revenue</h6>
-                            <h2 class="card-title mb-0">$@Model.TotalRevenueThisMonth.ToString("N2")</h2>
-                        </div>
-                        <div>
-                            <i class="fas fa-dollar-sign fa-3x opacity-50"></i>
-                        </div>
-                    </div>
-                </div>
-                <div class="card-footer bg-transparent border-0">
-                    <small class="text-white-50">Outstanding: $@Model.OutstandingBalance.ToString("N2")</small>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- All Appointments Section -->
+    <!-- All Appointments Section with Calendar Filter -->
     <div class="row mb-4" id="allAppointments">
         <div class="col-md-12">
             <div class="card shadow-sm">
                 <div class="card-header bg-white">
                     <div class="d-flex justify-content-between align-items-center">
                         <h4 class="mb-0">
-                            <i class="fas fa-calendar-alt text-primary"></i> All Patient Appointments
+                            <i class="fas fa-calendar-alt text-primary"></i> Patient Appointments
                         </h4>
                         <div>
                             <button class="btn btn-success" onclick="showCreate()">
@@ -119,9 +128,28 @@
                 </div>
                 
                 <div class="card-body">
-                    <!-- Search Bar -->
+                    <!-- Calendar Date Filter -->
                     <div class="row mb-3">
-                        <div class="col-md-6">
+                        <div class="col-md-4">
+                            <label for="dashboardDate" class="form-label fw-bold">
+                                <i class="fas fa-calendar"></i> Filter by Date:
+                            </label>
+                            <input type="date" 
+                                   id="dashboardDate" 
+                                   class="form-control" 
+                                   value="@DateTime.Today.ToString("yyyy-MM-dd")" 
+                                   onchange="filterByDate(this.value)">
+                            <small class="text-muted">Leave blank to show all appointments</small>
+                        </div>
+                        <div class="col-md-1 text-center align-self-end">
+                            <button class="btn btn-secondary mb-3" onclick="clearDateFilter()" title="Clear date filter">
+                                <i class="fas fa-times"></i> Clear
+                            </button>
+                        </div>
+                        <div class="col-md-7">
+                            <label class="form-label fw-bold">
+                                <i class="fas fa-search"></i> Search by Name:
+                            </label>
                             <div class="input-group">
                                 <input type="text" id="searchInput" class="form-control"
                                        placeholder="Search by patient name..."
@@ -145,189 +173,112 @@
         </div>
     </div>
 
-    <!-- Today's Appointments Section -->
-    <div class="row mb-4" id="todaysAppointments">
-        <div class="col-md-12">
-            <div class="card shadow-sm">
-                <div class="card-header bg-success text-white">
-                    <h4 class="mb-0">
-                        <i class="fas fa-calendar-day"></i> Today's Appointments
-                    </h4>
-                </div>
-                <div class="card-body">
-                    @if (Model.TodaysPatientAppointments != null && Model.TodaysPatientAppointments.Any())
-                    {
-                        <div class="table-responsive">
-                            <table class="table table-hover">
-                                <thead>
-                                    <tr>
-                                        <th>Time</th>
-                                        <th>Patient</th>
-                                        <th>Phone</th>
-                                        <th>Age</th>
-                                        <th>Status</th>
-                                        <th>Notes</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach (var appointment in Model.TodaysPatientAppointments.OrderBy(a => a.StartTime))
-                                    {
-                                        <tr>
-                                            <td>
-                                                <strong>@appointment.StartTime.ToString(@"hh\:mm")</strong>
-                                                <br />
-                                                <small class="text-muted">@appointment.EndTime.ToString(@"hh\:mm")</small>
-                                            </td>
-                                            <td>@appointment.FullName</td>
-                                            <td>@appointment.Phone</td>
-                                            <td>@appointment.Age</td>
-                                            <td>
-                                                <span class="badge @GetStatusBadgeClass(appointment.Status)">
-                                                    @appointment.Status.ToString()
-                                                </span>
-                                            </td>
-                                            <td>
-                                                @if (!string.IsNullOrEmpty(appointment.Notes))
-                                                {
-                                                    <small>@appointment.Notes</small>
-                                                }
-                                                else
-                                                {
-                                                    <small class="text-muted">No notes</small>
-                                                }
-                                            </td>
-                                            <td>
-                                                <div class="btn-group btn-group-sm">
-                                                    <button onclick="showEdit('@appointment.Id')" class="btn btn-primary" title="Edit">
-                                                        <i class="fas fa-edit"></i>
-                                                    </button>
-                                                    <button onclick="showDelete('@appointment.Id')" class="btn btn-danger" title="Delete">
-                                                        <i class="fas fa-trash"></i>
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    }
-                                </tbody>
-                            </table>
-                        </div>
-                    }
-                    else
-                    {
-                        <div class="alert alert-info">
-                            <i class="fas fa-info-circle"></i> No appointments scheduled for today.
-                        </div>
-                    }
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Recent Patients Section -->
-    <div class="row mb-4" id="recentPatients">
-        <div class="col-md-6">
-            <div class="card shadow-sm">
-                <div class="card-header bg-white">
-                    <h4 class="mb-0">
-                        <i class="fas fa-user-friends text-primary"></i> Recent Patients
-                    </h4>
-                </div>
-                <div class="card-body">
-                    @if (Model.RecentPatients != null && Model.RecentPatients.Any())
-                    {
-                        <div class="list-group list-group-flush">
-                            @foreach (var patient in Model.RecentPatients)
-                            {
-                                <div class="list-group-item">
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <div>
-                                            <h6 class="mb-1">@patient.FullName</h6>
-                                            <small class="text-muted">
-                                                <i class="fas fa-phone"></i> @patient.Phone |
-                                                <i class="fas fa-birthday-cake"></i> @patient.Age years
-                                            </small>
+    @if (isAdmin)
+    {
+        <!-- Quick Stats (Admin Only) -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-white">
+                        <h4 class="mb-0">
+                            <i class="fas fa-user-friends text-primary"></i> Recent Patients
+                        </h4>
+                    </div>
+                    <div class="card-body">
+                        @if (Model.RecentPatients != null && Model.RecentPatients.Any())
+                        {
+                            <div class="list-group list-group-flush">
+                                @foreach (var patient in Model.RecentPatients)
+                                {
+                                    <div class="list-group-item">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <h6 class="mb-1">@patient.FullName</h6>
+                                                <small class="text-muted">
+                                                    <i class="fas fa-phone"></i> @patient.Phone |
+                                                    <i class="fas fa-birthday-cake"></i> @patient.Age years
+                                                </small>
+                                            </div>
                                         </div>
                                     </div>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle"></i> No recent patients.
+                            </div>
+                        }
+                    </div>
+                    <div class="card-footer bg-white">
+                        <a href="@Url.Action("Index", "Patients")" class="btn btn-sm btn-outline-primary">
+                            View All Patients <i class="fas fa-arrow-right"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-white">
+                        <h4 class="mb-0">
+                            <i class="fas fa-chart-pie text-info"></i> Quick Statistics
+                        </h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between mb-1">
+                                <span>Scheduled Appointments</span>
+                                <strong>@Model.AllPatientAppointments.Count(a => a.Status == DentalCareManagmentSystem.Domain.Enums.AppointmentStatus.Scheduled)</strong>
+                            </div>
+                            <div class="progress" style="height: 20px;">
+                                <div class="progress-bar bg-primary" role="progressbar" 
+                                     style="width: @((Model.AllPatientAppointments.Count(a => a.Status == DentalCareManagmentSystem.Domain.Enums.AppointmentStatus.Scheduled) * 100.0 / Math.Max(Model.AllPatientAppointments.Count, 1)).ToString("F0"))%">
                                 </div>
-                            }
-                        </div>
-                    }
-                    else
-                    {
-                        <div class="alert alert-info">
-                            <i class="fas fa-info-circle"></i> No recent patients.
-                        </div>
-                    }
-                </div>
-                <div class="card-footer bg-white">
-                    <a href="@Url.Action("Index", "Patients")" class="btn btn-sm btn-outline-primary">
-                        View All Patients <i class="fas fa-arrow-right"></i>
-                    </a>
-                </div>
-            </div>
-        </div>
-
-        <!-- Quick Stats -->
-        <div class="col-md-6">
-            <div class="card shadow-sm">
-                <div class="card-header bg-white">
-                    <h4 class="mb-0">
-                        <i class="fas fa-chart-pie text-info"></i> Quick Statistics
-                    </h4>
-                </div>
-                <div class="card-body">
-                    <div class="mb-3">
-                        <div class="d-flex justify-content-between mb-1">
-                            <span>Scheduled Appointments</span>
-                            <strong>@Model.AllPatientAppointments.Count(a => a.Status == DentalCareManagmentSystem.Domain.Enums.AppointmentStatus.Scheduled)</strong>
-                        </div>
-                        <div class="progress" style="height: 20px;">
-                            <div class="progress-bar bg-primary" role="progressbar" 
-                                 style="width: @((Model.AllPatientAppointments.Count(a => a.Status == DentalCareManagmentSystem.Domain.Enums.AppointmentStatus.Scheduled) * 100.0 / Math.Max(Model.AllPatientAppointments.Count, 1)).ToString("F0"))%">
                             </div>
                         </div>
-                    </div>
 
-                    <div class="mb-3">
-                        <div class="d-flex justify-content-between mb-1">
-                            <span>Completed Appointments</span>
-                            <strong>@Model.AllPatientAppointments.Count(a => a.Status == DentalCareManagmentSystem.Domain.Enums.AppointmentStatus.Completed)</strong>
-                        </div>
-                        <div class="progress" style="height: 20px;">
-                            <div class="progress-bar bg-success" role="progressbar" 
-                                 style="width: @((Model.AllPatientAppointments.Count(a => a.Status == DentalCareManagmentSystem.Domain.Enums.AppointmentStatus.Completed) * 100.0 / Math.Max(Model.AllPatientAppointments.Count, 1)).ToString("F0"))%">
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between mb-1">
+                                <span>Completed Appointments</span>
+                                <strong>@Model.AllPatientAppointments.Count(a => a.Status == DentalCareManagmentSystem.Domain.Enums.AppointmentStatus.Completed)</strong>
+                            </div>
+                            <div class="progress" style="height: 20px;">
+                                <div class="progress-bar bg-success" role="progressbar" 
+                                     style="width: @((Model.AllPatientAppointments.Count(a => a.Status == DentalCareManagmentSystem.Domain.Enums.AppointmentStatus.Completed) * 100.0 / Math.Max(Model.AllPatientAppointments.Count, 1)).ToString("F0"))%">
+                                </div>
                             </div>
                         </div>
-                    </div>
 
-                    <div class="mb-3">
-                        <div class="d-flex justify-content-between mb-1">
-                            <span>Cancelled Appointments</span>
-                            <strong>@Model.AllPatientAppointments.Count(a => a.Status == DentalCareManagmentSystem.Domain.Enums.AppointmentStatus.Cancelled)</strong>
-                        </div>
-                        <div class="progress" style="height: 20px;">
-                            <div class="progress-bar bg-danger" role="progressbar" 
-                                 style="width: @((Model.AllPatientAppointments.Count(a => a.Status == DentalCareManagmentSystem.Domain.Enums.AppointmentStatus.Cancelled) * 100.0 / Math.Max(Model.AllPatientAppointments.Count, 1)).ToString("F0"))%">
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between mb-1">
+                                <span>Cancelled Appointments</span>
+                                <strong>@Model.AllPatientAppointments.Count(a => a.Status == DentalCareManagmentSystem.Domain.Enums.AppointmentStatus.Cancelled)</strong>
+                            </div>
+                            <div class="progress" style="height: 20px;">
+                                <div class="progress-bar bg-danger" role="progressbar" 
+                                     style="width: @((Model.AllPatientAppointments.Count(a => a.Status == DentalCareManagmentSystem.Domain.Enums.AppointmentStatus.Cancelled) * 100.0 / Math.Max(Model.AllPatientAppointments.Count, 1)).ToString("F0"))%">
+                                </div>
                             </div>
                         </div>
-                    </div>
 
-                    <div>
-                        <div class="d-flex justify-content-between mb-1">
-                            <span>No-Show Appointments</span>
-                            <strong>@Model.AllPatientAppointments.Count(a => a.Status == DentalCareManagmentSystem.Domain.Enums.AppointmentStatus.NoShow)</strong>
-                        </div>
-                        <div class="progress" style="height: 20px;">
-                            <div class="progress-bar bg-warning" role="progressbar" 
-                                 style="width: @((Model.AllPatientAppointments.Count(a => a.Status == DentalCareManagmentSystem.Domain.Enums.AppointmentStatus.NoShow) * 100.0 / Math.Max(Model.AllPatientAppointments.Count, 1)).ToString("F0"))%">
+                        <div>
+                            <div class="d-flex justify-content-between mb-1">
+                                <span>No-Show Appointments</span>
+                                <strong>@Model.AllPatientAppointments.Count(a => a.Status == DentalCareManagmentSystem.Domain.Enums.AppointmentStatus.NoShow)</strong>
+                            </div>
+                            <div class="progress" style="height: 20px;">
+                                <div class="progress-bar bg-warning" role="progressbar" 
+                                     style="width: @((Model.AllPatientAppointments.Count(a => a.Status == DentalCareManagmentSystem.Domain.Enums.AppointmentStatus.NoShow) * 100.0 / Math.Max(Model.AllPatientAppointments.Count, 1)).ToString("F0"))%">
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
+    }
 </div>
 
 <!-- Modal -->
@@ -348,10 +299,12 @@
         $(document).ready(function () {
             // Listen for modal success event to refresh grid
             $(document).on('modalSuccess', function(event, response) {
-                console.log('Appointment saved successfully, refreshing page...');
-                // Refresh the entire page to update all sections
-                location.reload();
+                console.log('Appointment saved successfully, refreshing grid...');
+                refreshGrid();
             });
+            
+            // Set today's date as default filter
+            filterByDate($('#dashboardDate').val());
         });
 
         // Show Create Form
@@ -364,23 +317,78 @@
             UIHelpers.loadModal('@Url.Action("Edit", "PatientAppointment")/' + id, 'Edit Appointment');
         }
 
+        // Show Details
+        function showDetails(id) {
+            UIHelpers.loadModal('@Url.Action("Details", "PatientAppointment")/' + id, 'Patient Appointment Details');
+        }
+
         // Show Delete Confirmation
         function showDelete(id) {
             UIHelpers.loadModal('@Url.Action("Delete", "PatientAppointment")/' + id, 'Delete Appointment');
         }
 
+        // Filter by Date
+        function filterByDate(date) {
+            var searchTerm = $("#searchInput").val();
+            var params = {};
+            
+            if (date) {
+                params.filterDate = date;
+            }
+            if (searchTerm) {
+                params.searchString = searchTerm;
+            }
+            
+            UIHelpers.reloadGridPartial(
+                '#gridContainer',
+                '@Url.Action("GetAppointmentsGrid", "Home")',
+                params
+            );
+        }
+
+        // Clear Date Filter
+        function clearDateFilter() {
+            $('#dashboardDate').val('');
+            filterByDate('');
+        }
+
         // Refresh Grid
         function refreshGrid() {
-            UIHelpers.reloadGridPartial('#gridContainer', '@Url.Action("GetAppointmentsGrid", "PatientAppointment")');
+            var date = $('#dashboardDate').val();
+            var searchTerm = $("#searchInput").val();
+            var params = {};
+            
+            if (date) {
+                params.filterDate = date;
+            }
+            if (searchTerm) {
+                params.searchString = searchTerm;
+            }
+            
+            UIHelpers.reloadGridPartial(
+                '#gridContainer',
+                '@Url.Action("GetAppointmentsGrid", "Home")',
+                params
+            );
         }
 
         // Perform Search
         function performSearch() {
             var searchTerm = $("#searchInput").val();
+            var date = $('#dashboardDate').val();
+            var params = {};
+            
+            if (searchTerm) {
+                params.searchString = searchTerm;
+            }
+            if (date) {
+                params.filterDate = date;
+            }
+            
             UIHelpers.reloadGridPartial(
                 '#gridContainer',
-                '@Url.Action("GetAppointmentsGrid", "PatientAppointment")',
-                { searchString: searchTerm }
+                '@Url.Action("GetAppointmentsGrid", "Home")',
+                params
             );
         }
 

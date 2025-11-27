@@ -37,32 +37,33 @@ public class HomeController : Controller
         }
 
         /// <summary>
-        /// Default landing page - Redirects to Today's Patients
+        /// Default landing page - Dashboard with calendar filter
         /// </summary>
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(DateTime? filterDate)
     {
-        // جلب بيانات PatientAppointments فقط
+        // Get all PatientAppointments
         var appointmentEntities = await _patientAppointmentService.GetAllAsync();
         var allPatientAppointments = _mapper.Map<List<PatientAppointmentDto>>(appointmentEntities);
 
-        // تصفية مواعيد اليوم
-        var todaysPatientAppointments = allPatientAppointments
-            .Where(a => a.Date.Date == DateTime.Today)
+        // Apply date filter if provided (default to today)
+        var targetDate = filterDate ?? DateTime.Today;
+        var filteredAppointments = allPatientAppointments
+            .Where(a => a.Date.Date == targetDate.Date)
             .ToList();
 
-        // حساب الإحصائيات من PatientAppointments
+        // Calculate statistics from PatientAppointments
         var totalPatients = allPatientAppointments
             .Select(a => a.FullName)
             .Distinct()
             .Count();
 
-        var todayAppointmentsCount = todaysPatientAppointments.Count;
+        var todayAppointmentsCount = allPatientAppointments
+            .Count(a => a.Date.Date == DateTime.Today);
 
         var pendingAppointments = allPatientAppointments
-     .Where(a => a.Status == AppointmentStatus.Scheduled || a.Status == AppointmentStatus.Notified)
-     .Count();
+            .Count(a => a.Status == AppointmentStatus.Scheduled || a.Status == AppointmentStatus.Notified);
 
-        // Recent Patients (من PatientAppointments)
+        // Recent Patients
         var recentPatients = allPatientAppointments
             .GroupBy(a => new { a.FullName, a.Phone, a.Age })
             .Select(g => new
@@ -76,8 +77,9 @@ public class HomeController : Controller
             .Take(5)
             .ToList();
 
-        // Today's Appointments List (من PatientAppointments)
-        var todayAppointmentsList = todaysPatientAppointments
+        // Today's Appointments List
+        var todayAppointmentsList = allPatientAppointments
+            .Where(a => a.Date.Date == DateTime.Today)
             .Select(a => new
             {
                 PatientName = a.FullName,
@@ -92,8 +94,6 @@ public class HomeController : Controller
             TodayAppointments = todayAppointmentsCount,
             PendingAppointments = pendingAppointments,
 
-            // إذا كنتِ تريدين استخدام هذه الخصائص، يمكنك تعيينها كـ object
-            // أو إنشاء DTOs بسيطة
             RecentPatients = recentPatients.Select(p => new PatientDto
             {
                 FullName = p.FullName,
@@ -108,31 +108,45 @@ public class HomeController : Controller
                 Status = a.Status
             }).ToList(),
 
-            // إحصائيات مالية (يمكنك تعيين قيم افتراضية)
-            TotalRevenueThisMonth = 0, // يمكنك حساب هذا إذا كان لديك بيانات المدفوعات
-            OutstandingBalance = 0,
-            PatientsWithOutstandingBalance = 0,
+            // Financial statistics (can be calculated from payment data if needed)
+            TotalRevenueThisMonth = allPatientAppointments
+                .Where(a => a.Date.Month == DateTime.Today.Month && a.Date.Year == DateTime.Today.Year)
+                .Sum(a => a.PaidAmount),
+                
+            OutstandingBalance = allPatientAppointments.Sum(a => a.Remainder),
+            PatientsWithOutstandingBalance = allPatientAppointments.Count(a => a.Remainder > 0),
 
-            // بيانات PatientAppointments
-            TodaysPatientAppointments = todaysPatientAppointments,
-            AllPatientAppointments = allPatientAppointments
+            // PatientAppointments data (filtered by date)
+            TodaysPatientAppointments = filteredAppointments,
+            AllPatientAppointments = filteredAppointments
         };
+        
+        ViewBag.FilterDate = targetDate;
 
         return View(viewModel);
     }
 
     /// <summary>
-    /// Get appointments grid for dashboard (AJAX refresh)
+    /// Get appointments grid for dashboard (AJAX refresh with date filter)
     /// </summary>
     [HttpGet]
-    public async Task<IActionResult> GetAppointmentsGrid(string searchString = null)
+    public async Task<IActionResult> GetAppointmentsGrid(string searchString = null, DateTime? filterDate = null)
     {
         var entities = await _patientAppointmentService.GetAllAsync();
+        
+        // Apply search filter
         if (!string.IsNullOrEmpty(searchString))
         {
             entities = entities.Where(x => x.FullName != null && 
                                           x.FullName.Contains(searchString, StringComparison.OrdinalIgnoreCase)).ToList();
         }
+        
+        // Apply date filter
+        if (filterDate.HasValue)
+        {
+            entities = entities.Where(x => x.Date.Date == filterDate.Value.Date).ToList();
+        }
+        
         var dtos = _mapper.Map<List<PatientAppointmentDto>>(entities);
         return PartialView("~/Views/PatientAppointment/_PatientAppointmentsGrid.cshtml", dtos);
     }
