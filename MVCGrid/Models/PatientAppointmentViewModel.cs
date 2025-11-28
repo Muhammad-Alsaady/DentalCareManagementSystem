@@ -32,10 +32,15 @@
         public Guid AppointmentId { get; set; }
         public Guid PatientId { get; set; }
         public string PatientName { get; set; } = string.Empty;
-        public decimal TotalCost { get; set; }
-        public decimal AmountPaid { get; set; }
-        public decimal RemainingBalance { get; set; }
-        public decimal PaymentAmount { get; set; }
+
+        public decimal TotalCost { get; set; }         // تكلفة العلاج كاملة
+        public decimal DiscountPercentage { get; set; } // النسبة اللي يدخلها المستخدم
+        public decimal DiscountAmount => TotalCost * (DiscountPercentage / 100); // المبلغ المخصوم
+
+        public decimal AmountPaid { get; set; }       // المدفوع مسبقًا
+        public decimal RemainingBalance => TotalCost - DiscountAmount - AmountPaid; // المتبقي بعد الخصم والمدفوعات
+
+        public decimal PaymentAmount { get; set; }    // المبلغ الحالي اللي سيدفعه
         public DateTime PaymentDate { get; set; } = DateTime.Now;
         public string Notes { get; set; } = string.Empty;
     }
