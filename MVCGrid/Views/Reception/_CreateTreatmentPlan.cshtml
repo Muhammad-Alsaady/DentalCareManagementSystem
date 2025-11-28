@@ -1,11 +1,35 @@
 ﻿@model DentalManagementSystem.Models.TreatmentPlanViewModel
 
-<!-- This partial is loaded into a modal-body, so it should NOT contain modal-header or modal-footer -->
 <form class="treatment-form" id="treatmentForm" method="post" action="@Url.Action("CreateTreatmentPlan", "Reception")">
     @Html.AntiForgeryToken()
     <input type="hidden" name="AppointmentId" value="@Model.AppointmentId" />
     <input type="hidden" name="PatientId" value="@Model.PatientId" />
+    <input type="hidden" name="PaidAmount" id="paidAmountHidden" value="0" />
+    <input type="hidden" name="DiscountPercentage" id="discountPercentageHidden" value="0" />
 
+    <!-- Available Services Dropdown -->
+    <div class="row mb-3">
+        <div class="col-md-8">
+            <label class="form-label">Select Service</label>
+            <select class="form-select" id="serviceDropdown">
+                <option value="">-- Select a Service --</option>
+                @if (Model.AvailableServices != null)
+                {
+                    foreach (var service in Model.AvailableServices)
+                    {
+                        <option value="@service.Id" data-price="@service.TotalCost">@service.PatientName - $@service.TotalCost</option>
+                    }
+                }
+            </select>
+        </div>
+        <div class="col-md-4 d-flex align-items-end">
+            <button type="button" class="btn btn-primary w-100" onclick="addSelectedService()">
+                <i class="fas fa-plus"></i> Add Service
+            </button>
+        </div>
+    </div>
+
+    <!-- Treatment Items Container -->
     <div id="treatmentItemsContainer">
         @if (Model.TreatmentItems.Any())
         {
@@ -14,17 +38,18 @@
                 <div class="treatment-item row mb-2 border p-2">
                     <div class="col-md-5">
                         <label class="form-label small">Service Name</label>
+                        <input type="hidden" name="TreatmentItems[@i].Id" value="@Model.TreatmentItems[i].Id" />
                         <input name="TreatmentItems[@i].Name"
                                value="@Model.TreatmentItems[i].Name"
                                class="form-control form-control-sm service-name"
-                               placeholder="Service Name" required />
+                               placeholder="Service Name" required readonly />
                     </div>
                     <div class="col-md-2">
                         <label class="form-label small">Price</label>
                         <input name="TreatmentItems[@i].Price"
                                value="@Model.TreatmentItems[i].Price"
                                class="form-control form-control-sm price-input"
-                               type="number" step="0.01" min="0" required />
+                               type="number" step="0.01" min="0" required readonly />
                     </div>
                     <div class="col-md-2">
                         <label class="form-label small">Quantity</label>
@@ -39,52 +64,14 @@
                                value="@(Model.TreatmentItems[i].LineTotal.ToString("F2"))" />
                     </div>
                     <div class="col-md-1 d-flex align-items-end">
-                        <button type="button" class="btn btn-danger btn-sm remove-item"
-                                style="@(i == 0 ? "display:none" : "")">
+                        <button type="button" class="btn btn-danger btn-sm remove-item">
                             <i class="fas fa-trash"></i>
                         </button>
                     </div>
                 </div>
             }
         }
-        else
-        {
-            <!-- Empty first item -->
-            <div class="treatment-item row mb-2 border p-2">
-                <div class="col-md-5">
-                    <label class="form-label small">Service Name</label>
-                    <input name="TreatmentItems[0].Name"
-                           class="form-control form-control-sm service-name"
-                           placeholder="Service Name" required />
-                </div>
-                <div class="col-md-2">
-                    <label class="form-label small">Price</label>
-                    <input name="TreatmentItems[0].Price"
-                           class="form-control form-control-sm price-input"
-                           type="number" step="0.01" min="0" required />
-                </div>
-                <div class="col-md-2">
-                    <label class="form-label small">Quantity</label>
-                    <input name="TreatmentItems[0].Quantity"
-                           class="form-control form-control-sm quantity-input"
-                           type="number" min="1" value="1" required />
-                </div>
-                <div class="col-md-2">
-                    <label class="form-label small">Line Total</label>
-                    <input type="text" class="form-control form-control-sm line-total" readonly value="0.00" />
-                </div>
-                <div class="col-md-1 d-flex align-items-end">
-                    <button type="button" class="btn btn-danger btn-sm remove-item" style="display:none">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </div>
-            </div>
-        }
     </div>
-
-    <button type="button" id="addItem" class="btn btn-primary btn-sm mt-2">
-        <i class="fas fa-plus"></i> Add Service
-    </button>
 
     <!-- Payment Information Section -->
     <div class="row mt-4">
@@ -94,99 +81,278 @@
         </div>
     </div>
 
-    <div class="row">
-        <div class="col-md-4 mb-3">
+    <!-- Cost Summary -->
+    <div class="row mb-3">
+        <div class="col-md-3">
             <label class="form-label">Total Cost</label>
             <div class="input-group">
                 <span class="input-group-text">$</span>
-                <input type="text" id="paymentTotalCost" class="form-control" readonly value="0.00" />
+                <input type="text" id="totalCostDisplay" class="form-control" readonly value="0.00" />
             </div>
         </div>
+        <div class="col-md-3">
+            <label class="form-label">Discount (%)</label>
+            <input type="number" step="0.01" min="0" max="100"
+                   id="discountPercentageInput"
+                   class="form-control" value="0" />
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">Discount Amount</label>
+            <div class="input-group">
+                <span class="input-group-text">$</span>
+                <input type="text" id="discountAmountDisplay" class="form-control" readonly value="0.00" />
+            </div>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">Net Total</label>
+            <div class="input-group">
+                <span class="input-group-text">$</span>
+                <input type="text" id="netTotalDisplay" class="form-control" readonly value="0.00" />
+            </div>
+        </div>
+    </div>
 
-        <div class="col-md-4 mb-3">
+    <!-- Payment Details -->
+    <div class="row mb-3">
+        <div class="col-md-4">
             <label class="form-label">Paid Amount</label>
             <div class="input-group">
                 <span class="input-group-text">$</span>
-                <input type="number" step="0.01" min="0" id="paidAmount" class="form-control" value="0" />
+                <input type="number" step="0.01" min="0"
+                       id="paidAmountInput"
+                       class="form-control" value="0" />
             </div>
         </div>
-
-        <div class="col-md-4 mb-3">
-            <label class="form-label">Remainder</label>
+        <div class="col-md-4">
+            <label class="form-label">Remaining Balance</label>
             <div class="input-group">
                 <span class="input-group-text">$</span>
-                <input type="text" id="remainder" class="form-control" readonly value="0.00" style="font-weight: bold;" />
+                <input type="text" id="remainingBalanceDisplay" class="form-control" readonly value="0.00"
+                       style="font-weight: bold;" />
             </div>
         </div>
-    </div>
-
-    <div class="row mt-3">
-        <div class="col-md-4 mb-3">
-            <label class="form-label">Discount (%)</label>
-            <input type="number" step="0.01" min="0" max="100"
-                   id="discountPercentage"
-                   name="DiscountPercentage"
-                   class="form-control" value="0" />
+        <div class="col-md-4">
+            <label class="form-label">Payment Status</label>
+            <input type="text" id="paymentStatus" class="form-control" readonly value="Not Paid" />
         </div>
     </div>
 
-    <!-- Cost Summary -->
+    <!-- Summary Card -->
     <div class="row mt-3">
         <div class="col-md-12">
             <div class="card bg-light">
-                <div class="card-body py-2">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <strong>Total Cost</strong>
-                        <span id="totalCost" class="h6 text-success mb-0">$0.00</span>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-md-3">
+                            <strong>Total Cost</strong>
+                            <div class="h5 text-primary" id="summaryTotalCost">$0.00</div>
+                        </div>
+                        <div class="col-md-3">
+                            <strong>Discount</strong>
+                            <div class="h5 text-warning" id="summaryDiscount">$0.00</div>
+                        </div>
+                        <div class="col-md-3">
+                            <strong>Net Total</strong>
+                            <div class="h5 text-success" id="summaryNetTotal">$0.00</div>
+                        </div>
+                        <div class="col-md-3">
+                            <strong>To Pay</strong>
+                            <div class="h5 text-danger" id="summaryToPay">$0.00</div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Footer Buttons - Now inside the form -->
+    <!-- Footer Buttons -->
     <div class="d-flex justify-content-end gap-2 mt-4">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
             <i class="fas fa-times"></i> Cancel
         </button>
         <button type="button" class="btn btn-success" onclick="saveTreatmentPlan()">
-            <i class="fas fa-save"></i> Save
+            <i class="fas fa-save"></i> Save Treatment Plan
         </button>
     </div>
 </form>
 
 <script>
+    // متغير لتخزين الخدمات المتاحة
+    let availableServices = @Html.Raw(Json.Serialize(Model.AvailableServices));
+
     $(document).ready(function() {
         calculateGrandTotal();
+        updatePaymentSummary();
 
-        $(document).on('change', '.price-input, .quantity-input', function() {
+        // تحديث عند تغيير الكمية
+        $(document).on('change', '.quantity-input', function() {
             calculateLineTotal($(this).closest('.treatment-item'));
             calculateGrandTotal();
+            updatePaymentSummary();
         });
 
-        $('#addItem').click(function() {
-            addNewTreatmentItem();
+        // تحديث عند تغيير الخصم أو المبلغ المدفوع
+        $('#discountPercentageInput, #paidAmountInput').on('input', function() {
+            updatePaymentSummary();
         });
 
+        // إزالة عنصر العلاج
         $(document).on('click', '.remove-item', function() {
             $(this).closest('.treatment-item').remove();
             reindexItems();
             calculateGrandTotal();
+            updatePaymentSummary();
         });
     });
 
+    // إضافة خدمة محددة
+    function addSelectedService() {
+        const selectedService = $('#serviceDropdown').find(':selected');
+        const serviceId = selectedService.val();
+        const serviceName = selectedService.text().split(' - ')[0];
+        const servicePrice = parseFloat(selectedService.data('price'));
+
+        if (!serviceId) {
+            alert('Please select a service from the list.');
+            return;
+        }
+
+        // التحقق إذا كانت الخدمة مضافة مسبقاً
+        const existingService = $(`.service-name[value="${serviceName}"]`);
+        if (existingService.length > 0) {
+            alert('This service is already added. You can update the quantity.');
+            return;
+        }
+
+        addServiceItem(serviceId, serviceName, servicePrice);
+        $('#serviceDropdown').val(''); // إعادة تعيين القائمة
+    }
+
+    // إضافة عنصر خدمة جديد
+    function addServiceItem(serviceId, serviceName, servicePrice) {
+        const index = $('.treatment-item').length;
+        const newItem = `
+            <div class="treatment-item row mb-2 border p-2">
+                <div class="col-md-5">
+                    <label class="form-label small">Service Name</label>
+                    <input type="hidden" name="TreatmentItems[${index}].Id" value="${serviceId}" />
+                    <input name="TreatmentItems[${index}].Name"
+                           value="${serviceName}"
+                           class="form-control form-control-sm service-name"
+                           readonly />
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small">Price</label>
+                    <input name="TreatmentItems[${index}].Price"
+                           value="${servicePrice}"
+                           class="form-control form-control-sm price-input"
+                           type="number" step="0.01" min="0" readonly />
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small">Quantity</label>
+                    <input name="TreatmentItems[${index}].Quantity"
+                           class="form-control form-control-sm quantity-input"
+                           type="number" min="1" value="1" required />
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small">Line Total</label>
+                    <input type="text" class="form-control form-control-sm line-total" readonly value="${servicePrice.toFixed(2)}" />
+                </div>
+                <div class="col-md-1 d-flex align-items-end">
+                    <button type="button" class="btn btn-danger btn-sm remove-item">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+        `;
+        $('#treatmentItemsContainer').append(newItem);
+        calculateGrandTotal();
+        updatePaymentSummary();
+    }
+
+    // حساب الإجمالي للعنصر
+    function calculateLineTotal(item) {
+        const price = parseFloat(item.find('.price-input').val()) || 0;
+        const quantity = parseInt(item.find('.quantity-input').val()) || 0;
+        const lineTotal = price * quantity;
+        item.find('.line-total').val(lineTotal.toFixed(2));
+    }
+
+    // حساب الإجمالي الكلي
+    function calculateGrandTotal() {
+        let total = 0;
+        $('.treatment-item').each(function() {
+            const lineTotal = parseFloat($(this).find('.line-total').val()) || 0;
+            total += lineTotal;
+        });
+        return total;
+    }
+
+    // تحديث ملخص الدفع
+    function updatePaymentSummary() {
+        const totalCost = calculateGrandTotal();
+        const discountPercentage = parseFloat($('#discountPercentageInput').val()) || 0;
+        const discountAmount = totalCost * (discountPercentage / 100);
+        const netTotal = totalCost - discountAmount;
+        const paidAmount = parseFloat($('#paidAmountInput').val()) || 0;
+        const remainingBalance = netTotal - paidAmount;
+
+        // تحديث الحقول المخفية
+        $('#paidAmountHidden').val(paidAmount);
+        $('#discountPercentageHidden').val(discountPercentage);
+
+        // تحديث العرض
+        $('#totalCostDisplay').val(totalCost.toFixed(2));
+        $('#discountAmountDisplay').val(discountAmount.toFixed(2));
+        $('#netTotalDisplay').val(netTotal.toFixed(2));
+        $('#remainingBalanceDisplay').val(remainingBalance.toFixed(2));
+
+        // تحديث الملخص
+        $('#summaryTotalCost').text('$' + totalCost.toFixed(2));
+        $('#summaryDiscount').text('$' + discountAmount.toFixed(2));
+        $('#summaryNetTotal').text('$' + netTotal.toFixed(2));
+        $('#summaryToPay').text('$' + remainingBalance.toFixed(2));
+
+        // تحديث حالة الدفع
+        const paymentStatus = $('#paymentStatus');
+        if (remainingBalance <= 0) {
+            paymentStatus.val('Fully Paid').css('color', '#28a745');
+            $('#remainingBalanceDisplay').css('color', '#28a745');
+        } else if (paidAmount > 0) {
+            paymentStatus.val('Partially Paid').css('color', '#ffc107');
+            $('#remainingBalanceDisplay').css('color', '#dc3545');
+        } else {
+            paymentStatus.val('Not Paid').css('color', '#dc3545');
+            $('#remainingBalanceDisplay').css('color', '#dc3545');
+        }
+    }
+
+    // إعادة فهرسة العناصر
+    function reindexItems() {
+        $('.treatment-item').each(function(index) {
+            $(this).find('input[name*="Id"]').attr('name', `TreatmentItems[${index}].Id`);
+            $(this).find('input[name*="Name"]').attr('name', `TreatmentItems[${index}].Name`);
+            $(this).find('input[name*="Price"]').attr('name', `TreatmentItems[${index}].Price`);
+            $(this).find('input[name*="Quantity"]').attr('name', `TreatmentItems[${index}].Quantity`);
+        });
+    }
+
+    // حفظ خطة العلاج
     function saveTreatmentPlan() {
         if ($('.treatment-item').length === 0) {
-            alert('Please add at least one service.');
+            showNotification('Please add at least one service.', 'error');
             return false;
         }
 
         const form = $('#treatmentForm');
-        
+        const formData = form.serialize();
+
+        console.log('Submitting treatment plan...', formData);
+
         $.ajax({
             url: form.attr('action'),
             type: 'POST',
-            data: form.serialize(),
+            data: formData,
             success: function (response) {
                 if (response.success) {
                     showNotification(response.message || 'Treatment plan created successfully!', 'success');
@@ -205,87 +371,11 @@
         });
     }
 
-    function calculateLineTotal(item) {
-        const price = parseFloat(item.find('.price-input').val()) || 0;
-        const quantity = parseInt(item.find('.quantity-input').val()) || 0;
-        const lineTotal = price * quantity;
-        item.find('.line-total').val(lineTotal.toFixed(2));
-    }
-
-    function calculateGrandTotal() {
-        let total = 0;
-        $('.treatment-item').each(function() {
-            const lineTotal = parseFloat($(this).find('.line-total').val()) || 0;
-            total += lineTotal;
-        });
-        $('#totalCost').text('$' + total.toFixed(2));
-        $('#paymentTotalCost').val(total.toFixed(2));
-        updatePaymentInfo();
-    }
-
-    function updatePaymentInfo() {
-        const totalCost = parseFloat($('#totalCost').text().replace('$','')) || 0;
-        const paidAmount = parseFloat($('#paidAmount').val()) || 0;
-        const discountPercent = parseFloat($('#discountPercentage').val()) || 0;
-        
-        const discountAmount = totalCost * (discountPercent / 100);
-        const remainder = totalCost - discountAmount - paidAmount;
-
-        $('#remainder').val(remainder.toFixed(2));
-
-        if (remainder > 0) {
-            $('#remainder').css('color', '#dc3545'); // Red for outstanding balance
-        } else if (remainder < 0) {
-            $('#remainder').css('color', '#ffc107'); // Yellow for overpayment
-        } else {
-            $('#remainder').css('color', '#28a745'); // Green for fully paid
-        }
-    }
-
-    $('#discountPercentage, #paidAmount').on('input', updatePaymentInfo);
-
-    function addNewTreatmentItem() {
-        const index = $('.treatment-item').length;
-        const newItem = `
-            <div class="treatment-item row mb-2 border p-2">
-                <div class="col-md-5">
-                    <label class="form-label small">Service Name</label>
-                    <input name="TreatmentItems[${index}].Name" class="form-control form-control-sm service-name" placeholder="Service Name" required />
-                </div>
-                <div class="col-md-2">
-                    <label class="form-label small">Price</label>
-                    <input name="TreatmentItems[${index}].Price" class="form-control form-control-sm price-input" type="number" step="0.01" min="0" required />
-                </div>
-                <div class="col-md-2">
-                    <label class="form-label small">Quantity</label>
-                    <input name="TreatmentItems[${index}].Quantity" class="form-control form-control-sm quantity-input" type="number" min="1" value="1" required />
-                </div>
-                <div class="col-md-2">
-                    <label class="form-label small">Line Total</label>
-                    <input type="text" class="form-control form-control-sm line-total" readonly value="0.00" />
-                </div>
-                <div class="col-md-1 d-flex align-items-end">
-                    <button type="button" class="btn btn-danger btn-sm remove-item">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </div>
-            </div>
-        `;
-        $('#treatmentItemsContainer').append(newItem);
-    }
-
-    function reindexItems() {
-        $('.treatment-item').each(function(index) {
-            $(this).find('input[name*="Name"]').attr('name', `TreatmentItems[${index}].Name`);
-            $(this).find('input[name*="Price"]').attr('name', `TreatmentItems[${index}].Price`);
-            $(this).find('input[name*="Quantity"]').attr('name', `TreatmentItems[${index}].Quantity`);
-        });
-    }
-
+    // عرض الإشعارات
     function showNotification(message, type) {
         const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
         const notification = `
-            <div class="alert ${alertClass} alert-dismissible fade show position-fixed" 
+            <div class="alert ${alertClass} alert-dismissible fade show position-fixed"
                  style="top: 20px; right: 20px; z-index: 9999;" role="alert">
                 ${message}
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
