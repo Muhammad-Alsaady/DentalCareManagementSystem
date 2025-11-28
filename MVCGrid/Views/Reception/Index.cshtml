@@ -87,54 +87,82 @@
             }
         </div>
 
-        <!-- Completed Patients Tab (Ready for Payment) -->
-        <div class="tab-pane fade" id="completed" role="tabpanel">
-            @{
-                var completedAppointments = Model.Where(m => m.Status == "Completed" || m.Status == "InProgress").ToList();
-            }
-            @if (completedAppointments.Any())
-            {
-                <div class="table-responsive">
-                    <table class="table table-striped table-hover">
-                        <thead class="table-dark">
-                            <tr>
-                                <th>Patient Name</th>
-                                <th>Phone</th>
-                                <th>Time</th>
-                                <th>Status</th>
-                                <th class="text-center">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var appointment in completedAppointments.OrderBy(m => m.AppointmentDate))
-                            {
-                                <tr>
-                                    <td><strong>@appointment.PatientName</strong></td>
-                                    <td>@appointment.PhoneNumber</td>
-                                    <td>@appointment.AppointmentDate.ToString("hh:mm tt")</td>
-                                    <td><span class="badge @GetStatusBadge(appointment.Status)">@appointment.Status</span></td>
-                                    <td class="text-center">
-                                        <div class="btn-group btn-group-sm" role="group">
-                                            <button type="button" class="btn btn-primary" onclick="showPaymentModal('@appointment.Id')" title="Process Payment">
-                                                <i class="fas fa-dollar-sign"></i> Payment
-                                            </button>
-                                            <button type="button" class="btn btn-outline-info" onclick="viewPatientHistory('@appointment.Id')" title="Patient History">
-                                                <i class="fas fa-history"></i>
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
+    <!-- Appointments Table -->
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-list"></i> @(Localizer["AppointmentsHeader"].Value + " - " + DateTime.Today.ToString("dddd, MMMM dd, yyyy"))
+                    </h5>
                 </div>
-            }
-            else
-            {
-                <div class="alert alert-info">
-                    <i class="fas fa-info-circle"></i> No completed appointments waiting for payment.
+                <div class="card-body">
+                    @if (Model.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>@Localizer["PatientName"]</th>
+                                        <th>@Localizer["Phone"]</th>
+                                        <th>@Localizer["AppointmentTime"]</th>
+                                        <th>@Localizer["Status"]</th>
+                                        <th>@Localizer["Notes"]</th>
+                                        <th>@Localizer["Actions"]</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var appointment in Model)
+                                    {
+                                        <tr>
+                                            <td>@appointment.PatientName</td>
+                                            <td>@appointment.PhoneNumber</td>
+                                            <td>@appointment.AppointmentDate.ToString("hh:mm tt")</td>
+                                            <td>
+                                                <span class="badge @GetStatusBadge(appointment.Status)">
+                                                    @appointment.Status
+                                                </span>
+                                            </td>
+                                            <td>@(appointment.Notes?.Length > 50 ? appointment.Notes.Substring(0, 50) + "..." : appointment.Notes)</td>
+                                            <td>
+                                                <div class="btn-group btn-group-sm">
+                                                    <!-- Treatment Plan Button -->
+                                                    @if (appointment.Status == "Scheduled" || appointment.Status == "Notified")
+                                                    {
+                                                        <button class="btn btn-success" onclick="showTreatmentPlan('@appointment.Id')"
+                                                                title="@Localizer["TreatmentButton"]">
+                                                            <i class="fas fa-stethoscope"></i> @Localizer["TreatmentButton"]
+                                                        </button>
+                                                    }
+                                                    else if (appointment.Status == "UnderTreatment")
+                                                    {
+                                                        <button class="btn btn-warning" onclick="showPayment('@appointment.Id')"
+                                                                title="@Localizer["PaymentButton"]">
+                                                            <i class="fas fa-money-bill-wave"></i> @Localizer["PaymentButton"]
+                                                        </button>
+                                                    }
+
+                                                    <!-- View Details Button -->
+                                                    <button class="btn btn-info" onclick="showAppointmentDetails('@appointment.Id')">
+                                                        <i class="fas fa-eye"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-info text-center">
+                            <i class="fas fa-info-circle"></i>
+                            @Localizer["NoAppointments"]
+                        </div>
+                    }
                 </div>
-            }
+            </div>
         </div>
     </div>
 </div>

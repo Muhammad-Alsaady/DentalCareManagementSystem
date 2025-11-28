@@ -182,3 +182,17 @@
 </style>
 
 @await Html.PartialAsync("MvcGrid/_Grid", grid)
+<script>
+    function showTreatmentPlan(appointmentId) {
+        $.get('/Reception/GetTreatmentPlanForm?appointmentId=' + appointmentId)
+            .done(function (data) {
+                $('#crudModalBody').html(data);
+                $('#crudModalLabel').text('Create Treatment Plan');
+                $('#crudModal').modal('show');
+            })
+            .fail(function (xhr, status, error) {
+                console.error("Error loading treatment plan:", error);
+                alert("Error loading treatment plan.");
+            });
+    }
+</script>
