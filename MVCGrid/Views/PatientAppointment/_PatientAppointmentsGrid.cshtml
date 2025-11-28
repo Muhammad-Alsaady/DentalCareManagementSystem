@@ -109,10 +109,10 @@
             DentalCareManagmentSystem.Domain.Enums.AppointmentStatus.Notified => "bg-info",
             _ => "bg-secondary"
         };
-        
+
         return $"<span class='badge {badgeClass}'>{status}</span>";
     }
-    
+
     string GetRemainderDisplay(DentalCareManagmentSystem.Application.DTOs.PatientAppointmentDto m)
     {
         var remainder = m.Remainder;
@@ -125,31 +125,32 @@
         var sb = new StringBuilder();
 
         sb.Append("<div class='btn-group btn-group-sm' role='group'>");
-        
+         sb.Append($"<button onclick='showTreatmentPlan(\"{m.Id}\")' class='btn btn-success' title='Treatment Plan'><i class='fas fa-stethoscope'></i></button>");
+
         // Details button
         sb.Append($"<button onclick='showDetails(\"{m.Id}\")' class='btn btn-info' title='Details'><i class='fas fa-info-circle'></i></button>");
-        
+
         // Send to Doctor button (only for Scheduled status)
         if (m.Status == DentalCareManagmentSystem.Domain.Enums.AppointmentStatus.Scheduled)
         {
             sb.Append($"<button onclick='sendToDoctor(\"{m.Id}\")' class='btn btn-success' title='Send to Doctor'><i class='fas fa-user-md'></i></button>");
         }
-        
+
         // Payment button (for InProgress and Completed status, or if there's a remainder)
-        if (m.Status == DentalCareManagmentSystem.Domain.Enums.AppointmentStatus.Completed || 
+        if (m.Status == DentalCareManagmentSystem.Domain.Enums.AppointmentStatus.Completed ||
             m.Status == DentalCareManagmentSystem.Domain.Enums.AppointmentStatus.InProgress ||
             m.Remainder > 0)
         {
             var paymentIconClass = m.Remainder > 0 ? "text-warning" : "text-success";
             sb.Append($"<button onclick='showPaymentModal(\"{m.Id}\")' class='btn btn-outline-primary' title='Payment'><i class='fas fa-dollar-sign {paymentIconClass}'></i></button>");
         }
-        
+
         // Edit button (only for Scheduled status)
         if (m.Status == DentalCareManagmentSystem.Domain.Enums.AppointmentStatus.Scheduled)
         {
             sb.Append($"<button onclick='showEdit(\"{m.Id}\")' class='btn btn-primary' title='Edit'><i class='fas fa-edit'></i></button>");
         }
-        
+
         // Delete button (only for Scheduled status)
         if (m.Status == DentalCareManagmentSystem.Domain.Enums.AppointmentStatus.Scheduled)
         {
@@ -169,16 +170,45 @@
         width: 100%;
     }
 
-    .col-patient-name { width: 15%; }
-    .col-phone { width: 12%; }
-    .col-date { width: 10%; }
-    .col-start-time { width: 8%; }
-    .col-end-time { width: 8%; }
-    .col-status { width: 10%; }
-    .col-total-cost { width: 8%; }
-    .col-paid-amount { width: 8%; }
-    .col-remainder { width: 8%; }
-    .col-actions { width: 13%; }
+    .col-patient-name {
+        width: 15%;
+    }
+
+    .col-phone {
+        width: 12%;
+    }
+
+    .col-date {
+        width: 10%;
+    }
+
+    .col-start-time {
+        width: 8%;
+    }
+
+    .col-end-time {
+        width: 8%;
+    }
+
+    .col-status {
+        width: 10%;
+    }
+
+    .col-total-cost {
+        width: 8%;
+    }
+
+    .col-paid-amount {
+        width: 8%;
+    }
+
+    .col-remainder {
+        width: 8%;
+    }
+
+    .col-actions {
+        width: 13%;
+    }
 </style>
 
 @await Html.PartialAsync("MvcGrid/_Grid", grid)
@@ -194,5 +224,17 @@
                 console.error("Error loading treatment plan:", error);
                 alert("Error loading treatment plan.");
             });
+             // Function to show edit modal (will close current details modal and open edit)
+       function editAppointment(id) {
+        $.ajax({
+            url: '/PatientAppointment/Edit/' + id,
+            type: 'GET',
+            success: function (response) {
+                $('#modalBody').html(response);
+                $('#editModal').modal('show');
+            }
+        });
+    }
+
     }
 </script>

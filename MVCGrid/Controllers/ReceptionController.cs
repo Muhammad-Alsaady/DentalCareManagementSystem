@@ -108,7 +108,7 @@ namespace DentalCareManagmentSystem.Web.Controllers
                 PatientName = appointment.FullName,
                 TotalCost = totalCost,
                 AmountPaid = totalPaid,
-                RemainingBalance = totalCost - totalPaid,
+                //RemainingBalance = totalCost - totalPaid,
                 PaymentDate = DateTime.Now
             };
 
@@ -304,7 +304,7 @@ namespace DentalCareManagmentSystem.Web.Controllers
                 PatientName = appointment.FullName,
                 TotalCost = totalCost,
                 AmountPaid = totalPaid,
-                RemainingBalance = totalCost - totalPaid,
+                //RemainingBalance = totalCost - totalPaid,
                 PaymentDate = DateTime.Now
             };
 
@@ -453,7 +453,7 @@ namespace DentalCareManagmentSystem.Web.Controllers
                 PatientName = appointment.FullName,
                 TotalCost = totalCost,
                 AmountPaid = totalPaid,
-                RemainingBalance = totalCost - totalPaid,
+                //RemainingBalance = totalCost - totalPaid,
                 PaymentDate = DateTime.Now
             };
 

@@ -40,10 +40,10 @@
                             <label for="appointmentDate" class="form-label fw-bold">
                                 <i class="fas fa-calendar"></i> Filter by Date:
                             </label>
-                            <input type="date" 
-                                   id="appointmentDate" 
-                                   class="form-control" 
-                                   value="@filterDate.ToString("yyyy-MM-dd")" 
+                            <input type="date"
+                                   id="appointmentDate"
+                                   class="form-control"
+                                   value="@filterDate.ToString("yyyy-MM-dd")"
                                    onchange="filterByDate(this.value)">
                             <small class="text-muted">Leave blank to show all appointments</small>
                         </div>
@@ -73,32 +73,32 @@
             </div>
         </div>
     </div>
-                    <div class="input-group">
-                        <input type="text" id="searchInput" class="form-control"
-                               placeholder="@Localizer["SearchPlaceholder"]"
-                               onkeypress="if(event.keyCode==13) performSearch()" />
-                        <button class="btn btn-primary" onclick="performSearch()">
-                            <i class="fas fa-search"></i> @Localizer["SearchButton"]
-                        </button>
-                        <button class="btn btn-secondary" onclick="clearSearch()">
-                            <i class="fas fa-times"></i> @Localizer["ClearButton"]
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
+    <div class="input-group">
+        <input type="text" id="searchInput" class="form-control"
+               placeholder="@Localizer["SearchPlaceholder"]"
+               onkeypress="if(event.keyCode==13) performSearch()" />
+        <button class="btn btn-primary" onclick="performSearch()">
+            <i class="fas fa-search"></i> @Localizer["SearchButton"]
+        </button>
+        <button class="btn btn-secondary" onclick="clearSearch()">
+            <i class="fas fa-times"></i> @Localizer["ClearButton"]
+        </button>
     </div>
+</div>
+</div>
+</div>
+</div>
 
-    <!-- Grid -->
-    <div class="row">
-        <div class="col-md-12">
-            <div class="card shadow-sm">
-                <div class="card-body" id="gridContainer">
-                    @await Html.PartialAsync("_PatientAppointmentsGrid", Model)
-                </div>
+<!-- Grid -->
+<div class="row">
+    <div class="col-md-12">
+        <div class="card shadow-sm">
+            <div class="card-body" id="gridContainer">
+                @await Html.PartialAsync("_PatientAppointmentsGrid", Model)
             </div>
         </div>
     </div>
+</div>
 </div>
 
 <!-- Modal -->
@@ -184,14 +184,14 @@
         function filterByDate(date) {
             var searchTerm = $("#searchInput").val();
             var params = {};
-            
+
             if (date) {
                 params.filterDate = date;
             }
             if (searchTerm) {
                 params.searchString = searchTerm;
             }
-            
+
             UIHelpers.reloadGridPartial(
                 '#gridContainer',
                 '@Url.Action("GetAppointmentsGrid", "PatientAppointment")',
@@ -210,14 +210,14 @@
             var date = $('#appointmentDate').val();
             var searchTerm = $("#searchInput").val();
             var params = {};
-            
+
             if (date) {
                 params.filterDate = date;
             }
             if (searchTerm) {
                 params.searchString = searchTerm;
             }
-            
+
             UIHelpers.reloadGridPartial(
                 '#gridContainer',
                 '@Url.Action("GetAppointmentsGrid", "PatientAppointment")',
@@ -230,14 +230,14 @@
             var searchTerm = $("#searchInput").val();
             var date = $('#appointmentDate').val();
             var params = {};
-            
+
             if (searchTerm) {
                 params.searchString = searchTerm;
             }
             if (date) {
                 params.filterDate = date;
             }
-            
+
             UIHelpers.reloadGridPartial(
                 '#gridContainer',
                 '@Url.Action("GetAppointmentsGrid", "PatientAppointment")',
@@ -275,6 +275,19 @@
                 });
             }
         }
+                function showTreatmentPlan(appointmentId) {
+            $.get('@Url.Action("GetTreatmentPlanForm", "Reception")?appointmentId=' + appointmentId)
+                .done(function (data) {
+                    $('#crudModalBody').html(data);
+                    $('#crudModalLabel').text('Treatment Plan');
+                    $('#crudModal').modal('show');
+                })
+                .fail(function (xhr, status, error) {
+                    console.error('Error loading treatment plan form:', error);
+                    alert('Error loading form: ' + error);
+                });
+        }
+
 
         // Show Payment Modal
         function showPaymentModal(appointmentId) {

@@ -205,13 +205,15 @@
 
 <script>
     // Function to show edit modal (will close current details modal and open edit)
-    function editAppointment(id) {
-        // Close the details modal
-        ModalLoader.close();
-        
-        // Wait a bit for modal to close, then open edit
-        setTimeout(function() {
-            UIHelpers.loadModal('@Url.Action("Edit", "PatientAppointment")/' + id, 'Edit Appointment');
-        }, 300);
+       function editAppointment(id) {
+        $.ajax({
+            url: '/PatientAppointment/Edit/' + id,
+            type: 'GET',
+            success: function (response) {
+                $('#modalBody').html(response);
+                $('#editModal').modal('show');
+            }
+        });
     }
+
 </script>
