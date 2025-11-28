@@ -2,8 +2,11 @@
 using DentalCareManagmentSystem.Application.DTOs;
 using DentalCareManagmentSystem.Application.Interfaces;
 using DentalCareManagmentSystem.Domain.Entities;
+using DentalCareManagmentSystem.Domain.Enums;
+using DentalCareManagmentSystem.Infrastructure.Data;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace DentalManagementSystem.Controllers
 {
@@ -12,11 +15,13 @@ namespace DentalManagementSystem.Controllers
     {
         private readonly IPatientAppointmentService _service;
         private readonly IMapper _mapper;
+        private readonly ClinicDbContext _context;
 
-        public PatientAppointmentController(IPatientAppointmentService service, IMapper mapper)
+        public PatientAppointmentController(IPatientAppointmentService service, IMapper mapper, ClinicDbContext context)
         {
             _service = service;
             _mapper = mapper;
+            _context = context;
         }
 
         public async Task<IActionResult> Index(DateTime? filterDate)
@@ -206,6 +211,42 @@ namespace DentalManagementSystem.Controllers
             catch (Exception ex)
             {
                 return Json(new { success = false, message = "Error updating payment: " + ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Send patient to doctor - Changes status to InProgress
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Receptionist,SystemAdmin")]
+        public async Task<IActionResult> SendToDoctor(Guid id)
+        {
+            try
+            {
+                var appointment = await _context.PatientAppointments.FindAsync(id);
+                if (appointment == null)
+                {
+                    return Json(new { success = false, message = "Appointment not found." });
+                }
+
+                // Update status to InProgress
+                appointment.Status = AppointmentStatus.InProgress;
+                await _context.SaveChangesAsync();
+
+                return Json(new
+                {
+                    success = true,
+                    message = "Patient sent to doctor successfully!"
+                });
+            }
+            catch (Exception ex)
+            {
+                return Json(new
+                {
+                    success = false,
+                    message = $"Error: {ex.Message}"
+                });
             }
         }
     }

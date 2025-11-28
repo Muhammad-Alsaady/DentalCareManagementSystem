@@ -1,0 +1,89 @@
+@model DentalCareManagmentSystem.Web.Models.CreateAppointmentPaymentViewModel
+@Html.AntiForgeryToken()
+
+<form id="paymentForm" asp-action="CreateForAppointment" asp-controller="Payments" method="post">
+    <input type="hidden" asp-for="PatientAppointmentId" />
+    <input type="hidden" asp-for="PatientId" />
+
+    <div class="row mb-3">
+        <div class="col-md-6">
+            <label class="form-label">Patient</label>
+            <input type="text" class="form-control" value="@Model.PatientName" readonly />
+        </div>
+    </div>
+
+    <div class="row mb-3 text-center">
+        <div class="col-md-4">
+            <div class="card bg-danger text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Total Cost</h5>
+                    <p class="card-text fs-4" id="totalCost">@Model.TotalCost.ToString("C")</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Already Paid</h5>
+                    <p class="card-text fs-4" id="totalPaid">@Model.TotalPaid.ToString("C")</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-warning text-dark">
+                <div class="card-body">
+                    <h5 class="card-title">Remainder</h5>
+                    <p class="card-text fs-4" id="remainder">@Model.Remainder.ToString("C")</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <hr />
+
+    <div class="row mb-3">
+        <div class="col-md-6">
+            <label asp-for="AmountToPay" class="form-label">Amount to Pay</label>
+            <input asp-for="AmountToPay" class="form-control" type="number" step="0.01" />
+            <span asp-validation-for="AmountToPay" class="text-danger"></span>
+        </div>
+        <div class="col-md-6">
+            <label asp-for="Notes" class="form-label">Notes</label>
+            <input asp-for="Notes" class="form-control" />
+        </div>
+    </div>
+
+    <div class="d-flex justify-content-end">
+        <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save Payment</button>
+    </div>
+</form>
+
+<script>
+    // Optional: Add client-side validation or dynamic calculation if needed
+    $(document).ready(function() {
+        $('#paymentForm').on('submit', function(e) {
+            e.preventDefault();
+            var form = $(this);
+            $.ajax({
+                url: form.attr('action'),
+                type: form.attr('method'),
+                data: form.serialize(),
+                success: function(response) {
+                    if (response.success) {
+                        // Close the modal
+                        var modal = bootstrap.Modal.getInstance(document.getElementById('crudModal'));
+                        modal.hide();
+                        // Refresh the grid or show a success message
+                        window.location.reload(); // Simple refresh
+                    } else {
+                        alert('Error: ' + response.message);
+                    }
+                },
+                error: function() {
+                    alert('An unexpected error occurred.');
+                }
+            });
+        });
+    });
+</script>

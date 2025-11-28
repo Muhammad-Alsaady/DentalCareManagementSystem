@@ -1,0 +1,372 @@
+@model DentalCareManagmentSystem.Web.Models.PatientHistoryViewModel
+@{
+    ViewData["Title"] = "Patient History";
+}
+
+<div class="container-fluid mt-4">
+    @if (ViewBag.ErrorMessage != null)
+    {
+        <div class="alert alert-warning">
+            <i class="fas fa-exclamation-triangle"></i> @ViewBag.ErrorMessage
+        </div>
+    }
+
+    <!-- Patient Information Card -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-primary text-white">
+            <h4 class="mb-0"><i class="fas fa-user"></i> Patient Information</h4>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-3">
+                    <p><strong>Name:</strong> @Model.Patient.FullName</p>
+                </div>
+                <div class="col-md-3">
+                    <p><strong>Phone:</strong> @Model.Patient.Phone</p>
+                </div>
+                <div class="col-md-3">
+                    <p><strong>Age:</strong> @Model.Patient.Age years</p>
+                </div>
+                <div class="col-md-3">
+                    <p><strong>Gender:</strong> @Model.Patient.Gender</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Payment Summary Card -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-success text-white">
+            <h4 class="mb-0"><i class="fas fa-dollar-sign"></i> Payment Summary</h4>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4">
+                    <h5>Total Cost: <span class="text-primary">@Model.TotalCost.ToString("C")</span></h5>
+                </div>
+                <div class="col-md-4">
+                    <h5>Total Paid: <span class="text-success">@Model.TotalPaid.ToString("C")</span></h5>
+                </div>
+                <div class="col-md-4">
+                    <h5>Remaining: <span class="text-danger">@Model.RemainingBalance.ToString("C")</span></h5>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <ul class="nav nav-tabs" id="patientHistoryTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="diagnosis-tab" data-bs-toggle="tab" data-bs-target="#diagnosis" type="button">
+                <i class="fas fa-notes-medical"></i> Diagnosis Notes
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="appointments-tab" data-bs-toggle="tab" data-bs-target="#appointments" type="button">
+                <i class="fas fa-calendar"></i> Appointments History
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="treatments-tab" data-bs-toggle="tab" data-bs-target="#treatments" type="button">
+                <i class="fas fa-tooth"></i> Treatment Plans
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="images-tab" data-bs-toggle="tab" data-bs-target="#images" type="button">
+                <i class="fas fa-images"></i> Medical Images
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="payments-tab" data-bs-toggle="tab" data-bs-target="#payments" type="button">
+                <i class="fas fa-file-invoice-dollar"></i> Payment History
+            </button>
+        </li>
+    </ul>
+
+    <div class="tab-content mt-3" id="patientHistoryTabsContent">
+        <!-- Diagnosis Notes Tab -->
+        <div class="tab-pane fade show active" id="diagnosis" role="tabpanel">
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h5>Diagnosis Notes</h5>
+                </div>
+                <div class="card-body">
+                    @if (Model.Patient.Id != Guid.Empty)
+                    {
+                        <!-- Add New Note Form -->
+                        <div class="mb-4">
+                            <h6>Add New Diagnosis Note:</h6>
+                            <form id="addDiagnosisForm">
+                                <div class="mb-2">
+                                    <textarea class="form-control" id="diagnosisNote" rows="3" placeholder="Enter diagnosis notes..."></textarea>
+                                </div>
+                                <button type="button" class="btn btn-primary" onclick="addDiagnosisNote()">
+                                    <i class="fas fa-save"></i> Save Note
+                                </button>
+                            </form>
+                        </div>
+                        <hr />
+                    }
+
+                    @if (Model.DiagnosisNotes.Any())
+                    {
+                        <div class="list-group">
+                            @foreach (var note in Model.DiagnosisNotes.OrderByDescending(n => n.CreatedAt))
+                            {
+                                <div class="list-group-item">
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <h6 class="mb-1">Dr. @note.DoctorId</h6>
+                                        <small>@note.CreatedAt.ToString("MMM dd, yyyy hh:mm tt")</small>
+                                    </div>
+                                    <p class="mb-1">@note.Note</p>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="text-muted">No diagnosis notes recorded yet.</p>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Appointments Tab -->
+        <div class="tab-pane fade" id="appointments" role="tabpanel">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    @if (Model.Appointments.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Time</th>
+                                        <th>Status</th>
+                                        <th>Notes</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var apt in Model.Appointments)
+                                    {
+                                        <tr>
+                                            <td>@apt.Date.ToString("MMM dd, yyyy")</td>
+                                            <td>@apt.StartTime.ToString(@"hh\:mm") - @apt.EndTime.ToString(@"hh\:mm")</td>
+                                            <td><span class="badge bg-info">@apt.Status</span></td>
+                                            <td>@apt.Notes</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="text-muted">No appointment history available.</p>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Treatment Plans Tab -->
+        <div class="tab-pane fade" id="treatments" role="tabpanel">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    @if (Model.TreatmentPlans.Any())
+                    {
+                        @foreach (var plan in Model.TreatmentPlans)
+                        {
+                            <div class="card mb-3">
+                                <div class="card-header">
+                                    Treatment Plan - @plan.CreatedAt.ToString("MMM dd, yyyy")
+                                    @if (plan.IsCompleted)
+                                    {
+                                        <span class="badge bg-success float-end">Completed</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-warning float-end">In Progress</span>
+                                    }
+                                </div>
+                                <div class="card-body">
+                                    @if (plan.Items != null && plan.Items.Any())
+                                    {
+                                        <ul class="list-group">
+                                            @foreach (var item in plan.Items)
+                                            {
+                                                <li class="list-group-item d-flex justify-content-between">
+                                                    <span>@item.Name (x@item.Quantity)</span>
+                                                    <strong>@item.LineTotal.ToString("C")</strong>
+                                                </li>
+                                            }
+                                        </ul>
+                                    }
+                                    <div class="mt-2">
+                                        <strong>Total: @plan.TotalCost.ToString("C")</strong>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <p class="text-muted">No treatment plans recorded yet.</p>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Medical Images Tab -->
+        <div class="tab-pane fade" id="images" role="tabpanel">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    @if (Model.PatientImages.Any())
+                    {
+                        <div class="row">
+                            @foreach (var image in Model.PatientImages)
+                            {
+                                <div class="col-md-3 mb-3">
+                                    <div class="card">
+                                        <img src="@image.FilePath" class="card-img-top" alt="Patient Image" style="max-height: 200px; object-fit: cover;">
+                                        <div class="card-body text-center">
+                                            <small>@image.UploadedAt.ToString("MMM dd, yyyy")</small>
+                                            @if (!string.IsNullOrEmpty(image.FileName))
+                                            {
+                                                <br/><small class="text-muted">@image.FileName</small>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="text-muted">No medical images uploaded yet.</p>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Payment History Tab -->
+        <div class="tab-pane fade" id="payments" role="tabpanel">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    @if (Model.Payments.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Amount</th>
+                                        <th>Notes</th>
+                                        <th>Processed By</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var payment in Model.Payments.OrderByDescending(p => p.PaymentDate))
+                                    {
+                                        <tr>
+                                            <td>@payment.PaymentDate.ToString("MMM dd, yyyy hh:mm tt")</td>
+                                            <td><strong>@payment.Amount.ToString("C")</strong></td>
+                                            <td>@payment.Notes</td>
+                                            <td>@payment.CreatedBy</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="text-muted">No payment history available.</p>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="mt-4">
+        <a href="@Url.Action("Index", "Doctor")" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Patient List
+        </a>
+        <button type="button" class="btn btn-success" onclick="completeSession()">
+            <i class="fas fa-check-circle"></i> Complete Session & Send to Reception
+        </button>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function addDiagnosisNote() {
+            const note = $('#diagnosisNote').val();
+            if (!note) {
+                alert('Please enter a diagnosis note.');
+                return;
+            }
+
+            $.ajax({
+                url: '@Url.Action("AddDiagnosisNote", "Doctor")',
+                type: 'POST',
+                data: {
+                    appointmentId: '@Model.CurrentAppointmentId',
+                    patientId: '@Model.Patient.Id',
+                    note: note,
+                    __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                },
+                success: function (response) {
+                    if (response.success) {
+                        showNotification(response.message, 'success');
+                        $('#diagnosisNote').val('');
+                        setTimeout(() => location.reload(), 1500);
+                    } else {
+                        showNotification(response.message, 'error');
+                    }
+                },
+                error: function () {
+                    showNotification('An error occurred while adding the note.', 'error');
+                }
+            });
+        }
+
+        function completeSession() {
+            if (confirm('Are you sure you want to complete this session? The patient will be sent back to reception for payment.')) {
+                $.ajax({
+                    url: '@Url.Action("CompleteSession", "Doctor")',
+                    type: 'POST',
+                    data: {
+                        appointmentId: '@Model.CurrentAppointmentId',
+                        __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                    },
+                    success: function (response) {
+                        if (response.success) {
+                            showNotification(response.message, 'success');
+                            setTimeout(() => window.location.href = '@Url.Action("Index", "Doctor")', 1500);
+                        } else {
+                            showNotification(response.message, 'error');
+                        }
+                    },
+                    error: function () {
+                        showNotification('An error occurred while completing the session.', 'error');
+                    }
+                });
+            }
+        }
+
+        function showNotification(message, type) {
+            const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+            const notification = `
+                <div class="alert ${alertClass} alert-dismissible fade show position-fixed" 
+                     style="top: 20px; right: 20px; z-index: 9999;" role="alert">
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `;
+            $('body').append(notification);
+            setTimeout(() => $('.alert').fadeOut('slow', function() { $(this).remove(); }), 3000);
+        }
+    </script>
+}

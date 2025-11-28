@@ -1,4 +1,3 @@
-
 namespace DentalCareManagmentSystem.Domain.Entities;
 
 public class AuditLog
@@ -10,6 +9,7 @@ public class AuditLog
     public string? Action { get; set; }
     public string? UserId { get; set; }
     public DateTime Timestamp { get; set; }
+    public string? Changes { get; set; }
     public string? ChangesJson { get; set; }
     public virtual PatientAppointment? PatientAppointment { get; set; }
 

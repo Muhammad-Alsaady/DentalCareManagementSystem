@@ -102,9 +102,10 @@
         string badgeClass = status switch
         {
             DentalCareManagmentSystem.Domain.Enums.AppointmentStatus.Scheduled => "bg-primary",
+            DentalCareManagmentSystem.Domain.Enums.AppointmentStatus.InProgress => "bg-warning",
             DentalCareManagmentSystem.Domain.Enums.AppointmentStatus.Completed => "bg-success",
             DentalCareManagmentSystem.Domain.Enums.AppointmentStatus.Cancelled => "bg-danger",
-            DentalCareManagmentSystem.Domain.Enums.AppointmentStatus.NoShow => "bg-warning",
+            DentalCareManagmentSystem.Domain.Enums.AppointmentStatus.NoShow => "bg-secondary",
             DentalCareManagmentSystem.Domain.Enums.AppointmentStatus.Notified => "bg-info",
             _ => "bg-secondary"
         };
@@ -123,11 +124,37 @@
     {
         var sb = new StringBuilder();
 
-        sb.Append("<div class='btn-group btn-group-sm'>");
+        sb.Append("<div class='btn-group btn-group-sm' role='group'>");
         
+        // Details button
         sb.Append($"<button onclick='showDetails(\"{m.Id}\")' class='btn btn-info' title='Details'><i class='fas fa-info-circle'></i></button>");
-        sb.Append($"<button onclick='showEdit(\"{m.Id}\")' class='btn btn-primary' title='Edit'><i class='fas fa-edit'></i></button>");
-        sb.Append($"<button onclick='showDelete(\"{m.Id}\")' class='btn btn-danger' title='Delete'><i class='fas fa-trash'></i></button>");
+        
+        // Send to Doctor button (only for Scheduled status)
+        if (m.Status == DentalCareManagmentSystem.Domain.Enums.AppointmentStatus.Scheduled)
+        {
+            sb.Append($"<button onclick='sendToDoctor(\"{m.Id}\")' class='btn btn-success' title='Send to Doctor'><i class='fas fa-user-md'></i></button>");
+        }
+        
+        // Payment button (for InProgress and Completed status, or if there's a remainder)
+        if (m.Status == DentalCareManagmentSystem.Domain.Enums.AppointmentStatus.Completed || 
+            m.Status == DentalCareManagmentSystem.Domain.Enums.AppointmentStatus.InProgress ||
+            m.Remainder > 0)
+        {
+            var paymentIconClass = m.Remainder > 0 ? "text-warning" : "text-success";
+            sb.Append($"<button onclick='showPaymentModal(\"{m.Id}\")' class='btn btn-outline-primary' title='Payment'><i class='fas fa-dollar-sign {paymentIconClass}'></i></button>");
+        }
+        
+        // Edit button (only for Scheduled status)
+        if (m.Status == DentalCareManagmentSystem.Domain.Enums.AppointmentStatus.Scheduled)
+        {
+            sb.Append($"<button onclick='showEdit(\"{m.Id}\")' class='btn btn-primary' title='Edit'><i class='fas fa-edit'></i></button>");
+        }
+        
+        // Delete button (only for Scheduled status)
+        if (m.Status == DentalCareManagmentSystem.Domain.Enums.AppointmentStatus.Scheduled)
+        {
+            sb.Append($"<button onclick='showDelete(\"{m.Id}\")' class='btn btn-danger' title='Delete'><i class='fas fa-trash'></i></button>");
+        }
 
         sb.Append("</div>");
 

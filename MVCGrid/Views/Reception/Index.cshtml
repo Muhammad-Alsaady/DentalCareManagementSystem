@@ -10,128 +10,138 @@
     ViewData["Title"] = Localizer["Title"];
 }
 
-<div class="container-fluid">
-
+<div class="container-fluid mt-4">
     <!-- Header -->
     <div class="row mb-3">
         <div class="col-md-12">
-            <div class="d-flex justify-content-between align-items-center">
-                <h2><i class="fas fa-calendar-alt"></i> @Localizer["TodaysAppointments"]</h2>
-
-                <div>
-                    <button class="btn btn-outline-primary" onclick="refreshGrid()">
-                        <i class="fas fa-sync"></i> @Localizer["RefreshButton"]
-                    </button>
-                </div>
-            </div>
-            <hr />
+            <h2><i class="fas fa-desktop"></i> @Localizer["PageTitle"]</h2>
+            <p class="text-muted">@Localizer["PageSubtitle"]</p>
         </div>
     </div>
 
-    <!-- Search -->
-    <div class="row mb-3">
-        <div class="col-md-12">
-            <div class="card shadow-sm">
-                <div class="card-body">
-                    <div class="input-group">
-                        <input type="text" id="searchInput" class="form-control"
-                               placeholder="@Localizer["SearchPlaceholder"]"
-                               onkeypress="if(event.keyCode==13) performSearch()" />
-                        <button class="btn btn-primary" onclick="performSearch()">
-                            <i class="fas fa-search"></i> @Localizer["SearchButton"]
-                        </button>
-                        <button class="btn btn-secondary" onclick="clearSearch()">
-                            <i class="fas fa-times"></i> @Localizer["ClearButton"]
-                        </button>
-                    </div>
+    <!-- Status Tabs -->
+    <ul class="nav nav-tabs mb-3" id="receptionTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="scheduled-tab" data-bs-toggle="tab" data-bs-target="#scheduled" type="button">
+                <i class="fas fa-calendar-check"></i> Scheduled (@Model.Count(m => m.Status == "Scheduled" || m.Status == "Notified"))
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="completed-tab" data-bs-toggle="tab" data-bs-target="#completed" type="button">
+                <i class="fas fa-check-circle"></i> Ready for Payment
+            </button>
+        </li>
+    </ul>
+
+    <!-- Tab Content -->
+    <div class="tab-content" id="receptionTabsContent">
+        <!-- Scheduled Patients Tab -->
+        <div class="tab-pane fade show active" id="scheduled" role="tabpanel">
+            @if (Model.Any(m => m.Status == "Scheduled" || m.Status == "Notified"))
+            {
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Patient Name</th>
+                                <th>Phone</th>
+                                <th>Time</th>
+                                <th>Status</th>
+                                <th>Notes</th>
+                                <th class="text-center">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var appointment in Model.Where(m => m.Status == "Scheduled" || m.Status == "Notified").OrderBy(m => m.AppointmentDate))
+                            {
+                                <tr>
+                                    <td><strong>@appointment.PatientName</strong></td>
+                                    <td>@appointment.PhoneNumber</td>
+                                    <td>@appointment.AppointmentDate.ToString("hh:mm tt")</td>
+                                    <td><span class="badge @GetStatusBadge(appointment.Status)">@appointment.Status</span></td>
+                                    <td>@appointment.Notes</td>
+                                    <td class="text-center">
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <button type="button" class="btn btn-info" onclick="showAppointmentDetails('@appointment.Id')" title="Details">
+                                                <i class="fas fa-info-circle"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-success" onclick="sendToDoctor('@appointment.Id')" title="Send to Doctor">
+                                                <i class="fas fa-user-md"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-outline-primary" onclick="viewPatientHistory('@appointment.Id')" title="Patient History">
+                                                <i class="fas fa-history"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
                 </div>
-            </div>
+            }
+            else
+            {
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> No scheduled appointments for today.
+                </div>
+            }
         </div>
-    </div>
 
-    <!-- Appointments Table -->
-    <div class="row">
-        <div class="col-md-12">
-            <div class="card shadow-sm">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="card-title mb-0">
-                        <i class="fas fa-list"></i> @(Localizer["AppointmentsHeader"].Value + " - " + DateTime.Today.ToString("dddd, MMMM dd, yyyy"))
-                    </h5>
+        <!-- Completed Patients Tab (Ready for Payment) -->
+        <div class="tab-pane fade" id="completed" role="tabpanel">
+            @{
+                var completedAppointments = Model.Where(m => m.Status == "Completed" || m.Status == "InProgress").ToList();
+            }
+            @if (completedAppointments.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Patient Name</th>
+                                <th>Phone</th>
+                                <th>Time</th>
+                                <th>Status</th>
+                                <th class="text-center">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var appointment in completedAppointments.OrderBy(m => m.AppointmentDate))
+                            {
+                                <tr>
+                                    <td><strong>@appointment.PatientName</strong></td>
+                                    <td>@appointment.PhoneNumber</td>
+                                    <td>@appointment.AppointmentDate.ToString("hh:mm tt")</td>
+                                    <td><span class="badge @GetStatusBadge(appointment.Status)">@appointment.Status</span></td>
+                                    <td class="text-center">
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <button type="button" class="btn btn-primary" onclick="showPaymentModal('@appointment.Id')" title="Process Payment">
+                                                <i class="fas fa-dollar-sign"></i> Payment
+                                            </button>
+                                            <button type="button" class="btn btn-outline-info" onclick="viewPatientHistory('@appointment.Id')" title="Patient History">
+                                                <i class="fas fa-history"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
                 </div>
-                <div class="card-body">
-                    @if (Model.Any())
-                    {
-                        <div class="table-responsive">
-                            <table class="table table-striped table-hover">
-                                <thead class="table-dark">
-                                    <tr>
-                                        <th>@Localizer["PatientName"]</th>
-                                        <th>@Localizer["Phone"]</th>
-                                        <th>@Localizer["AppointmentTime"]</th>
-                                        <th>@Localizer["Status"]</th>
-                                        <th>@Localizer["Notes"]</th>
-                                        <th>@Localizer["Actions"]</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach (var appointment in Model)
-                                    {
-                                        <tr>
-                                            <td>@appointment.PatientName</td>
-                                            <td>@appointment.PhoneNumber</td>
-                                            <td>@appointment.AppointmentDate.ToString("hh:mm tt")</td>
-                                            <td>
-                                                <span class="badge @GetStatusBadge(appointment.Status)">
-                                                    @appointment.Status
-                                                </span>
-                                            </td>
-                                            <td>@(appointment.Notes?.Length > 50 ? appointment.Notes.Substring(0, 50) + "..." : appointment.Notes)</td>
-                                            <td>
-                                                <div class="btn-group btn-group-sm">
-                                                    <!-- Treatment Plan Button -->
-                                                    @if (appointment.Status == "Scheduled" || appointment.Status == "Notified")
-                                                    {
-                                                        <button class="btn btn-success" onclick="showTreatmentPlan('@appointment.Id')"
-                                                                title="@Localizer["TreatmentButton"]">
-                                                            <i class="fas fa-stethoscope"></i> @Localizer["TreatmentButton"]
-                                                        </button>
-                                                    }
-                                                    else if (appointment.Status == "UnderTreatment")
-                                                    {
-                                                        <button class="btn btn-warning" onclick="showPayment('@appointment.Id')"
-                                                                title="@Localizer["PaymentButton"]">
-                                                            <i class="fas fa-money-bill-wave"></i> @Localizer["PaymentButton"]
-                                                        </button>
-                                                    }
-
-                                                    <!-- View Details Button -->
-                                                    <button class="btn btn-info" onclick="showAppointmentDetails('@appointment.Id')">
-                                                        <i class="fas fa-eye"></i>
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    }
-                                </tbody>
-                            </table>
-                        </div>
-                    }
-                    else
-                    {
-                        <div class="alert alert-info text-center">
-                            <i class="fas fa-info-circle"></i>
-                            @Localizer["NoAppointments"]
-                        </div>
-                    }
+            }
+            else
+            {
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> No completed appointments waiting for payment.
                 </div>
-            </div>
+            }
         </div>
     </div>
 </div>
 
-<!-- Modal -->
-<div class="modal fade" id="crudModal" tabindex="-1">
-    <div class="modal-dialog modal-xl">
+<!-- Modal for forms -->
+<div class="modal fade" id="crudModal" tabindex="-1" aria-labelledby="crudModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="crudModalLabel">@Localizer["ModalDetailsTitle"]</h5>
@@ -150,30 +160,44 @@
             crudModal = new bootstrap.Modal(document.getElementById('crudModal'));
         });
 
-        function showTreatmentPlan(appointmentId) {
-            $.get('@Url.Action("GetTreatmentPlanForm", "Reception")?appointmentId=' + appointmentId)
-                .done(function (data) {
-                    $('#crudModalBody').html(data);
-                    $('#crudModalLabel').text('@Localizer["ModalTreatmentTitle"]');
-                    $('#crudModal').modal('show');
-                })
-                .fail(function (xhr, status, error) {
-                    console.error('Error loading treatment plan form:', error);
-                    alert('Error loading form: ' + error);
+        function sendToDoctor(appointmentId) {
+            if (confirm('Are you sure you want to send this patient to the doctor?')) {
+                $.ajax({
+                    url: '@Url.Action("SendToDoctor", "PatientAppointment")',
+                    type: 'POST',
+                    data: {
+                        id: appointmentId,
+                        __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                    },
+                    success: function (response) {
+                        if (response.success) {
+                            showNotification(response.message, 'success');
+                            setTimeout(() => location.reload(), 1500);
+                        } else {
+                            showNotification(response.message, 'error');
+                        }
+                    },
+                    error: function () {
+                        showNotification('An error occurred.', 'error');
+                    }
                 });
+            }
         }
 
-        function showPayment(appointmentId) {
-            $.get('@Url.Action("GetPaymentForm", "Reception")?appointmentId=' + appointmentId)
-                .done(function (data) {
+        function showPaymentModal(appointmentId) {
+            $.ajax({
+                url: '@Url.Action("GetPaymentModal", "Reception")',
+                type: 'GET',
+                data: { appointmentId: appointmentId },
+                success: function (data) {
                     $('#crudModalBody').html(data);
-                    $('#crudModalLabel').text('@Localizer["ModalPaymentTitle"]');
-                    $('#crudModal').modal('show');
-                })
-                .fail(function (xhr, status, error) {
-                    console.error('Error loading payment form:', error);
-                    alert('Error loading form: ' + error);
-                });
+                    $('#crudModalLabel').text('Process Payment');
+                    crudModal.show();
+                },
+                error: function () {
+                    showNotification('Error loading payment form.', 'error');
+                }
+            });
         }
 
         function showAppointmentDetails(appointmentId) {
@@ -181,33 +205,29 @@
                 .done(function (data) {
                     $('#crudModalBody').html(data);
                     $('#crudModalLabel').text('@Localizer["ModalDetailsTitle"]');
-                    $('#crudModal').modal('show');
+                    crudModal.show();
                 })
                 .fail(function (xhr, status, error) {
                     console.error('Error loading details:', error);
-                    alert('Error loading details: ' + error);
+                    showNotification('Error loading details.', 'error');
                 });
         }
 
-        function refreshGrid() {
-            window.location.reload();
+        function viewPatientHistory(appointmentId) {
+            window.location.href = '@Url.Action("PatientDetails", "Reception")?id=' + appointmentId;
         }
 
-        function performSearch() {
-            let term = $("#searchInput").val().toLowerCase();
-            $('table tbody tr').each(function() {
-                let patientName = $(this).find('td:first').text().toLowerCase();
-                if (patientName.includes(term)) {
-                    $(this).show();
-                } else {
-                    $(this).hide();
-                }
-            });
-        }
-
-        function clearSearch() {
-            $("#searchInput").val("");
-            $('table tbody tr').show();
+        function showNotification(message, type) {
+            const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+            const notification = `
+                <div class="alert ${alertClass} alert-dismissible fade show position-fixed" 
+                     style="top: 20px; right: 20px; z-index: 9999;" role="alert">
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `;
+            $('body').append(notification);
+            setTimeout(() => $('.alert').fadeOut('slow', function() { $(this).remove(); }), 3000);
         }
     </script>
 }
@@ -219,7 +239,7 @@
         {
             "Scheduled" => "bg-primary",
             "Notified" => "bg-info",
-            "UnderTreatment" => "bg-warning",
+            "InProgress" => "bg-warning",
             "Completed" => "bg-success",
             "Cancelled" => "bg-danger",
             "NoShow" => "bg-secondary",

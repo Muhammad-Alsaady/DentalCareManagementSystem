@@ -4,6 +4,7 @@ using DentalCareManagmentSystem.Application.Interfaces;
 using DentalCareManagmentSystem.Domain.Entities;
 using DentalCareManagmentSystem.Domain.Enums;
 using DentalCareManagmentSystem.Infrastructure.Data;
+using DentalCareManagmentSystem.Web.Models;
 using DentalManagementSystem.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -19,6 +20,7 @@ namespace DentalCareManagmentSystem.Web.Controllers
         private readonly IPatientAppointmentService _patientAppointmentService;
         private readonly ITreatmentPlanService _treatmentPlanService;
         private readonly IPriceListService _priceListService;
+        private readonly IPatientService _patientService;
         private readonly IMapper _mapper;
 
         public ReceptionController(
@@ -27,6 +29,7 @@ namespace DentalCareManagmentSystem.Web.Controllers
             IPatientAppointmentService patientAppointmentService,
             ITreatmentPlanService treatmentPlanService,
             IPriceListService priceListService,
+            IPatientService patientService,
             IMapper mapper)
         {
             _context = context;
@@ -34,15 +37,14 @@ namespace DentalCareManagmentSystem.Web.Controllers
             _patientAppointmentService = patientAppointmentService;
             _treatmentPlanService = treatmentPlanService;
             _priceListService = priceListService;
+            _patientService = patientService;
             _mapper = mapper;
         }
 
         public async Task<IActionResult> Index()
         {
             var todayAppointments = await _context.PatientAppointments
-                .Where(a => a.Date.Date == DateTime.Today &&
-                           (a.Status.ToString() == "Scheduled" ||
-                            a.Status.ToString() == "Notified"))
+                .Where(a => a.Date.Date == DateTime.Today)
                 .OrderBy(a => a.StartTime)
                 .Select(a => new PatientAppointmentViewModel
                 {
@@ -138,7 +140,7 @@ namespace DentalCareManagmentSystem.Web.Controllers
                 FullName = appointment.FullName,
                 Phone = appointment.Phone,
                 Age = appointment.Age,
-               // Gender = appointment.Gender.ToString(),
+                // Gender = appointment.Gender.ToString(),
                 Date = appointment.Date,
                 StartTime = appointment.StartTime,
                 EndTime = appointment.EndTime,
@@ -413,6 +415,178 @@ namespace DentalCareManagmentSystem.Web.Controllers
             return View("Payment", model);
         }
 
+        /// <summary>
+        /// Get payment modal for appointment with treatment selection
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> GetPaymentModal(Guid appointmentId)
+        {
+            var appointment = await _context.PatientAppointments
+                .FirstOrDefaultAsync(a => a.Id == appointmentId);
+
+            if (appointment == null)
+            {
+                return NotFound();
+            }
+
+            // Find or create patient
+            var patient = await _context.Patients
+                .FirstOrDefaultAsync(p => p.Phone == appointment.Phone);
+
+            Guid patientId = patient?.Id ?? Guid.Empty;
+
+            // Get treatment items for this appointment
+            var treatmentItems = await _context.TreatmentItems
+                .Where(t => t.PatientAppointmentId == appointmentId)
+                .ToListAsync();
+
+            // Calculate totals
+            var totalCost = treatmentItems.Sum(t => t.LineTotal);
+            var totalPaid = await _context.PaymentTransactions
+                .Where(p => p.PatientAppointmentId == appointmentId)
+                .SumAsync(p => p.Amount);
+
+            var model = new PaymentViewModel
+            {
+                AppointmentId = appointmentId,
+                PatientId = patientId,
+                PatientName = appointment.FullName,
+                TotalCost = totalCost,
+                AmountPaid = totalPaid,
+                RemainingBalance = totalCost - totalPaid,
+                PaymentDate = DateTime.Now
+            };
+
+            ViewBag.TreatmentItems = treatmentItems;
+            ViewBag.PaymentHistory = await _context.PaymentTransactions
+                .Where(p => p.PatientAppointmentId == appointmentId)
+                .OrderByDescending(p => p.PaymentDate)
+                .ToListAsync();
+
+            return PartialView("_PaymentModal", model);
+        }
+
+        /// <summary>
+        /// Process payment with audit logging
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ProcessPaymentWithAudit(PaymentViewModel model)
+        {
+            if (model.PaymentAmount <= 0)
+            {
+                return Json(new { success = false, message = "Payment amount must be greater than zero." });
+            }
+
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                var appointment = await _context.PatientAppointments
+                    .FirstOrDefaultAsync(a => a.Id == model.AppointmentId);
+
+                if (appointment == null)
+                {
+                    return Json(new { success = false, message = "Appointment not found." });
+                }
+
+                // Find or create patient record
+                var patient = await _context.Patients
+                    .FirstOrDefaultAsync(p => p.Phone == appointment.Phone);
+
+                if (patient == null)
+                {
+                    // Create patient from appointment data
+                    patient = new Patient
+                    {
+                        Id = Guid.NewGuid(),
+                        FullName = appointment.FullName,
+                        Phone = appointment.Phone,
+                        Age = appointment.Age,
+                        Gender = appointment.Gender,
+                        CreatedAt = DateTime.UtcNow,
+                        IsActive = true
+                    };
+                    _context.Patients.Add(patient);
+                    await _context.SaveChangesAsync();
+                }
+
+                // Create payment transaction
+                var payment = new PaymentTransaction
+                {
+                    Id = Guid.NewGuid(),
+                    PatientId = patient.Id,
+                    PatientAppointmentId = model.AppointmentId,
+                    Amount = model.PaymentAmount,
+                    PaymentDate = model.PaymentDate,
+                    Notes = model.Notes,
+                    CreatedAt = DateTime.UtcNow,
+                    CreatedBy = User.Identity?.Name ?? "Reception"
+                };
+
+                _context.PaymentTransactions.Add(payment);
+
+                // Create audit log
+                var auditLog = new AuditLog
+                {
+                    Id = Guid.NewGuid(),
+                    Action = "Payment Processed",
+                    EntityName = "PaymentTransaction",
+                    EntityId = payment.Id.ToString(),
+                    PatientAppointmentId = model.AppointmentId,
+                    Changes = $"Payment of {model.PaymentAmount:C} recorded for appointment {appointment.FullName}. " +
+                             $"Total Cost: {model.TotalCost:C}, Previous Paid: {model.AmountPaid:C}, " +
+                             $"New Total Paid: {model.AmountPaid + model.PaymentAmount:C}, " +
+                             $"Remaining: {model.TotalCost - (model.AmountPaid + model.PaymentAmount):C}",
+                    UserId = User.Identity?.Name ?? "System",
+                    Timestamp = DateTime.UtcNow
+                };
+
+                _context.AuditLogs.Add(auditLog);
+
+                // Check if fully paid
+                var totalCost = await _context.TreatmentItems
+                    .Where(t => t.PatientAppointmentId == model.AppointmentId)
+                    .SumAsync(t => t.LineTotal);
+
+                var totalPaid = await _context.PaymentTransactions
+                    .Where(p => p.PatientAppointmentId == model.AppointmentId)
+                    .SumAsync(p => p.Amount) + model.PaymentAmount;
+
+                if (totalPaid >= totalCost)
+                {
+                    appointment.Status = AppointmentStatus.Completed;
+                    
+                    var treatmentPlan = await _context.TreatmentPlans
+                        .FirstOrDefaultAsync(tp => tp.PatientAppointmentId == model.AppointmentId);
+                    
+                    if (treatmentPlan != null)
+                    {
+                        treatmentPlan.IsCompleted = true;
+                    }
+                }
+
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                return Json(new
+                {
+                    success = true,
+                    message = $"Payment of {model.PaymentAmount:C} processed successfully!",
+                    newBalance = totalCost - totalPaid,
+                    isFullyPaid = totalPaid >= totalCost
+                });
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                return Json(new
+                {
+                    success = false,
+                    message = $"Error processing payment: {ex.Message}"
+                });
+            }
+        }
+
         // AJAX actions
         [HttpPost]
         public IActionResult AddTreatmentItem([FromBody] List<TreatmentItemViewModel> currentItems)
@@ -442,5 +616,50 @@ namespace DentalCareManagmentSystem.Web.Controllers
             return Enum.GetNames(typeof(AppointmentStatus))
                       .Any(name => name.Equals(statusName, StringComparison.OrdinalIgnoreCase));
         }
+
+
+        [HttpGet]
+        public async Task<IActionResult> PatientDetails(Guid id)
+        {
+            var appointment = await _context.PatientAppointments.FindAsync(id);
+            if (appointment == null || appointment.Phone == null)
+            {
+                return NotFound("Appointment not found or phone number is missing.");
+            }
+
+            var patient = await _context.Patients.FirstOrDefaultAsync(p => p.Phone == appointment.Phone);
+            if (patient == null)
+            {
+                // If the patient doesn't exist in the Patients table, create a temporary one from the appointment
+                var patientDto = new PatientDto
+                {
+                    Id = Guid.Empty, // Indicates a temporary patient
+                    FullName = appointment.FullName,
+                    Phone = appointment.Phone,
+                    Age = appointment.Age,
+                    Gender = appointment.Gender.ToString()
+                };
+
+                var vm = new PatientHistoryViewModel { Patient = patientDto };
+                ViewBag.ErrorMessage = "This patient has not been formally registered. History is limited to this appointment.";
+                return View(vm);
+            }
+
+            var summary = _paymentService.GetPatientPaymentSummary(patient.Id);
+
+            var historyViewModel = new PatientHistoryViewModel
+            {
+                Patient = _mapper.Map<PatientDto>(patient),
+                Appointments = _mapper.Map<List<PatientAppointmentDto>>(await _context.PatientAppointments.Where(pa => pa.Phone == patient.Phone).ToListAsync()),
+                TreatmentPlans = _treatmentPlanService.GetPlansByPatientId(patient.Id),
+                Payments = summary.Payments,
+                TotalCost = summary.TotalCost,
+                TotalPaid = summary.TotalPaid
+            };
+
+            return View(historyViewModel);
+        }
+
+
     }
 }

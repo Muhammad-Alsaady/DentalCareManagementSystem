@@ -237,5 +237,47 @@
             $("#searchInput").val("");
             refreshGrid();
         }
+
+        // Send Patient to Doctor
+        function sendToDoctor(id) {
+            if (confirm('Are you sure you want to send this patient to the doctor?')) {
+                $.ajax({
+                    url: '@Url.Action("SendToDoctor", "PatientAppointment")',
+                    type: 'POST',
+                    data: {
+                        id: id,
+                        __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                    },
+                    success: function (response) {
+                        if (response.success) {
+                            UIHelpers.showNotification(response.message, 'success');
+                            refreshGrid();
+                        } else {
+                            UIHelpers.showNotification(response.message, 'error');
+                        }
+                    },
+                    error: function () {
+                        UIHelpers.showNotification('An error occurred while sending the patient to the doctor.', 'error');
+                    }
+                });
+            }
+        }
+
+        // Show Payment Modal
+        function showPaymentModal(appointmentId) {
+            $.ajax({
+                url: '@Url.Action("GetPaymentModal", "Reception")',
+                type: 'GET',
+                data: { appointmentId: appointmentId },
+                success: function (data) {
+                    $('#crudModalBody').html(data);
+                    $('#crudModalLabel').text('Process Payment');
+                    $('#crudModal').modal('show');
+                },
+                error: function () {
+                    UIHelpers.showNotification('Error loading payment form.', 'error');
+                }
+            });
+        }
     </script>
 }

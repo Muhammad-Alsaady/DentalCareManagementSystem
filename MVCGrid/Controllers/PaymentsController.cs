@@ -1,8 +1,9 @@
 ﻿using DentalCareManagmentSystem.Application.DTOs;
 using DentalCareManagmentSystem.Application.Interfaces;
-using DentalCareManagmentSystem.Infrastructure.Services;
+using DentalCareManagmentSystem.Infrastructure.Data;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace DentalManagementSystem.Controllers;
 
@@ -13,18 +14,24 @@ public class PaymentsController : Controller
     private readonly IPatientService _patientService;
     private readonly IAppointmentService _appointmentService;
     private readonly ITreatmentPlanService _treatmentPlanService;
+    private readonly IPatientAppointmentService _patientAppointmentService;
+    private readonly ClinicDbContext _context;
 
 
     public PaymentsController(
     IPaymentService paymentService,
     IPatientService patientService,
     IAppointmentService appointmentService,
-    ITreatmentPlanService treatmentPlanService) 
+    ITreatmentPlanService treatmentPlanService,
+    IPatientAppointmentService patientAppointmentService,
+    ClinicDbContext context)
     {
         _paymentService = paymentService;
         _patientService = patientService;
         _appointmentService = appointmentService;
-        _treatmentPlanService = treatmentPlanService; 
+        _treatmentPlanService = treatmentPlanService;
+        _patientAppointmentService = patientAppointmentService;
+        _context = context;
     }
 
 
@@ -114,7 +121,7 @@ public class PaymentsController : Controller
 
             // Record payment using the service
             await _paymentService.AddPaymentAsync(paymentDto, createdBy);
-            
+
             return Json(new
             {
                 success = true,
@@ -178,7 +185,7 @@ public class PaymentsController : Controller
         {
             var deletedBy = User.Identity?.Name ?? "System";
             await _paymentService.DeletePaymentAsync(id, deletedBy);
-            
+
             return Json(new
             {
                 success = true,
@@ -266,6 +273,70 @@ public class PaymentsController : Controller
         catch (Exception ex)
         {
             return Json(new { success = false, message = $"Error: {ex.Message}" });
+        }
+    }
+
+
+    [HttpGet]
+    public async Task<IActionResult> CreateForAppointment(Guid id)
+    {
+        var appointment = await _patientAppointmentService.GetByIdAsync(id);
+        if (appointment == null)
+        {
+            return NotFound();
+        }
+
+        // Find the patient to get their ID
+        var patient = await _context.Patients.FirstOrDefaultAsync(p => p.Phone == appointment.Phone);
+        if (patient == null)
+        {
+            return NotFound("Patient record not found for this appointment.");
+        }
+
+        var summary = _paymentService.GetPatientPaymentSummary(patient.Id);
+
+        var model = new DentalCareManagmentSystem.Web.Models.CreateAppointmentPaymentViewModel
+        {
+            PatientAppointmentId = appointment.Id,
+            PatientId = patient.Id,
+            PatientName = appointment.FullName,
+            TotalCost = summary.TotalCost,
+            TotalPaid = summary.TotalPaid,
+            Remainder = summary.RemainingBalance
+        };
+
+        return PartialView("_CreateForAppointment", model);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> CreateForAppointment(DentalCareManagmentSystem.Web.Models.CreateAppointmentPaymentViewModel model)
+    {
+        if (model.AmountToPay <= 0)
+        {
+            return Json(new { success = false, message = "Payment amount must be greater than zero." });
+        }
+
+        try
+        {
+            var createdBy = User.Identity?.Name ?? "System";
+            var paymentDto = new CreatePaymentDto
+            {
+                PatientId = model.PatientId,
+                AppointmentId = model.PatientAppointmentId,
+                Amount = model.AmountToPay,
+                Notes = model.Notes,
+                PaymentDate = DateTime.Now
+            };
+
+            await _paymentService.AddPaymentAsync(paymentDto, createdBy);
+
+            return Json(new { success = true, message = "Payment recorded successfully." });
+        }
+        catch (Exception ex)
+        {
+            // Log the exception ex
+            return Json(new { success = false, message = "An error occurred while processing the payment." });
         }
     }
 
