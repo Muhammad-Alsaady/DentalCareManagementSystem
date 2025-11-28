@@ -101,24 +101,8 @@
 </div>
 </div>
 
-<!-- Modal -->
-<div class="modal fade" id="crudModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-
-            <div class="modal-header">
-                <h5 class="modal-title" id="crudModalLabel">@Localizer["Appointment"]</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-
-            <div class="modal-body" id="crudModalBody"></div>
-        </div>
-    </div>
-</div>
-
 @section Scripts {
     <script>
-        let crudModal;
         const texts = {
             addButton: '@Localizer["AddButton"]',
             editButton: '@Localizer["EditButton"]',
@@ -134,50 +118,44 @@
                 refreshGrid();
             });
 
-            // تعيين placeholder للبحث
+            // Set placeholder for search
             $("#searchInput").attr("placeholder", texts.searchPlaceholder);
         });
 
+        // Show Create Form - Uses Global Modal
         function showCreate() {
-            $.get('@Url.Action("Create", "PatientAppointment")')
-                .done(function (data) {
-                    $('#crudModalBody').html(data);
-                    $('#crudModalLabel').text(texts.addButton);
-                    $('#crudModal').modal('show');
-                    $.validator.unobtrusive.parse('#createForm');
-                })
-                .fail(function (xhr, status, error) {
-                    console.error('Error loading form:', error);
-                    alert('Error loading form: ' + error);
-                });
+            UIHelpers.loadModal('@Url.Action("Create", "PatientAppointment")', texts.addButton);
         }
 
-        // Show Edit Form
+        // Show Edit Form - Uses Global Modal
         function showEdit(id) {
             UIHelpers.loadModal('@Url.Action("Edit", "PatientAppointment")/' + id, texts.editButton);
         }
-               function showTreatmentPlan(appointmentId) {
-            $.get('/Reception/GetTreatmentPlanForm?appointmentId=' + appointmentId)
-                .done(function (data) {
-                    $('#crudModalBody').html(data);
-                    $('#crudModalLabel').text('Create Treatment Plan');
-                    $('#crudModal').modal('show');
-                })
-                .fail(function (xhr, status, error) {
-                    alert("Error loading treatment plan.");
-                    console.error(error);
-                });
+
+        // Show Treatment Plan - Uses Global Modal
+        function showTreatmentPlan(appointmentId) {
+            UIHelpers.loadModal(
+                '@Url.Action("GetTreatmentPlanForm", "Reception")?appointmentId=' + appointmentId,
+                'Create Treatment Plan'
+            );
         }
 
-
-        // Show Details
+        // Show Details - Uses Global Modal
         function showDetails(id) {
             UIHelpers.loadModal('@Url.Action("Details", "PatientAppointment")/' + id, 'Patient Appointment Details');
         }
 
-        // Show Delete Confirmation
+        // Show Delete Confirmation - Uses Global Modal
         function showDelete(id) {
             UIHelpers.loadModal('@Url.Action("Delete", "PatientAppointment")/' + id, texts.deleteButton);
+        }
+
+        // Show Payment Modal - Uses Global Modal
+        function showPaymentModal(appointmentId) {
+            UIHelpers.loadModal(
+                '@Url.Action("GetPaymentModal", "Reception")?appointmentId=' + appointmentId,
+                'Process Payment'
+            );
         }
 
         // Filter by Date
@@ -274,36 +252,6 @@
                     }
                 });
             }
-        }
-                function showTreatmentPlan(appointmentId) {
-            $.get('@Url.Action("GetTreatmentPlanForm", "Reception")?appointmentId=' + appointmentId)
-                .done(function (data) {
-                    $('#crudModalBody').html(data);
-                    $('#crudModalLabel').text('Treatment Plan');
-                    $('#crudModal').modal('show');
-                })
-                .fail(function (xhr, status, error) {
-                    console.error('Error loading treatment plan form:', error);
-                    alert('Error loading form: ' + error);
-                });
-        }
-
-
-        // Show Payment Modal
-        function showPaymentModal(appointmentId) {
-            $.ajax({
-                url: '@Url.Action("GetPaymentModal", "Reception")',
-                type: 'GET',
-                data: { appointmentId: appointmentId },
-                success: function (data) {
-                    $('#crudModalBody').html(data);
-                    $('#crudModalLabel').text('Process Payment');
-                    $('#crudModal').modal('show');
-                },
-                error: function () {
-                    UIHelpers.showNotification('Error loading payment form.', 'error');
-                }
-            });
         }
     </script>
 }

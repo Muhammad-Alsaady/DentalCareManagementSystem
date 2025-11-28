@@ -71,29 +71,11 @@
     </div>
 </div>
 
-<!-- Modal for CRUD operations -->
-<div class="modal fade" id="crudModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="crudModalLabel">Appointment</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body" id="crudModalBody">
-                <!-- Dynamic content will be loaded here -->
-            </div>
-        </div>
-    </div>
-</div>
+<!-- Modal for CRUD operations - NO LOCAL MODAL, USING GLOBAL MODAL FROM _Layout -->
 
 @section Scripts {
     <script>
-        let crudModal;
-
         $(document).ready(function() {
-            // Initialize modal
-            crudModal = new bootstrap.Modal(document.getElementById('crudModal'));
-
             // Enable auto-refresh every 15 seconds
             UIHelpers.enableAutoRefresh(
                 'AppointmentsGrid',
@@ -105,28 +87,28 @@
                 }
             );
 
-            // Setup AJAX form handler for appointment forms
-            UIHelpers.ajaxFormHandler('#appointmentForm', function(response) {
+            // Listen for modal success to refresh grid
+            $(document).on('modalSuccess', function(event, response) {
                 refreshAppointments();
             });
         });
 
-        // Show Create Form
+        // Show Create Form - Uses Global Modal
         function showCreate() {
             UIHelpers.loadModal('@Url.Action("Create")', 'Create Appointment');
         }
 
-        // Show Edit Form
+        // Show Edit Form - Uses Global Modal
         function showEdit(id) {
             UIHelpers.loadModal('@Url.Action("Edit")/' + id, 'Edit Appointment');
         }
 
-        // Show Delete Confirmation
+        // Show Delete Confirmation - Uses Global Modal
         function showDelete(id) {
             UIHelpers.loadModal('@Url.Action("Delete")/' + id, 'Delete Appointment');
         }
 
-        // Show Details
+        // Show Details - Uses Global Modal
         function showDetails(id) {
             UIHelpers.loadModal('@Url.Action("Details")/' + id, 'Appointment Details');
         }
@@ -146,40 +128,26 @@
 
         // Apply Filters
         function applyFilters() {
-            const date = $('#filterDate').val();
-            const status = $('#filterStatus').val();
-            
-            // Update grid with filters
-            UIHelpers.reloadGridPartial(
-                '#gridContainer',
-                '@Url.Action("GetAppointmentsGrid")',
-                { date: date, status: status }
-            );
-
-            // Update auto-refresh with new filters
-            UIHelpers.enableAutoRefresh(
-                'AppointmentsGrid',
-                '#gridContainer',
-                '@Url.Action("GetAppointmentsGrid")',
-                { date: date, status: status }
-            );
+            refreshAppointments();
         }
 
         // Clear Filters
         function clearFilters() {
-            $('#filterDate').val('@DateTime.Today.ToString("yyyy-MM-dd")');
+            $('#filterDate').val('');
             $('#filterStatus').val('');
-            applyFilters();
+            refreshAppointments();
         }
 
         // Refresh Appointments
         function refreshAppointments() {
-            applyFilters();
+            UIHelpers.reloadGridPartial(
+                '#gridContainer',
+                '@Url.Action("GetAppointmentsGrid")',
+                {
+                    date: $('#filterDate').val(),
+                    status: $('#filterStatus').val()
+                }
+            );
         }
-
-        // Cleanup on page unload
-        $(window).on('beforeunload', function() {
-            UIHelpers.disableAutoRefresh('AppointmentsGrid');
-        });
     </script>
 }

@@ -281,18 +281,7 @@
     }
 </div>
 
-<!-- Modal -->
-<div class="modal fade" id="crudModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="crudModalLabel">Appointment</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body" id="crudModalBody"></div>
-        </div>
-    </div>
-</div>
+<!-- NO LOCAL MODAL - Using Global Modal from _Layout -->
 
 @section Scripts {
     <script>
@@ -307,110 +296,39 @@
             filterByDate($('#dashboardDate').val());
         });
 
-        // Show Create Form
+        // Show Create Form - Uses Global Modal
         function showCreate() {
             UIHelpers.loadModal('@Url.Action("Create", "PatientAppointment")', 'Add Patient Appointment');
         }
 
-        // Show Edit Form
+        // Show Edit Form - Uses Global Modal
         function showEdit(id) {
             UIHelpers.loadModal('@Url.Action("Edit", "PatientAppointment")/' + id, 'Edit Appointment');
         }
 
-        // Show Details
+        // Show Details - Uses Global Modal
         function showDetails(id) {
             UIHelpers.loadModal('@Url.Action("Details", "PatientAppointment")/' + id, 'Patient Appointment Details');
         }
 
-        // Show Delete Confirmation
+        // Show Delete Confirmation - Uses Global Modal
         function showDelete(id) {
             UIHelpers.loadModal('@Url.Action("Delete", "PatientAppointment")/' + id, 'Delete Appointment');
         }
 
-        // Filter by Date
-        function filterByDate(date) {
-            var searchTerm = $("#searchInput").val();
-            var params = {};
-            
-            if (date) {
-                params.filterDate = date;
-            }
-            if (searchTerm) {
-                params.searchString = searchTerm;
-            }
-            
+        // Filter appointments by date
+        function filterByDate(selectedDate) {
             UIHelpers.reloadGridPartial(
                 '#gridContainer',
-                '@Url.Action("GetAppointmentsGrid", "Home")',
-                params
+                '@Url.Action("GetAppointmentsGridByDate", "PatientAppointment")',
+                { filterDate: selectedDate }
             );
         }
 
-        // Clear Date Filter
-        function clearDateFilter() {
-            $('#dashboardDate').val('');
-            filterByDate('');
-        }
-
-        // Refresh Grid
+        // Refresh grid
         function refreshGrid() {
-            var date = $('#dashboardDate').val();
-            var searchTerm = $("#searchInput").val();
-            var params = {};
-            
-            if (date) {
-                params.filterDate = date;
-            }
-            if (searchTerm) {
-                params.searchString = searchTerm;
-            }
-            
-            UIHelpers.reloadGridPartial(
-                '#gridContainer',
-                '@Url.Action("GetAppointmentsGrid", "Home")',
-                params
-            );
-        }
-
-        // Perform Search
-        function performSearch() {
-            var searchTerm = $("#searchInput").val();
-            var date = $('#dashboardDate').val();
-            var params = {};
-            
-            if (searchTerm) {
-                params.searchString = searchTerm;
-            }
-            if (date) {
-                params.filterDate = date;
-            }
-            
-            UIHelpers.reloadGridPartial(
-                '#gridContainer',
-                '@Url.Action("GetAppointmentsGrid", "Home")',
-                params
-            );
-        }
-
-        // Clear Search
-        function clearSearch() {
-            $("#searchInput").val("");
-            refreshGrid();
+            var selectedDate = $('#dashboardDate').val();
+            filterByDate(selectedDate);
         }
     </script>
-}
-
-@functions {
-    string GetStatusBadgeClass(DentalCareManagmentSystem.Domain.Enums.AppointmentStatus status)
-    {
-        return status switch
-        {
-            DentalCareManagmentSystem.Domain.Enums.AppointmentStatus.Scheduled => "bg-primary",
-            DentalCareManagmentSystem.Domain.Enums.AppointmentStatus.Completed => "bg-success",
-            DentalCareManagmentSystem.Domain.Enums.AppointmentStatus.Cancelled => "bg-danger",
-            DentalCareManagmentSystem.Domain.Enums.AppointmentStatus.NoShow => "bg-warning",
-            DentalCareManagmentSystem.Domain.Enums.AppointmentStatus.Notified => "bg-info",
-            _ => "bg-secondary"
-        };
-    }
 }

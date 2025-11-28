@@ -212,29 +212,5 @@
 </style>
 
 @await Html.PartialAsync("MvcGrid/_Grid", grid)
-<script>
-    function showTreatmentPlan(appointmentId) {
-        $.get('/Reception/GetTreatmentPlanForm?appointmentId=' + appointmentId)
-            .done(function (data) {
-                $('#crudModalBody').html(data);
-                $('#crudModalLabel').text('Create Treatment Plan');
-                $('#crudModal').modal('show');
-            })
-            .fail(function (xhr, status, error) {
-                console.error("Error loading treatment plan:", error);
-                alert("Error loading treatment plan.");
-            });
-             // Function to show edit modal (will close current details modal and open edit)
-       function editAppointment(id) {
-        $.ajax({
-            url: '/PatientAppointment/Edit/' + id,
-            type: 'GET',
-            success: function (response) {
-                $('#modalBody').html(response);
-                $('#editModal').modal('show');
-            }
-        });
-    }
 
-    }
-</script>
+<!-- No inline script needed - functions defined in parent Index.cshtml -->

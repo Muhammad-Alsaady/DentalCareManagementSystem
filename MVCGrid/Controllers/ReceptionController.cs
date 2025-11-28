@@ -205,8 +205,7 @@ namespace DentalCareManagmentSystem.Web.Controllers
 
                     if (appointment == null)
                     {
-                        ModelState.AddModelError("", "لم يتم العثور على الموعد");
-                        return View(model);
+                        return Json(new { success = false, message = "Appointment not found" });
                     }
 
                     // إنشاء خطة العلاج - استخدام CreatedAt بدلاً من CreatedDate
@@ -258,21 +257,18 @@ namespace DentalCareManagmentSystem.Web.Controllers
                     await _context.SaveChangesAsync();
                     await transaction.CommitAsync();
 
-                    TempData["SuccessMessage"] = "Done";
-                    return RedirectToAction("Payment", new { appointmentId = model.AppointmentId });
+                    return Json(new { success = true, message = "Treatment plan created successfully!" });
                 }
                 catch (Exception ex)
                 {
                     await transaction.RollbackAsync();
-                    ModelState.AddModelError("", $"Error in treatment plan: {ex.Message}");
+                    return Json(new { success = false, message = $"Error creating treatment plan: {ex.Message}" });
                 }
             }
 
-            // إعادة تعبئة البيانات في حالة الخطأ
-            var priceListItems = _priceListService.GetAll()?.ToList() ?? new List<PriceListItemDto>();
-            ViewBag.PriceListItems = priceListItems;
-
-            return View(model);
+            // إعادة رسالة خطأ في حالة فشل التحقق
+            var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage);
+            return Json(new { success = false, message = "Validation failed: " + string.Join(", ", errors) });
         }
 
         // صفحة الدفع والمبلغ المطلوب
@@ -555,10 +551,10 @@ namespace DentalCareManagmentSystem.Web.Controllers
                 if (totalPaid >= totalCost)
                 {
                     appointment.Status = AppointmentStatus.Completed;
-                    
+
                     var treatmentPlan = await _context.TreatmentPlans
                         .FirstOrDefaultAsync(tp => tp.PatientAppointmentId == model.AppointmentId);
-                    
+
                     if (treatmentPlan != null)
                     {
                         treatmentPlan.IsCompleted = true;

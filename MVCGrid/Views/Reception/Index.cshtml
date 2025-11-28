@@ -166,26 +166,18 @@
             </div>
         </div>
     </div>
+</div>
 
-    <!-- Modal for forms -->
-    <div class="modal fade" id="crudModal" tabindex="-1" aria-labelledby="crudModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="crudModalLabel">@Localizer["ModalDetailsTitle"]</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body" id="crudModalBody"></div>
-            </div>
-        </div>
-    </div>
+<!-- NO LOCAL MODAL - Using Global Modal from _Layout -->
 
 @section Scripts {
         <script>
-            let crudModal;
-
             $(document).ready(function () {
-                crudModal = new bootstrap.Modal(document.getElementById('crudModal'));
+                // Listen for modal success to reload page
+                $(document).on('modalSuccess', function(event, response) {
+                    console.log('Treatment plan or payment saved successfully');
+                    setTimeout(() => location.reload(), 1000);
+                });
             });
 
             function sendToDoctor(appointmentId) {
@@ -199,63 +191,42 @@
                         },
                         success: function (response) {
                             if (response.success) {
-                                showNotification(response.message, 'success');
+                                UIHelpers.showNotification(response.message, 'success');
                                 setTimeout(() => location.reload(), 1500);
                             } else {
-                                showNotification(response.message, 'error');
+                                UIHelpers.showNotification(response.message, 'error');
                             }
                         },
                         error: function () {
-                            showNotification('An error occurred.', 'error');
+                            UIHelpers.showNotification('An error occurred.', 'error');
                         }
                     });
                 }
             }
 
-            function showPaymentModal(appointmentId) {
-                $.ajax({
-                    url: '@Url.Action("GetPaymentModal", "Reception")',
-                    type: 'GET',
-                    data: { appointmentId: appointmentId },
-                    success: function (data) {
-                        $('#crudModalBody').html(data);
-                        $('#crudModalLabel').text('Process Payment');
-                        crudModal.show();
-                    },
-                    error: function () {
-                        showNotification('Error loading payment form.', 'error');
-                    }
-                });
+            function showTreatmentPlan(appointmentId) {
+                UIHelpers.loadModal(
+                    '@Url.Action("GetTreatmentPlanForm", "Reception")?appointmentId=' + appointmentId,
+                    'Create Treatment Plan'
+                );
+            }
+
+            function showPayment(appointmentId) {
+                UIHelpers.loadModal(
+                    '@Url.Action("GetPaymentForm", "Reception")?appointmentId=' + appointmentId,
+                    'Process Payment'
+                );
             }
 
             function showAppointmentDetails(appointmentId) {
-                $.get('@Url.Action("GetAppointmentDetails", "Reception")?appointmentId=' + appointmentId)
-                    .done(function (data) {
-                        $('#crudModalBody').html(data);
-                        $('#crudModalLabel').text('@Localizer["ModalDetailsTitle"]');
-                        crudModal.show();
-                    })
-                    .fail(function (xhr, status, error) {
-                        console.error('Error loading details:', error);
-                        showNotification('Error loading details.', 'error');
-                    });
+                UIHelpers.loadModal(
+                    '@Url.Action("GetAppointmentDetails", "Reception")?appointmentId=' + appointmentId,
+                    '@Localizer["ModalDetailsTitle"]'
+                );
             }
 
             function viewPatientHistory(appointmentId) {
                 window.location.href = '@Url.Action("PatientDetails", "Reception")?id=' + appointmentId;
-            }
-
-            function showNotification(message, type) {
-                const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
-                const notification = `
-                    <div class="alert ${alertClass} alert-dismissible fade show position-fixed"
-                         style="top: 20px; right: 20px; z-index: 9999;" role="alert">
-                        ${message}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
-                `;
-                $('body').append(notification);
-                setTimeout(() => $('.alert').fadeOut('slow', function() { $(this).remove(); }), 3000);
             }
         </script>
 }

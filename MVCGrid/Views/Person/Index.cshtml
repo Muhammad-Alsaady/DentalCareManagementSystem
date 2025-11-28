@@ -136,20 +136,7 @@
     </div>
 </div>
 
-<!-- Modal for CRUD Operations -->
-<div class="modal fade" id="crudModal" tabindex="-1" aria-labelledby="crudModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="crudModalLabel">Modal Title</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body" id="crudModalBody">
-                <!-- Content will be loaded here -->
-            </div>
-        </div>
-    </div>
-</div>
+<!-- NO LOCAL MODAL - Using Global Modal from _Layout -->
 
 @section Styles {
     <style>
@@ -329,150 +316,48 @@
 
 @section Scripts {
     <script>
-        var crudModal;
-        
         $(document).ready(function() {
-            crudModal = new bootstrap.Modal(document.getElementById('crudModal'));
+            // Listen for modal success to refresh grid
+            $(document).on('modalSuccess', function(event, response) {
+                refreshGrid();
+            });
         });
 
-        // Show Create Form
+        // Show Create Form - Uses Global Modal
         function showCreate() {
-            $.ajax({
-                url: '@Url.Action("Create")',
-                type: 'GET',
-                success: function(result) {
-                    $('#crudModalLabel').html('<i class="fas fa-user-plus"></i> Create New Person');
-                    $('#crudModalBody').html(result);
-                    crudModal.show();
-                },
-                error: function() {
-                    showAlert('Failed to load create form', 'error');
-                }
-            });
+            UIHelpers.loadModal(
+                '@Url.Action("Create")',
+                '<i class="fas fa-user-plus"></i> Create New Person'
+            );
         }
 
-        // Show Edit Form
+        // Show Edit Form - Uses Global Modal
         function showEdit(id) {
-            $.ajax({
-                url: '@Url.Action("Edit")/' + id,
-                type: 'GET',
-                success: function(result) {
-                    if (result.success === false) {
-                        showAlert(result.message, 'error');
-                        return;
-                    }
-                    $('#crudModalLabel').html('<i class="fas fa-user-edit"></i> Edit Person');
-                    $('#crudModalBody').html(result);
-                    crudModal.show();
-                },
-                error: function() {
-                    showAlert('Failed to load edit form', 'error');
-                }
-            });
+            UIHelpers.loadModal(
+                '@Url.Action("Edit")/' + id,
+                '<i class="fas fa-user-edit"></i> Edit Person'
+            );
         }
 
-        // Show Delete Confirmation
+        // Show Delete Confirmation - Uses Global Modal
         function showDelete(id) {
-            $.ajax({
-                url: '@Url.Action("Delete")/' + id,
-                type: 'GET',
-                success: function(result) {
-                    if (result.success === false) {
-                        showAlert(result.message, 'error');
-                        return;
-                    }
-                    $('#crudModalLabel').html('<i class="fas fa-user-times"></i> Delete Person');
-                    $('#crudModalBody').html(result);
-                    crudModal.show();
-                },
-                error: function() {
-                    showAlert('Failed to load delete confirmation', 'error');
-                }
-            });
+            UIHelpers.loadModal(
+                '@Url.Action("Delete")/' + id,
+                '<i class="fas fa-user-times"></i> Delete Person'
+            );
         }
 
-        // Show Details
+        // Show Details - Uses Global Modal
         function showDetails(id) {
-            $.ajax({
-                url: '@Url.Action("Details")/' + id,
-                type: 'GET',
-                success: function(result) {
-                    if (result.success === false) {
-                        showAlert(result.message, 'error');
-                        return;
-                    }
-                    $('#crudModalLabel').html('<i class="fas fa-user"></i> Person Details');
-                    $('#crudModalBody').html(result);
-                    crudModal.show();
-                },
-                error: function() {
-                    showAlert('Failed to load details', 'error');
-                }
-            });
-        }
-
-        // Submit Form via AJAX
-        function submitForm(formId, url) {
-            var form = $('#' + formId);
-            
-            $.ajax({
-                url: url,
-                type: 'POST',
-                data: form.serialize(),
-                success: function(result) {
-                    if (result.success) {
-                        crudModal.hide();
-                        showAlert(result.message, 'success');
-                        refreshGrid();
-                    } else {
-                        // If validation failed, replace form with errors
-                        $('#crudModalBody').html(result);
-                    }
-                },
-                error: function() {
-                    showAlert('An error occurred while processing your request', 'error');
-                }
-            });
-            
-            return false;
+            UIHelpers.loadModal(
+                '@Url.Action("Details")/' + id,
+                '<i class="fas fa-user"></i> Person Details'
+            );
         }
 
         // Refresh Grid
         function refreshGrid() {
-            $.ajax({
-                url: '@Url.Action("GetGridData")',
-                type: 'GET',
-                success: function(result) {
-                    $('#gridContainer').html(result);
-                    // Reinitialize MVC Grid
-                    document.querySelectorAll(".mvc-grid").forEach(el => new MvcGrid(el));
-                },
-                error: function() {
-                    showAlert('Failed to refresh grid', 'error');
-                }
-            });
-        }
-
-        // Show Alert
-        function showAlert(message, type) {
-            var alertClass = type === 'success' ? 'alert-info' : 'alert-error';
-            var alertHtml = `
-                <div class="alert ${alertClass} alert-dismissible" role="alert">
-                    <button style="color:black" type="button" class="close" data-bs-dismiss="alert" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                    <h5>${message}</h5>
-                </div>
-            `;
-            
-            $('#alertContainer').html(alertHtml);
-            
-            // Auto-hide after 5 seconds
-            setTimeout(function() {
-                $('#alertContainer .alert').fadeOut(function() {
-                    $(this).remove();
-                });
-            }, 5000);
+            UIHelpers.reloadGridPartial('#gridContainer', '@Url.Action("GetGridData")');
         }
     </script>
 }

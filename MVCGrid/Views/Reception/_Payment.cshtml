@@ -4,172 +4,164 @@
 @model PaymentViewModel
 @inject IHtmlLocalizer<Views_Reception__Payment> Localizer
 
-<div class="modal-header">
-    <h5 class="modal-title">@string.Format(Localizer["ModalTitle"].Value, Model.PatientName)</h5>
-    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-</div>
-
-<div class="modal-body">
-    <!-- Patient Info -->
-    <div class="row mb-3">
-        <div class="col-md-12">
-            <div class="card bg-light">
-                <div class="card-body py-2">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <strong>@Localizer["Patient"].Value</strong> @Model.PatientName
-                        </div>
-                        <div class="col-md-6">
-                            <strong>@Localizer["AppointmentID"].Value</strong> @Model.AppointmentId
-                        </div>
+<!-- This partial is loaded into a modal-body, so it should NOT contain modal-header or modal-body wrapper -->
+<!-- Patient Info -->
+<div class="row mb-3">
+    <div class="col-md-12">
+        <div class="card bg-light">
+            <div class="card-body py-2">
+                <div class="row">
+                    <div class="col-md-6">
+                        <strong>@Localizer["Patient"].Value:</strong> @Model.PatientName
+                    </div>
+                    <div class="col-md-6">
+                        <strong>@Localizer["AppointmentID"].Value:</strong> @Model.AppointmentId
                     </div>
                 </div>
             </div>
         </div>
     </div>
+</div>
 
-    <div class="row">
-        <!-- Treatment Summary -->
-        <div class="col-md-6">
-            <div class="card mb-3">
-                <div class="card-header bg-info text-white py-2">
-                    <h6 class="card-title mb-0">
-                        <i class="fas fa-list"></i> @Localizer["TreatmentSummary"].Value
-                    </h6>
-                </div>
-                <div class="card-body">
-                    @if (ViewBag.TreatmentItems != null && ((List<TreatmentItem>)ViewBag.TreatmentItems).Any())
-                    {
-                        <div class="table-responsive" style="max-height: 200px;">
-                            <table class="table table-sm">
-                                <thead>
+<div class="row">
+    <!-- Treatment Summary -->
+    <div class="col-md-6">
+        <div class="card mb-3">
+            <div class="card-header bg-info text-white py-2">
+                <h6 class="card-title mb-0">
+                    <i class="fas fa-list"></i> @Localizer["TreatmentSummary"].Value
+                </h6>
+            </div>
+            <div class="card-body">
+                @if (ViewBag.TreatmentItems != null && ((List<TreatmentItem>)ViewBag.TreatmentItems).Any())
+                {
+                    <div class="table-responsive" style="max-height: 200px;">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>@Localizer["Service"].Value</th>
+                                    <th>@Localizer["Price"].Value</th>
+                                    <th>@Localizer["Quantity"].Value</th>
+                                    <th>@Localizer["Total"].Value</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in (List<TreatmentItem>)ViewBag.TreatmentItems)
+                                {
                                     <tr>
-                                        <th>@Localizer["Service"].Value</th>
-                                        <th>@Localizer["Price"].Value</th>
-                                        <th>@Localizer["Quantity"].Value</th>
-                                        <th>@Localizer["Total"].Value</th>
+                                        <td class="small">@item.NameSnapshot</td>
+                                        <td class="small">$@item.PriceSnapshot.ToString("F2")</td>
+                                        <td class="small">@item.Quantity</td>
+                                        <td class="small">$@item.LineTotal.ToString("F2")</td>
                                     </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach (var item in (List<TreatmentItem>)ViewBag.TreatmentItems)
-                                    {
-                                        <tr>
-                                            <td class="small">@item.NameSnapshot</td>
-                                            <td class="small">$@item.PriceSnapshot.ToString("F2")</td>
-                                            <td class="small">@item.Quantity</td>
-                                            <td class="small">$@item.LineTotal.ToString("F2")</td>
-                                        </tr>
-                                    }
-                                </tbody>
-                            </table>
-                        </div>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <div class="alert alert-warning small mb-0">
+                        @Localizer["NoTreatmentItems"].Value
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Payment Section -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-success text-white py-2">
+                <h6 class="card-title mb-0">
+                    <i class="fas fa-dollar-sign"></i> @Localizer["PaymentInformation"].Value
+                </h6>
+            </div>
+            <div class="card-body">
+                <!-- Payment Summary -->
+                <div class="d-flex justify-content-between small mb-1">
+                    <span>@Localizer["TotalCost"].Value</span>
+                    <strong>$@Model.TotalCost.ToString("F2")</strong>
+                </div>
+                <div class="d-flex justify-content-between small mb-1">
+                    <span>@Localizer["PaidAmount"].Value</span>
+                    <strong class="text-success">$@Model.AmountPaid.ToString("F2")</strong>
+                </div>
+                <div class="d-flex justify-content-between small mb-2">
+                    <span>@Localizer["Remaining"].Value</span>
+                    <strong class="text-danger">$@Model.RemainingBalance.ToString("F2")</strong>
+                </div>
+                <hr class="my-2">
+                @if (Model.RemainingBalance <= 0)
+                {
+                    <div class="alert alert-success text-center py-1 small mb-0">
+                        <i class="fas fa-check-circle"></i> @Localizer["PaymentCompleted"].Value
+                    </div>
+                }
+            </div>
+
+            <!-- Payment Form -->
+            @if (Model.RemainingBalance > 0)
+            {
+                <form class="payment-form" id="paymentForm" method="post" action="@Url.Action("ProcessPayment", "Reception")">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="AppointmentId" value="@Model.AppointmentId" />
+                    <input type="hidden" name="PatientId" value="@Model.PatientId" />
+
+                    <div class="mb-2">
+                        <label class="form-label small">@Localizer["PaymentAmount"].Value</label>
+                        <input type="number" name="PaymentAmount" class="form-control form-control-sm"
+                               step="0.01" min="0.01" max="@Model.RemainingBalance"
+                               value="@Model.RemainingBalance" required />
+                        <small class="form-text text-muted">
+                            @string.Format(Localizer["MaxAmount"].Value, Model.RemainingBalance.ToString("F2"))
+                        </small>
+                    </div>
+
+                    <div class="mb-2">
+                        <label class="form-label small">@Localizer["PaymentDate"].Value</label>
+                        <input type="datetime-local" name="PaymentDate"
+                               class="form-control form-control-sm" value="@DateTime.Now.ToString("yyyy-MM-ddTHH:mm")" required />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small">@Localizer["Notes"].Value</label>
+                        <textarea name="Notes" class="form-control form-control-sm" rows="2"
+                              placeholder="@Localizer["Notes"].Value"></textarea>
+                    </div>
+
+                    <button type="submit" class="btn btn-success btn-sm w-100">
+                        <i class="fas fa-credit-card"></i> @Localizer["ProcessPayment"].Value
+                    </button>
+                </form>
+            }
+
+            <!-- Payment History -->
+            <div class="mt-3">
+                <h6 class="small">@Localizer["Payment"].Value @Localizer["History"].Value ?? "History"</h6>
+                <div id="paymentHistory" style="max-height: 120px; overflow-y: auto;">
+                    @if (ViewBag.PaymentHistory != null && ((List<PaymentTransaction>)ViewBag.PaymentHistory).Any())
+                    {
+                        foreach (var payment in (List<PaymentTransaction>)ViewBag.PaymentHistory)
+                        {
+                            <div class="border-bottom py-1">
+                                <div class="d-flex justify-content-between">
+                                    <strong class="text-success small">$@payment.Amount.ToString("F2")</strong>
+                                    <small class="text-muted">@payment.PaymentDate.ToString("MM/dd/yy")</small>
+                                </div>
+                                @if (!string.IsNullOrEmpty(payment.Notes))
+                                {
+                                    <small class="text-muted">@payment.Notes</small>
+                                }
+                            </div>
+                        }
                     }
                     else
                     {
-                        <div class="alert alert-warning small mb-0">
-                            @Localizer["NoTreatmentItems"].Value
+                        <div class="text-muted text-center small">
+                            @Localizer["NoPaymentHistory"].Value
                         </div>
                     }
-                </div>
-            </div>
-        </div>
-
-        <!-- Payment Section -->
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-header bg-success text-white py-2">
-                    <h6 class="card-title mb-0">
-                        <i class="fas fa-calculator"></i> @Localizer["Payment"].Value
-                    </h6>
-                </div>
-                <div class="card-body">
-                    <!-- Financial Summary -->
-                    <div class="mb-3">
-                        <div class="d-flex justify-content-between small mb-1">
-                            <span>@Localizer["TotalCost"].Value</span>
-                            <strong>$@Model.TotalCost.ToString("F2")</strong>
-                        </div>
-                        <div class="d-flex justify-content-between small mb-1">
-                            <span>@Localizer["PaidAmount"].Value</span>
-                            <strong class="text-success">$@Model.AmountPaid.ToString("F2")</strong>
-                        </div>
-                        <div class="d-flex justify-content-between small mb-2">
-                            <span>@Localizer["Remaining"].Value</span>
-                            <strong class="text-danger">$@Model.RemainingBalance.ToString("F2")</strong>
-                        </div>
-                        <hr class="my-2">
-                        @if (Model.RemainingBalance <= 0)
-                        {
-                            <div class="alert alert-success text-center py-1 small mb-0">
-                                <i class="fas fa-check-circle"></i> @Localizer["PaymentCompleted"].Value
-                            </div>
-                        }
-                    </div>
-
-                    <!-- Payment Form -->
-                    @if (Model.RemainingBalance > 0)
-                    {
-                        <form class="payment-form" id="paymentForm" method="post" action="@Url.Action("ProcessPayment", "Reception")">
-                            @Html.AntiForgeryToken()
-                            <input type="hidden" name="AppointmentId" value="@Model.AppointmentId" />
-                            <input type="hidden" name="PatientId" value="@Model.PatientId" />
-
-                            <div class="mb-2">
-                                <label class="form-label small">@Localizer["PaymentAmount"].Value</label>
-                                <input type="number" name="PaymentAmount" class="form-control form-control-sm"
-                                       step="0.01" min="0.01" max="@Model.RemainingBalance"
-                                       value="@Model.RemainingBalance" required />
-                                <small class="form-text text-muted">
-                                    @string.Format(Localizer["MaxAmount"].Value, Model.RemainingBalance.ToString("F2"))
-                                </small>
-                            </div>
-
-                            <div class="mb-2">
-                                <label class="form-label small">@Localizer["PaymentDate"].Value</label>
-                                <input type="datetime-local" name="PaymentDate"
-                                       class="form-control form-control-sm" value="@DateTime.Now.ToString("yyyy-MM-ddTHH:mm")" required />
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="form-label small">@Localizer["Notes"].Value</label>
-                                <textarea name="Notes" class="form-control form-control-sm" rows="2"
-                                      placeholder="@Localizer["Notes"].Value"></textarea>
-                            </div>
-
-                            <button type="submit" class="btn btn-success btn-sm w-100">
-                                <i class="fas fa-credit-card"></i> @Localizer["ProcessPayment"].Value
-                            </button>
-                        </form>
-                    }
-
-                    <!-- Payment History -->
-                    <div class="mt-3">
-                        <h6 class="small">@Localizer["Payment"].Value @Localizer["History"].Value ?? "History"</h6>
-                        <div id="paymentHistory" style="max-height: 120px; overflow-y: auto;">
-                            @if (ViewBag.PaymentHistory != null && ((List<PaymentTransaction>)ViewBag.PaymentHistory).Any())
-                            {
-                                foreach (var payment in (List<PaymentTransaction>)ViewBag.PaymentHistory)
-                                {
-                                    <div class="border-bottom py-1">
-                                        <div class="d-flex justify-content-between">
-                                            <strong class="text-success small">$@payment.Amount.ToString("F2")</strong>
-                                            <small class="text-muted">@payment.PaymentDate.ToString("MM/dd/yy")</small>
-                                        </div>
-                                        @if (!string.IsNullOrEmpty(payment.Notes))
-                                        {
-                                            <small class="text-muted">@payment.Notes</small>
-                                        }
-                                    </div>
-                                }
-                            }
-                            else
-                            {
-                                <div class="text-muted text-center small">
-                                    @Localizer["NoPaymentHistory"].Value
-                                </div>
-                            }
-                        </div>
-                    </div>
                 </div>
             </div>
         </div>

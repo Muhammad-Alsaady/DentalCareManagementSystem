@@ -55,46 +55,28 @@
     </div>
 </div>
 
-<!-- Modal for CRUD operations -->
-<div class="modal fade" id="crudModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="crudModalLabel">Patient</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body" id="crudModalBody">
-                <!-- Dynamic content will be loaded here -->
-            </div>
-        </div>
-    </div>
-</div>
+<!-- NO LOCAL MODAL - Using Global Modal from _Layout -->
 
 @section Scripts {
     <script>
-        let crudModal;
-
         $(document).ready(function() {
-            // Initialize modal
-            crudModal = new bootstrap.Modal(document.getElementById('crudModal'));
-
-            // Setup AJAX form handler for patient forms
-            UIHelpers.ajaxFormHandler('.patient-form', function(response) {
+            // Listen for modal success to refresh grid
+            $(document).on('modalSuccess', function(event, response) {
                 refreshGrid();
             });
         });
 
-        // Show Create Form
+        // Show Create Form - Uses Global Modal
         function showCreate() {
             UIHelpers.loadModal('@Url.Action("Create")', 'Add New Patient');
         }
 
-        // Show Edit Form
+        // Show Edit Form - Uses Global Modal
         function showEdit(id) {
             UIHelpers.loadModal('@Url.Action("Edit")/' + id, 'Edit Patient');
         }
 
-        // Show Delete Confirmation
+        // Show Delete Confirmation - Uses Global Modal
         function showDelete(id) {
             UIHelpers.loadModal('@Url.Action("Delete")/' + id, 'Delete Patient');
         }

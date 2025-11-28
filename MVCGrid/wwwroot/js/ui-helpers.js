@@ -1,7 +1,7 @@
 /**
  * UI Helpers for Dental Care Management System
  * Provides AJAX form handling, grid refresh, and alert management
- * FIXED: Removed conflicting modal code, using only ModalLoader
+ * UNIFIED MODAL SYSTEM - Uses global ModalLoader throughout
  */
 
 // Global configuration
@@ -201,7 +201,7 @@ const UIHelpers = {
     },
 
     /**
-     * Load content into modal - USES GLOBAL MODALLOADER
+     * Load content into GLOBAL UNIFIED MODAL
      * @param {string} url - URL to load
      * @param {string} modalTitle - Title for the modal
      * @param {object} options - Additional options
@@ -225,7 +225,7 @@ const UIHelpers = {
     },
 
     /**
-     * Confirm action with custom message
+     * Confirm action with custom message (uses browser confirm for now)
      * @param {string} message - Confirmation message
      * @param {function} onConfirm - Callback if user confirms
      */
@@ -297,6 +297,19 @@ const UIHelpers = {
                 console.error('Failed to refresh partial:', containerSelector);
             }
         });
+    },
+
+    /**
+     * Show notification (alias for showAlert for consistency)
+     * @param {string} message - The message to display
+     * @param {string} type - Type: success, error, warning, info
+     */
+    showNotification: function(message, type) {
+        // Map 'error' to 'danger' for Bootstrap
+        if (type === 'error') {
+            type = 'danger';
+        }
+        UIHelpers.showAlert(message, type);
     }
 };
 
