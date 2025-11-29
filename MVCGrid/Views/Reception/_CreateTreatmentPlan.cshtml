@@ -3,9 +3,20 @@
 <form class="treatment-form" id="treatmentForm" method="post" action="@Url.Action("CreateTreatmentPlan", "Reception")">
     @Html.AntiForgeryToken()
     <input type="hidden" name="AppointmentId" value="@Model.AppointmentId" />
-    <input type="hidden" name="PatientId" value="@Model.PatientId" />
     <input type="hidden" name="PaidAmount" id="paidAmountHidden" value="0" />
     <input type="hidden" name="DiscountPercentage" id="discountPercentageHidden" value="0" />
+
+    <!-- Patient Information -->
+    <div class="row mb-3">
+        <div class="col-md-6">
+            <label class="form-label fw-bold">Patient Name</label>
+            <input type="text" class="form-control" value="@Model.PatientName" readonly />
+        </div>
+        <div class="col-md-6">
+            <label class="form-label fw-bold">Phone Number</label>
+            <input type="text" class="form-control" value="@Model.PhoneNumber" readonly />
+        </div>
+    </div>
 
     <!-- Available Services Dropdown -->
     <div class="row mb-3">
@@ -13,12 +24,25 @@
             <label class="form-label">Select Service</label>
             <select class="form-select" id="serviceDropdown">
                 <option value="">-- Select a Service --</option>
-                @if (Model.AvailableServices != null)
+                @if (Model.AvailableServices != null && Model.AvailableServices.Any())
                 {
-                    foreach (var service in Model.AvailableServices)
+                    // تجميع الخدمات حسب الفئة
+                    var servicesByCategory = Model.AvailableServices.GroupBy(s => s.Category).OrderBy(g => g.Key);
+                    foreach (var category in servicesByCategory)
                     {
-                        <option value="@service.Id" data-price="@service.TotalCost">@service.PatientName - $@service.TotalCost</option>
+                        <optgroup label="@category.Key">
+                            @foreach (var service in category.OrderBy(s => s.Name))
+                            {
+                                <option value="@service.Id" data-price="@service.DefaultPrice" data-name="@service.Name">
+                                    @service.Name - $@service.DefaultPrice.ToString("F2")
+                                </option>
+                            }
+                        </optgroup>
                     }
+                }
+                else
+                {
+                    <option value="">No services available</option>
                 }
             </select>
         </div>
@@ -70,6 +94,14 @@
                     </div>
                 </div>
             }
+        }
+        else
+        {
+            <div class="text-center text-muted py-3" id="noItemsMessage">
+                <i class="fas fa-info-circle fa-2x mb-2"></i>
+                <br />
+                No services added yet. Please select services from the dropdown above.
+            </div>
         }
     </div>
 
@@ -202,6 +234,7 @@
             reindexItems();
             calculateGrandTotal();
             updatePaymentSummary();
+            checkEmptyItems();
         });
     });
 
@@ -209,23 +242,24 @@
     function addSelectedService() {
         const selectedService = $('#serviceDropdown').find(':selected');
         const serviceId = selectedService.val();
-        const serviceName = selectedService.text().split(' - ')[0];
+        const serviceName = selectedService.data('name');
         const servicePrice = parseFloat(selectedService.data('price'));
 
         if (!serviceId) {
-            alert('Please select a service from the list.');
+            showNotification('Please select a service from the list.', 'error');
             return;
         }
 
         // التحقق إذا كانت الخدمة مضافة مسبقاً
         const existingService = $(`.service-name[value="${serviceName}"]`);
         if (existingService.length > 0) {
-            alert('This service is already added. You can update the quantity.');
+            showNotification('This service is already added. You can update the quantity.', 'warning');
             return;
         }
 
         addServiceItem(serviceId, serviceName, servicePrice);
         $('#serviceDropdown').val(''); // إعادة تعيين القائمة
+        checkEmptyItems();
     }
 
     // إضافة عنصر خدمة جديد
@@ -244,7 +278,7 @@
                 <div class="col-md-2">
                     <label class="form-label small">Price</label>
                     <input name="TreatmentItems[${index}].Price"
-                           value="${servicePrice}"
+                           value="${servicePrice.toFixed(2)}"
                            class="form-control form-control-sm price-input"
                            type="number" step="0.01" min="0" readonly />
                 </div>
@@ -265,6 +299,10 @@
                 </div>
             </div>
         `;
+
+        // إزالة رسالة عدم وجود عناصر إذا كانت موجودة
+        $('#noItemsMessage').remove();
+
         $('#treatmentItemsContainer').append(newItem);
         calculateGrandTotal();
         updatePaymentSummary();
@@ -315,15 +353,17 @@
 
         // تحديث حالة الدفع
         const paymentStatus = $('#paymentStatus');
+        const remainingDisplay = $('#remainingBalanceDisplay');
+
         if (remainingBalance <= 0) {
-            paymentStatus.val('Fully Paid').css('color', '#28a745');
-            $('#remainingBalanceDisplay').css('color', '#28a745');
+            paymentStatus.val('Fully Paid').removeClass('bg-warning bg-danger').addClass('bg-success text-white');
+            remainingDisplay.removeClass('bg-warning bg-danger').addClass('bg-success text-white');
         } else if (paidAmount > 0) {
-            paymentStatus.val('Partially Paid').css('color', '#ffc107');
-            $('#remainingBalanceDisplay').css('color', '#dc3545');
+            paymentStatus.val('Partially Paid').removeClass('bg-success bg-danger').addClass('bg-warning text-dark');
+            remainingDisplay.removeClass('bg-success bg-danger').addClass('bg-warning text-dark');
         } else {
-            paymentStatus.val('Not Paid').css('color', '#dc3545');
-            $('#remainingBalanceDisplay').css('color', '#dc3545');
+            paymentStatus.val('Not Paid').removeClass('bg-success bg-warning').addClass('bg-danger text-white');
+            remainingDisplay.removeClass('bg-success bg-warning').addClass('bg-danger text-white');
         }
     }
 
@@ -337,10 +377,39 @@
         });
     }
 
+    // التحقق من العناصر الفارغة
+    function checkEmptyItems() {
+        if ($('.treatment-item').length === 0) {
+            $('#treatmentItemsContainer').html(`
+                <div class="text-center text-muted py-3" id="noItemsMessage">
+                    <i class="fas fa-info-circle fa-2x mb-2"></i>
+                    <br />
+                    No services added yet. Please select services from the dropdown above.
+                </div>
+            `);
+        }
+    }
+
     // حفظ خطة العلاج
     function saveTreatmentPlan() {
         if ($('.treatment-item').length === 0) {
             showNotification('Please add at least one service.', 'error');
+            return false;
+        }
+
+        // التحقق من صحة الكميات
+        let valid = true;
+        $('.quantity-input').each(function() {
+            if ($(this).val() < 1) {
+                $(this).addClass('is-invalid');
+                valid = false;
+            } else {
+                $(this).removeClass('is-invalid');
+            }
+        });
+
+        if (!valid) {
+            showNotification('Please enter valid quantities (minimum 1).', 'error');
             return false;
         }
 
@@ -349,6 +418,11 @@
 
         console.log('Submitting treatment plan...', formData);
 
+        // إظهار تحميل
+        const submitBtn = $('button[onclick="saveTreatmentPlan()"]');
+        const originalText = submitBtn.html();
+        submitBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Saving...');
+
         $.ajax({
             url: form.attr('action'),
             type: 'POST',
@@ -356,36 +430,47 @@
             success: function (response) {
                 if (response.success) {
                     showNotification(response.message || 'Treatment plan created successfully!', 'success');
-                    $('#crudModal').modal('hide');
                     setTimeout(function () {
-                        location.reload();
-                    }, 1500);
+                        window.location.href = '@Url.Action("Index", "Reception")';
+                    }, 2000);
                 } else {
                     showNotification(response.message || 'Error creating treatment plan.', 'error');
+                    submitBtn.prop('disabled', false).html(originalText);
                 }
             },
             error: function (xhr) {
                 console.error('Error saving treatment plan:', xhr);
                 showNotification('An error occurred while saving the treatment plan.', 'error');
+                submitBtn.prop('disabled', false).html(originalText);
             }
         });
     }
 
     // عرض الإشعارات
     function showNotification(message, type) {
-        const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+        const alertClass = type === 'success' ? 'alert-success' :
+                         type === 'warning' ? 'alert-warning' : 'alert-danger';
+        const icon = type === 'success' ? 'fa-check-circle' :
+                    type === 'warning' ? 'fa-exclamation-triangle' : 'fa-exclamation-circle';
+
+        // إزالة أي إشعارات سابقة
+        $('.alert-notification').remove();
+
         const notification = `
-            <div class="alert ${alertClass} alert-dismissible fade show position-fixed"
-                 style="top: 20px; right: 20px; z-index: 9999;" role="alert">
+            <div class="alert ${alertClass} alert-dismissible fade show alert-notification position-fixed"
+                 style="top: 20px; right: 20px; z-index: 9999; min-width: 300px;" role="alert">
+                <i class="fas ${icon} me-2"></i>
                 ${message}
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
         `;
         $('body').append(notification);
+
+        // إخفاء تلقائي بعد 5 ثواني
         setTimeout(function () {
-            $('.alert').fadeOut('slow', function () {
+            $('.alert-notification').fadeOut('slow', function () {
                 $(this).remove();
             });
-        }, 3000);
+        }, 5000);
     }
 </script>

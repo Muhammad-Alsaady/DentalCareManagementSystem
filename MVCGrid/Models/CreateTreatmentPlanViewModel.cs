@@ -1,4 +1,4 @@
-namespace DentalManagementSystem.Models;
+﻿namespace DentalManagementSystem.Models;
 
 public class CreateTreatmentPlanViewModel
 {
