@@ -40,6 +40,7 @@ builder.Services.AddScoped<ITreatmentPlanService, TreatmentPlanService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IPaymentService, PaymentService>();
+builder.Services.AddScoped<ITreatmentPaymentWorkflowService, TreatmentPaymentWorkflowService>();
 
 builder.Services.AddScoped<DiscountService>();
 builder.Services.AddScoped<IDiscountVisitorFactory, DiscountVisitorFactory>();

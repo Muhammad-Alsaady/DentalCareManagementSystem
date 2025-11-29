@@ -4,6 +4,7 @@
     var menuItems = new List<MenuItem>
     {
         MenuItem.Create("Dashboard", Url.Action("Index", "Home"), "fas fa-home"),
+        MenuItem.Create("Doctor Dashboard", Url.Action("Index", "Doctor"), "fas fa-home"),
         MenuItem.Create("Patients", Url.Action("Index", "Reception"), "fas fa-users"),
         MenuItem.Create("Appointments", Url.Action("Index", "PatientAppointment"), "fas fa-calendar-alt"),
         MenuItem.Create("Payments", Url.Action("Index", "Payments"), "fas fa-money-bill-wave", true),
