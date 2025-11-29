@@ -1,0 +1,127 @@
+@model List<DentalCareManagmentSystem.Application.DTOs.PriceListItemDto>
+
+@using NonFactors.Mvc.Grid
+
+@{
+    var grid = new Grid<DentalCareManagmentSystem.Application.DTOs.PriceListItemDto>(Model)
+    {
+        Name = "PriceListGrid",
+        Id = "PriceListGrid",
+        EmptyText = "No services found",
+        FilterMode = GridFilterMode.Header
+    };
+
+    // Service Name (30%)
+    grid.Columns.Add(m => m.Name)
+        .Titled("Service Name")
+        .Css("col-service-name")
+        .Filterable(true)
+        .Sortable(true);
+
+    // Category (20%)
+    grid.Columns.Add(m => m.Category)
+        .Titled("Category")
+        .Css("col-category")
+        .Filterable(true)
+        .Sortable(true);
+
+    // Default Price (15%)
+    grid.Columns.Add(m => m.DefaultPrice)
+        .Titled("Default Price")
+        .Css("col-price text-end")
+        .Formatted("${0:N2}")
+        .Filterable(false)
+        .Sortable(true);
+
+    // Status (15%)
+    grid.Columns.Add(m => m.IsActive)
+        .Titled("Status")
+        .Css("col-status text-center")
+        .RenderedAs(m => m.IsActive 
+            ? "<span class='badge bg-success'>Active</span>" 
+            : "<span class='badge bg-secondary'>Inactive</span>")
+        .Encoded(false)
+        .Filterable(true)
+        .Sortable(true);
+
+    // Actions (20%)
+    grid.Columns.Add(m => m.Id)
+        .Titled("Actions")
+        .Css("col-actions text-center")
+        .Encoded(false)
+        .RenderedAs(m => $@"
+            <div class='btn-group btn-group-sm' role='group'>
+                <button type='button' onclick='showEdit(""{m.Id}"")' class='btn btn-primary' title='Edit'>
+                    <i class='fas fa-edit'></i>
+                </button>
+                <button type='button' onclick='showDelete(""{m.Id}"")' class='btn btn-danger' title='Delete'>
+                    <i class='fas fa-trash'></i>
+                </button>
+            </div>
+        ")
+        .Filterable(false)
+        .Sortable(false);
+
+    grid.Pager = new GridPager<DentalCareManagmentSystem.Application.DTOs.PriceListItemDto>(grid)
+    {
+        PartialViewName = "MvcGrid/_Pager",
+        PageSizes = new Dictionary<int, string> { 
+            { 10, "10 rows" }, 
+            { 25, "25 rows" }, 
+            { 50, "50 rows" }, 
+            { 100, "100 rows" }
+        },
+        ShowPageSizes = true,
+        RowsPerPage = 25,
+        PagesToDisplay = 5
+    };
+}
+
+<style>
+    /* Column Width Distribution */
+    .mvc-grid table {
+        table-layout: fixed;
+        width: 100%;
+    }
+
+    .col-service-name {
+        width: 30%;
+    }
+
+    .col-category {
+        width: 20%;
+    }
+
+    .col-price {
+        width: 15%;
+    }
+
+    .col-status {
+        width: 15%;
+    }
+
+    .col-actions {
+        width: 20%;
+    }
+
+    /* Enhanced Table Styling */
+    .mvc-grid table thead th {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        font-weight: 600;
+        padding: 12px 8px;
+    }
+
+    .mvc-grid table tbody tr:hover {
+        background-color: #e3f2fd;
+        transform: scale(1.01);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .mvc-grid table tbody td {
+        padding: 10px 8px;
+        vertical-align: middle;
+    }
+</style>
+
+@await Html.PartialAsync("MvcGrid/_Grid", grid)

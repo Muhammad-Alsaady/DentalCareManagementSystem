@@ -26,6 +26,7 @@
     <Folder Include="Resources\Views\Reports\" />
     <Folder Include="Resources\Views\TreatmentPlans\" />
     <Folder Include="Resources\Views\Notifications\" />
+    <Folder Include="Views\TreatmentPlans\PriceList\" />
   </ItemGroup>
 
 </Project>

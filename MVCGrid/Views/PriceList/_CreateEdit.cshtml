@@ -1,0 +1,92 @@
+@model DentalCareManagmentSystem.Application.DTOs.PriceListItemDto
+
+@{
+    var isEdit = Model.Id != Guid.Empty;
+    var actionUrl = isEdit 
+        ? Url.Action("Edit", "PriceList") 
+        : Url.Action("Create", "PriceList");
+}
+
+<!-- This partial is loaded into a modal-body, NO modal-header or modal-footer -->
+<form id="priceListForm" method="post" action="@actionUrl">
+    @Html.AntiForgeryToken()
+    
+    @if (isEdit)
+    {
+        <input type="hidden" asp-for="Id" />
+    }
+
+    <div class="row">
+        <!-- Service Name -->
+        <div class="col-md-12 mb-3">
+            <label asp-for="Name" class="form-label">
+                <i class="fas fa-tooth"></i> Service Name <span class="text-danger">*</span>
+            </label>
+            <input asp-for="Name" class="form-control" placeholder="e.g., Root Canal, Teeth Cleaning, Dental Filling" required autofocus />
+            <span asp-validation-for="Name" class="text-danger small"></span>
+        </div>
+
+        <!-- Default Price -->
+        <div class="col-md-12 mb-3">
+            <label asp-for="DefaultPrice" class="form-label">
+                <i class="fas fa-dollar-sign"></i> Price <span class="text-danger">*</span>
+            </label>
+            <div class="input-group">
+                <span class="input-group-text">$</span>
+                <input asp-for="DefaultPrice" type="number" step="0.01" min="0" 
+                       class="form-control" placeholder="0.00" required />
+            </div>
+            <span asp-validation-for="DefaultPrice" class="text-danger small"></span>
+        </div>
+
+        <!-- Status (Hidden, always true by default) -->
+        <input type="hidden" asp-for="IsActive" value="true" />
+    </div>
+
+    <!-- Footer Buttons -->
+    <div class="d-flex justify-content-end gap-2 mt-3">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+            <i class="fas fa-times"></i> Cancel
+        </button>
+        <button type="submit" class="btn btn-success">
+            <i class="fas fa-save"></i> @(isEdit ? "Update" : "Save")
+        </button>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
+
+<script>
+    // Client-side validation setup
+    $(document).ready(function() {
+        // Focus on first input
+        $('#priceListForm input[name="Name"]').focus();
+        
+        $('#priceListForm').validate({
+            rules: {
+                Name: {
+                    required: true,
+                    minlength: 3
+                },
+                DefaultPrice: {
+                    required: true,
+                    min: 0,
+                    number: true
+                }
+            },
+            messages: {
+                Name: {
+                    required: "Please enter a service name",
+                    minlength: "Service name must be at least 3 characters"
+                },
+                DefaultPrice: {
+                    required: "Please enter a price",
+                    min: "Price must be greater than or equal to 0",
+                    number: "Please enter a valid number"
+                }
+            }
+        });
+    });
+</script>
