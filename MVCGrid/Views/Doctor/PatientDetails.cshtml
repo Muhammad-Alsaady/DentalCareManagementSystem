@@ -1,0 +1,620 @@
+@model DentalManagementSystem.Models.PatientDetailsViewModel
+@{
+    ViewData["Title"] = $"Patient Details - {Model.Patient.FullName}";
+}
+
+<div class="container-fluid">
+    <!-- Patient Header Card -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm border-0">
+                <div class="card-body p-4">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <div class="d-flex align-items-center">
+                                <div class="patient-avatar me-3">
+                                    <i class="fas fa-user-circle fa-4x text-primary"></i>
+                                </div>
+                                <div>
+                                    <h2 class="mb-1">@Model.Patient.FullName</h2>
+                                    <div class="patient-info">
+                                        <span class="badge bg-primary me-2">
+                                            <i class="fas fa-phone"></i> @Model.Patient.Phone
+                                        </span>
+                                        <span class="badge bg-info me-2">
+                                            <i class="fas fa-birthday-cake"></i> @Model.Patient.Age years old
+                                        </span>
+                                        <span class="badge bg-secondary">
+                                            <i class="fas fa-venus-mars"></i> @Model.Patient.Gender
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 text-end">
+                            <button class="btn btn-success btn-lg mb-2" onclick="createTreatmentPlan()">
+                                <i class="fas fa-stethoscope"></i> Create Treatment Plan
+                            </button>
+                            <button class="btn btn-primary mb-2" onclick="addDiagnosis()">
+                                <i class="fas fa-notes-medical"></i> Add Diagnosis
+                            </button>
+                            <button class="btn btn-info mb-2" onclick="uploadImage()">
+                                <i class="fas fa-camera"></i> Upload Image
+                            </button>
+                            <a href="@Url.Action("Index", "Doctor")" class="btn btn-outline-secondary mb-2">
+                                <i class="fas fa-arrow-left"></i> Back to Patients
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabs Navigation -->
+    <ul class="nav nav-tabs mb-3" id="patientDetailsTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="overview-tab" data-bs-toggle="tab" data-bs-target="#overview" type="button">
+                <i class="fas fa-info-circle"></i> Overview
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="treatment-plans-tab" data-bs-toggle="tab" data-bs-target="#treatment-plans" type="button">
+                <i class="fas fa-stethoscope"></i> Treatment Plans
+                <span class="badge bg-primary">@Model.TreatmentPlans.Count</span>
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="diagnosis-tab" data-bs-toggle="tab" data-bs-target="#diagnosis" type="button">
+                <i class="fas fa-notes-medical"></i> Diagnosis Notes
+                <span class="badge bg-info">@Model.DiagnosisNotes.Count</span>
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="images-tab" data-bs-toggle="tab" data-bs-target="#images" type="button">
+                <i class="fas fa-images"></i> Medical Images
+                <span class="badge bg-warning">@Model.PatientImages.Count</span>
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="appointments-tab" data-bs-toggle="tab" data-bs-target="#appointments" type="button">
+                <i class="fas fa-calendar"></i> Appointments
+                <span class="badge bg-secondary">@Model.Appointments.Count</span>
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="payments-tab" data-bs-toggle="tab" data-bs-target="#payments" type="button">
+                <i class="fas fa-dollar-sign"></i> Payment History
+            </button>
+        </li>
+    </ul>
+
+    <!-- Tabs Content -->
+    <div class="tab-content" id="patientDetailsTabContent">
+        
+        <!-- Overview Tab -->
+        <div class="tab-pane fade show active" id="overview" role="tabpanel">
+            <div class="row">
+                <!-- Patient Information -->
+                <div class="col-md-6 mb-3">
+                    <div class="card h-100">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="mb-0"><i class="fas fa-user"></i> Patient Information</h5>
+                        </div>
+                        <div class="card-body">
+                            <table class="table table-borderless">
+                                <tr>
+                                    <th width="40%">Full Name:</th>
+                                    <td>@Model.Patient.FullName</td>
+                                </tr>
+                                <tr>
+                                    <th>Phone:</th>
+                                    <td>@Model.Patient.Phone</td>
+                                </tr>
+                                <tr>
+                                    <th>Age:</th>
+                                    <td>@Model.Patient.Age years</td>
+                                </tr>
+                                <tr>
+                                    <th>Gender:</th>
+                                    <td>@Model.Patient.Gender</td>
+                                </tr>
+                                <tr>
+                                    <th>Registered:</th>
+                                    <td>N/A</td>
+                                </tr>
+                                <tr>
+                                    <th>Status:</th>
+                                    <td>
+                                        <span class="badge bg-success">Active</span>
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Financial Summary -->
+                <div class="col-md-6 mb-3">
+                    <div class="card h-100">
+                        <div class="card-header bg-success text-white">
+                            <h5 class="mb-0"><i class="fas fa-money-bill-wave"></i> Financial Summary</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row text-center mb-3">
+                                <div class="col-md-4">
+                                    <h6 class="text-muted">Total Cost</h6>
+                                    <h3 class="text-primary">$@Model.TotalCost.ToString("N2")</h3>
+                                </div>
+                                <div class="col-md-4">
+                                    <h6 class="text-muted">Total Paid</h6>
+                                    <h3 class="text-success">$@Model.TotalPaid.ToString("N2")</h3>
+                                </div>
+                                <div class="col-md-4">
+                                    <h6 class="text-muted">Remaining</h6>
+                                    <h3 class="@(Model.TotalCost - Model.TotalPaid > 0 ? "text-danger" : "text-success")">
+                                        $@((Model.TotalCost - Model.TotalPaid).ToString("N2"))
+                                    </h3>
+                                </div>
+                            </div>
+                            <hr />
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>Total Appointments:</span>
+                                <strong>@Model.Appointments.Count</strong>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>Completed Treatments:</span>
+                                <strong>@Model.TreatmentPlans.Count(t => t.IsCompleted)</strong>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <span>Payment Transactions:</span>
+                                <strong>@Model.Payments.Count</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Stats -->
+            <div class="row">
+                <div class="col-md-3 mb-3">
+                    <div class="card text-center border-primary">
+                        <div class="card-body">
+                            <i class="fas fa-calendar-check fa-2x text-primary mb-2"></i>
+                            <h4 class="mb-0">@Model.Appointments.Count</h4>
+                            <p class="text-muted mb-0">Total Appointments</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="card text-center border-success">
+                        <div class="card-body">
+                            <i class="fas fa-stethoscope fa-2x text-success mb-2"></i>
+                            <h4 class="mb-0">@Model.TreatmentPlans.Count</h4>
+                            <p class="text-muted mb-0">Treatment Plans</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="card text-center border-info">
+                        <div class="card-body">
+                            <i class="fas fa-notes-medical fa-2x text-info mb-2"></i>
+                            <h4 class="mb-0">@Model.DiagnosisNotes.Count</h4>
+                            <p class="text-muted mb-0">Diagnosis Notes</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="card text-center border-warning">
+                        <div class="card-body">
+                            <i class="fas fa-images fa-2x text-warning mb-2"></i>
+                            <h4 class="mb-0">@Model.PatientImages.Count</h4>
+                            <p class="text-muted mb-0">Medical Images</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Treatment Plans Tab -->
+        <div class="tab-pane fade" id="treatment-plans" role="tabpanel">
+            <div class="card">
+                <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-stethoscope"></i> Treatment Plans</h5>
+                    <button class="btn btn-light btn-sm" onclick="createTreatmentPlan()">
+                        <i class="fas fa-plus"></i> New Treatment Plan
+                    </button>
+                </div>
+                <div class="card-body">
+                    @if (Model.TreatmentPlans.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Created Date</th>
+                                        <th>Created By</th>
+                                        <th>Items</th>
+                                        <th class="text-end">Total Cost</th>
+                                        <th class="text-center">Status</th>
+                                        <th class="text-center">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var plan in Model.TreatmentPlans.OrderByDescending(t => t.CreatedAt))
+                                    {
+                                        <tr>
+                                            <td>@plan.CreatedAt.ToString("yyyy-MM-dd HH:mm")</td>
+                                            <td>Doctor</td>
+                                            <td>@plan.Items.Count items</td>
+                                            <td class="text-end">$@plan.Items.Sum(i => i.LineTotal).ToString("N2")</td>
+                                            <td class="text-center">
+                                                @if (plan.IsCompleted)
+                                                {
+                                                    <span class="badge bg-success">Completed</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-warning">In Progress</span>
+                                                }
+                                            </td>
+                                            <td class="text-center">
+                                                <button class="btn btn-sm btn-info" onclick="viewTreatmentPlan('@plan.Id')">
+                                                    <i class="fas fa-eye"></i> View
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-info text-center">
+                            <i class="fas fa-info-circle fa-2x mb-2"></i>
+                            <p class="mb-0">No treatment plans created yet. Click "Create Treatment Plan" to add one.</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Diagnosis Tab -->
+        <div class="tab-pane fade" id="diagnosis" role="tabpanel">
+            <div class="card">
+                <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-notes-medical"></i> Diagnosis Notes</h5>
+                    <button class="btn btn-light btn-sm" onclick="addDiagnosis()">
+                        <i class="fas fa-plus"></i> Add Diagnosis
+                    </button>
+                </div>
+                <div class="card-body" id="diagnosisNotesContainer">
+                    @if (Model.DiagnosisNotes.Any())
+                    {
+                        @foreach (var note in Model.DiagnosisNotes.OrderByDescending(d => d.CreatedAt))
+                        {
+                            <div class="card mb-3 border-start border-info border-4">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <div>
+                                            <h6 class="mb-1">
+                                                <i class="fas fa-user-md text-info"></i> Dr. @note.DoctorName
+                                            </h6>
+                                            <small class="text-muted">
+                                                <i class="fas fa-clock"></i> @note.CreatedAt.ToString("MMMM dd, yyyy HH:mm")
+                                            </small>
+                                        </div>
+                                    </div>
+                                    <p class="mb-0">@note.Note</p>
+                                </div>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div class="alert alert-info text-center">
+                            <i class="fas fa-info-circle fa-2x mb-2"></i>
+                            <p class="mb-0">No diagnosis notes recorded yet. Click "Add Diagnosis" to create one.</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Images Tab -->
+        <div class="tab-pane fade" id="images" role="tabpanel">
+            <div class="card">
+                <div class="card-header bg-warning text-dark d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-images"></i> Medical Images</h5>
+                    <button class="btn btn-dark btn-sm" onclick="uploadImage()">
+                        <i class="fas fa-upload"></i> Upload Image
+                    </button>
+                </div>
+                <div class="card-body" id="imagesContainer">
+                    @if (Model.PatientImages.Any())
+                    {
+                        <div class="row">
+                            @foreach (var image in Model.PatientImages.OrderByDescending(i => i.UploadedAt))
+                            {
+                                <div class="col-md-3 mb-3">
+                                    <div class="card h-100">
+                                        <img src="@image.ImagePath" class="card-img-top" alt="@image.Description" 
+                                             style="height: 200px; object-fit: cover; cursor: pointer;"
+                                             onclick="viewImageFullSize('@image.ImagePath', '@image.Description')">
+                                        <div class="card-body">
+                                            <h6 class="card-title">@image.Description</h6>
+                                            <p class="card-text">
+                                                <small class="text-muted">
+                                                    <i class="fas fa-calendar"></i> @image.UploadedAt.ToString("yyyy-MM-dd")<br/>
+                                                    <i class="fas fa-user"></i> @image.UploadedBy
+                                                </small>
+                                            </p>
+                                        </div>
+                                        <div class="card-footer">
+                                            <button class="btn btn-sm btn-danger w-100" onclick="deleteImage('@image.Id')">
+                                                <i class="fas fa-trash"></i> Delete
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-info text-center">
+                            <i class="fas fa-info-circle fa-2x mb-2"></i>
+                            <p class="mb-0">No images uploaded yet. Click "Upload Image" to add medical images.</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Appointments Tab -->
+        <div class="tab-pane fade" id="appointments" role="tabpanel">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-calendar"></i> Appointment History</h5>
+                </div>
+                <div class="card-body">
+                    @if (Model.Appointments.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Time</th>
+                                        <th>Status</th>
+                                        <th>Notes</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var apt in Model.Appointments.OrderByDescending(a => a.Date))
+                                    {
+                                        <tr>
+                                            <td>@apt.Date.ToString("yyyy-MM-dd")</td>
+                                            <td>@apt.StartTime.ToString(@"hh\:mm") - @apt.EndTime.ToString(@"hh\:mm")</td>
+                                            <td>
+                                                <span class="badge bg-@(apt.Status.ToString() == "Completed" ? "success" : apt.Status.ToString() == "Scheduled" ? "primary" : "warning")">
+                                                    @apt.Status
+                                                </span>
+                                            </td>
+                                            <td>@apt.Notes</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-info text-center">
+                            <i class="fas fa-info-circle fa-2x mb-2"></i>
+                            <p class="mb-0">No appointments found for this patient.</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Payments Tab -->
+        <div class="tab-pane fade" id="payments" role="tabpanel">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="fas fa-dollar-sign"></i> Payment History</h5>
+                </div>
+                <div class="card-body">
+                    @if (Model.Payments.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Amount</th>
+                                        <th>Notes</th>
+                                        <th>Received By</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var payment in Model.Payments.OrderByDescending(p => p.PaymentDate))
+                                    {
+                                        <tr>
+                                            <td>@payment.PaymentDate.ToString("yyyy-MM-dd HH:mm")</td>
+                                            <td class="text-success fw-bold">$@payment.Amount.ToString("N2")</td>
+                                            <td>@payment.Notes</td>
+                                            <td>@payment.CreatedByName</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                                <tfoot class="table-light">
+                                    <tr>
+                                        <th>Total Paid:</th>
+                                        <th class="text-success">$@Model.TotalPaid.ToString("N2")</th>
+                                        <th colspan="2"></th>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-info text-center">
+                            <i class="fas fa-info-circle fa-2x mb-2"></i>
+                            <p class="mb-0">No payment records found for this patient.</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Global Modal for Actions -->
+@await Html.PartialAsync("_GlobalModal")
+
+<!-- Image Full Size Modal -->
+<div class="modal fade" id="imageViewModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="imageModalTitle">Medical Image</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+                <img id="fullSizeImage" src="" class="img-fluid" alt="Medical Image">
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const patientId = '@Model.Patient.Id';
+
+        // Create Treatment Plan
+        function createTreatmentPlan() {
+            UIHelpers.loadModal(
+                '@Url.Action("CreateTreatmentPlanForPatient", "Doctor")?patientId=' + patientId,
+                '<i class="fas fa-stethoscope"></i> Create Treatment Plan'
+            );
+        }
+
+        // View Treatment Plan
+        function viewTreatmentPlan(planId) {
+            UIHelpers.loadModal(
+                '@Url.Action("Details", "TreatmentPlans")/' + planId,
+                '<i class="fas fa-eye"></i> Treatment Plan Details'
+            );
+        }
+
+        // Add Diagnosis
+        function addDiagnosis() {
+            UIHelpers.loadModal(
+                '@Url.Action("AddDiagnosisForm", "Doctor")?patientId=' + patientId,
+                '<i class="fas fa-notes-medical"></i> Add Diagnosis Note'
+            );
+        }
+
+        // Upload Image
+        function uploadImage() {
+            UIHelpers.loadModal(
+                '@Url.Action("UploadImageForm", "Doctor")?patientId=' + patientId,
+                '<i class="fas fa-camera"></i> Upload Medical Image'
+            );
+        }
+
+        // View Image Full Size
+        function viewImageFullSize(imagePath, description) {
+            $('#fullSizeImage').attr('src', imagePath);
+            $('#imageModalTitle').text(description || 'Medical Image');
+            new bootstrap.Modal(document.getElementById('imageViewModal')).show();
+        }
+
+        // Delete Image
+        function deleteImage(imageId) {
+            if (!confirm('Are you sure you want to delete this image?')) {
+                return;
+            }
+
+            $.ajax({
+                url: '@Url.Action("DeleteImage", "Doctor")',
+                type: 'POST',
+                data: {
+                    imageId: imageId,
+                    __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                },
+                success: function(response) {
+                    if (response.success) {
+                        UIHelpers.showNotification(response.message, 'success');
+                        location.reload();
+                    } else {
+                        UIHelpers.showNotification(response.message, 'error');
+                    }
+                },
+                error: function() {
+                    UIHelpers.showNotification('Error deleting image', 'error');
+                }
+            });
+        }
+
+        // Listen for modal success
+        $(document).on('modalSuccess', function(event, response) {
+            console.log('Action completed successfully');
+            setTimeout(() => location.reload(), 1000);
+        });
+    </script>
+    @Html.AntiForgeryToken()
+}
+
+@section Styles {
+    <style>
+        .patient-avatar i {
+            color: #0d6efd;
+        }
+
+        .patient-info .badge {
+            font-size: 0.9rem;
+            padding: 0.5rem 0.75rem;
+        }
+
+        .nav-tabs .nav-link {
+            color: #495057;
+            font-weight: 500;
+        }
+
+        .nav-tabs .nav-link.active {
+            color: #0d6efd;
+            font-weight: 600;
+        }
+
+        .nav-tabs .nav-link .badge {
+            margin-left: 0.5rem;
+        }
+
+        .card {
+            border-radius: 0.5rem;
+            box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.075);
+        }
+
+        .table th {
+            font-weight: 600;
+            color: #495057;
+        }
+
+        .border-4 {
+            border-width: 4px !important;
+        }
+
+        .card-img-top {
+            transition: transform 0.2s;
+        }
+
+        .card-img-top:hover {
+            transform: scale(1.05);
+        }
+    </style>
+}

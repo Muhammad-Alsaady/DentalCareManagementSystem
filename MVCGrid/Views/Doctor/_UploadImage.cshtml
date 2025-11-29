@@ -1,0 +1,111 @@
+@model DentalManagementSystem.Models.UploadImageViewModel
+
+<form id="uploadImageForm" method="post" asp-action="UploadImage" asp-controller="Doctor" enctype="multipart/form-data">
+    @Html.AntiForgeryToken()
+    <input type="hidden" name="PatientId" value="@Model.PatientId" />
+
+    <div class="modal-header bg-warning text-dark">
+        <h5 class="modal-title">
+            <i class="fas fa-camera"></i> Upload Medical Image
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+    </div>
+
+    <div class="modal-body">
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle"></i>
+            <strong>Patient:</strong> @Model.PatientName
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label fw-bold">
+                <i class="fas fa-image"></i> Select Image <span class="text-danger">*</span>
+            </label>
+            <input type="file" name="ImageFile" class="form-control" accept="image/*" required id="imageInput" />
+            <div class="form-text">
+                <i class="fas fa-info-circle"></i> Accepted formats: JPG, PNG, GIF. Max size: 5MB
+            </div>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label fw-bold">
+                <i class="fas fa-pen"></i> Description <span class="text-danger">*</span>
+            </label>
+            <input type="text" name="Description" class="form-control" 
+                   placeholder="e.g., X-Ray - Upper Right Molar, Before Treatment, Cavity on #14..." 
+                   required />
+            <div class="form-text">
+                <i class="fas fa-lightbulb"></i> Provide a clear description to identify this image later
+            </div>
+        </div>
+
+        <!-- Image Preview -->
+        <div class="mb-3" id="imagePreviewContainer" style="display: none;">
+            <label class="form-label fw-bold">Preview:</label>
+            <div class="text-center">
+                <img id="imagePreview" src="" class="img-fluid rounded border" style="max-height: 300px;" alt="Preview">
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+            <i class="fas fa-times"></i> Cancel
+        </button>
+        <button type="submit" class="btn btn-warning text-dark">
+            <i class="fas fa-upload"></i> Upload Image
+        </button>
+    </div>
+</form>
+
+@section Scripts {
+    <script>
+        // Image preview
+        $('#imageInput').on('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                if (file.size > 5 * 1024 * 1024) { // 5MB
+                    alert('File size must be less than 5MB');
+                    $(this).val('');
+                    return;
+                }
+
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    $('#imagePreview').attr('src', e.target.result);
+                    $('#imagePreviewContainer').show();
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        $('#uploadImageForm').on('submit', function(e) {
+            e.preventDefault();
+
+            const formData = new FormData(this);
+
+            $.ajax({
+                url: $(this).attr('action'),
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function(response) {
+                    if (response.success) {
+                        UIHelpers.showNotification(response.message, 'success');
+                        bootstrap.Modal.getInstance(document.getElementById('globalModal')).hide();
+                        $(document).trigger('modalSuccess', [response]);
+                    } else {
+                        UIHelpers.showNotification(response.message || 'Error uploading image', 'error');
+                    }
+                },
+                error: function(xhr) {
+                    console.error('Error:', xhr);
+                    UIHelpers.showNotification('An error occurred while uploading image', 'error');
+                }
+            });
+
+            return false;
+        });
+    </script>
+}

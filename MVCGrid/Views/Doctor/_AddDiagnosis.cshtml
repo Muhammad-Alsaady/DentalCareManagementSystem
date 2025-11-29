@@ -1,0 +1,81 @@
+@model DentalManagementSystem.Models.AddDiagnosisViewModel
+
+<form id="addDiagnosisForm" method="post" asp-action="AddDiagnosisNote" asp-controller="Doctor">
+    @Html.AntiForgeryToken()
+    <input type="hidden" name="PatientId" value="@Model.PatientId" />
+
+    <div class="modal-header bg-info text-white">
+        <h5 class="modal-title">
+            <i class="fas fa-notes-medical"></i> Add Diagnosis Note
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+    </div>
+
+    <div class="modal-body">
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle"></i>
+            <strong>Patient:</strong> @Model.PatientName
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label fw-bold">
+                <i class="fas fa-file-medical"></i> Diagnosis Note <span class="text-danger">*</span>
+            </label>
+            <textarea name="Note" class="form-control" rows="6" 
+                      placeholder="Enter diagnosis, symptoms, observations, recommendations..." 
+                      required></textarea>
+            <div class="form-text">
+                <i class="fas fa-lightbulb"></i> Be detailed and specific. This will be part of the patient's permanent medical record.
+            </div>
+        </div>
+
+        <div class="alert alert-warning">
+            <i class="fas fa-exclamation-triangle"></i>
+            <strong>Note:</strong> This diagnosis will be permanently recorded and cannot be edited later.
+        </div>
+    </div>
+
+    <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+            <i class="fas fa-times"></i> Cancel
+        </button>
+        <button type="submit" class="btn btn-info">
+            <i class="fas fa-save"></i> Save Diagnosis
+        </button>
+    </div>
+</form>
+
+@section Scripts {
+    <script>
+        $('#addDiagnosisForm').on('submit', function(e) {
+            e.preventDefault();
+
+            const note = $('textarea[name="Note"]').val().trim();
+            if (!note) {
+                alert('Please enter a diagnosis note');
+                return false;
+            }
+
+            $.ajax({
+                url: $(this).attr('action'),
+                type: 'POST',
+                data: $(this).serialize(),
+                success: function(response) {
+                    if (response.success) {
+                        UIHelpers.showNotification(response.message, 'success');
+                        bootstrap.Modal.getInstance(document.getElementById('globalModal')).hide();
+                        $(document).trigger('modalSuccess', [response]);
+                    } else {
+                        UIHelpers.showNotification(response.message || 'Error saving diagnosis', 'error');
+                    }
+                },
+                error: function(xhr) {
+                    console.error('Error:', xhr);
+                    UIHelpers.showNotification('An error occurred while saving diagnosis', 'error');
+                }
+            });
+
+            return false;
+        });
+    </script>
+}

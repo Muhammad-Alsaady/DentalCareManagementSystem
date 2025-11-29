@@ -1,0 +1,249 @@
+@model DentalManagementSystem.Models.CreateTreatmentPlanViewModel
+
+@{
+    var priceListItems = ViewBag.PriceListItems as List<DentalCareManagmentSystem.Application.DTOs.PriceListItemDto> ?? new List<DentalCareManagmentSystem.Application.DTOs.PriceListItemDto>();
+}
+
+<form id="treatmentPlanForm" method="post" asp-action="CreateTreatmentPlan" asp-controller="Doctor">
+    @Html.AntiForgeryToken()
+    <input type="hidden" name="AppointmentId" value="@Model.AppointmentId" />
+    <input type="hidden" name="PatientId" value="@Model.PatientId" />
+
+    <div class="modal-header bg-success text-white">
+        <h5 class="modal-title">
+            <i class="fas fa-stethoscope"></i> Create Treatment Plan - @Model.PatientName
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+    </div>
+
+    <div class="modal-body">
+        <!-- Service Selection from Price List -->
+        <div class="card mb-3">
+            <div class="card-header bg-light">
+                <h6 class="mb-0"><i class="fas fa-tooth"></i> Select Services from Price List</h6>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-9">
+                        <label class="form-label">Service</label>
+                        <select id="serviceSelector" class="form-select">
+                            <option value="">-- Select a service --</option>
+                            @foreach (var service in priceListItems.Where(p => p.IsActive).OrderBy(p => p.Name))
+                            {
+                                <option value="@service.Id" 
+                                        data-name="@service.Name" 
+                                        data-price="@service.DefaultPrice">
+                                    @service.Name - $@service.DefaultPrice.ToString("N2")
+                                </option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Quantity</label>
+                        <input type="number" id="serviceQuantity" class="form-control" value="1" min="1" />
+                    </div>
+                </div>
+                <button type="button" class="btn btn-primary btn-sm" onclick="addServiceToTreatment()">
+                    <i class="fas fa-plus"></i> Add Service
+                </button>
+            </div>
+        </div>
+
+        <!-- Selected Services Table -->
+        <div class="card mb-3">
+            <div class="card-header bg-light">
+                <h6 class="mb-0"><i class="fas fa-list"></i> Selected Services</h6>
+            </div>
+            <div class="card-body">
+                <div id="selectedServicesContainer">
+                    <table class="table table-sm table-bordered" id="selectedServicesTable">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 50%">Service</th>
+                                <th style="width: 15%" class="text-center">Price</th>
+                                <th style="width: 15%" class="text-center">Qty</th>
+                                <th style="width: 15%" class="text-end">Total</th>
+                                <th style="width: 5%" class="text-center">Remove</th>
+                            </tr>
+                        </thead>
+                        <tbody id="selectedServicesBody">
+                            <tr id="emptyRow">
+                                <td colspan="5" class="text-center text-muted">
+                                    No services selected yet. Please add services from the price list above.
+                                </td>
+                            </tr>
+                        </tbody>
+                        <tfoot class="table-light">
+                            <tr>
+                                <td colspan="3" class="text-end"><strong>Grand Total:</strong></td>
+                                <td class="text-end"><strong id="grandTotal">$0.00</strong></td>
+                                <td></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Optional: Initial Payment & Discount -->
+        <div class="card">
+            <div class="card-header bg-light">
+                <h6 class="mb-0"><i class="fas fa-dollar-sign"></i> Payment Options (Optional)</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <label class="form-label">Initial Payment</label>
+                        <input type="number" name="InitialPayment" class="form-control" 
+                               value="0" min="0" step="0.01" />
+                        <small class="text-muted">Leave 0 if no payment now</small>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Discount %</label>
+                        <input type="number" name="DiscountPercentage" class="form-control" 
+                               value="0" min="0" max="100" step="0.1" />
+                        <small class="text-muted">Optional discount</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Hidden field to store selected items JSON -->
+        <input type="hidden" name="ItemsJson" id="itemsJson" value="[]" />
+    </div>
+
+    <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+            <i class="fas fa-times"></i> Cancel
+        </button>
+        <button type="submit" class="btn btn-success" id="saveTreatmentPlanBtn">
+            <i class="fas fa-save"></i> Save Treatment Plan
+        </button>
+    </div>
+</form>
+
+@section Scripts {
+    <script>
+        let selectedServices = [];
+
+        function addServiceToTreatment() {
+            const selector = $('#serviceSelector');
+            const selectedOption = selector.find('option:selected');
+            
+            if (!selectedOption.val()) {
+                alert('Please select a service first');
+                return;
+            }
+
+            const quantity = parseInt($('#serviceQuantity').val()) || 1;
+            
+            const service = {
+                PriceListItemId: selectedOption.val(),
+                Name: selectedOption.data('name'),
+                Price: parseFloat(selectedOption.data('price')),
+                Quantity: quantity,
+                LineTotal: parseFloat(selectedOption.data('price')) * quantity
+            };
+
+            // Check if already added
+            const existingIndex = selectedServices.findIndex(s => s.PriceListItemId === service.PriceListItemId);
+            if (existingIndex >= 0) {
+                // Update quantity
+                selectedServices[existingIndex].Quantity += quantity;
+                selectedServices[existingIndex].LineTotal = selectedServices[existingIndex].Price * selectedServices[existingIndex].Quantity;
+            } else {
+                selectedServices.push(service);
+            }
+
+            updateServicesTable();
+            
+            // Reset selector
+            selector.val('');
+            $('#serviceQuantity').val('1');
+        }
+
+        function removeService(index) {
+            selectedServices.splice(index, 1);
+            updateServicesTable();
+        }
+
+        function updateServicesTable() {
+            const tbody = $('#selectedServicesBody');
+            tbody.empty();
+
+            if (selectedServices.length === 0) {
+                tbody.append(`
+                    <tr id="emptyRow">
+                        <td colspan="5" class="text-center text-muted">
+                            No services selected yet. Please add services from the price list above.
+                        </td>
+                    </tr>
+                `);
+                $('#grandTotal').text('$0.00');
+                $('#itemsJson').val('[]');
+                return;
+            }
+
+            let grandTotal = 0;
+
+            selectedServices.forEach((service, index) => {
+                grandTotal += service.LineTotal;
+                
+                tbody.append(`
+                    <tr>
+                        <td>${service.Name}</td>
+                        <td class="text-center">$${service.Price.toFixed(2)}</td>
+                        <td class="text-center">${service.Quantity}</td>
+                        <td class="text-end">$${service.LineTotal.toFixed(2)}</td>
+                        <td class="text-center">
+                            <button type="button" class="btn btn-sm btn-danger" onclick="removeService(${index})">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `);
+            });
+
+            $('#grandTotal').text('$' + grandTotal.toFixed(2));
+            $('#itemsJson').val(JSON.stringify(selectedServices));
+        }
+
+        // Form submission
+        $('#treatmentPlanForm').on('submit', function(e) {
+            e.preventDefault();
+
+            if (selectedServices.length === 0) {
+                alert('Please add at least one service to the treatment plan');
+                return false;
+            }
+
+            const formData = $(this).serialize();
+
+            $.ajax({
+                url: $(this).attr('action'),
+                type: 'POST',
+                data: formData,
+                success: function(response) {
+                    if (response.success) {
+                        UIHelpers.showNotification(response.message, 'success');
+                        bootstrap.Modal.getInstance(document.getElementById('globalModal')).hide();
+                        
+                        // Trigger refresh event
+                        $(document).trigger('modalSuccess', [response]);
+                        
+                        // Reload page to show updated data
+                        setTimeout(() => location.reload(), 1000);
+                    } else {
+                        UIHelpers.showNotification(response.message || 'Error creating treatment plan', 'error');
+                    }
+                },
+                error: function(xhr) {
+                    console.error('Error:', xhr);
+                    UIHelpers.showNotification('An error occurred while creating the treatment plan', 'error');
+                }
+            });
+
+            return false;
+        });
+    </script>
+}
