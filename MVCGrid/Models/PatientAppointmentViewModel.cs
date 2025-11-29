@@ -15,11 +15,12 @@ namespace DentalManagementSystem.Models
     public class TreatmentPlanViewModel
     {
         public Guid AppointmentId { get; set; }
-        public Guid PatientId { get; set; }
+        public string PatientName { get; set; } = string.Empty;
+        public string PhoneNumber { get; set; } = string.Empty;
         public decimal PaidAmount { get; set; }
         public decimal DiscountPercentage { get; set; }
         public List<TreatmentItemViewModel> TreatmentItems { get; set; } = new();
-        public List<TreatmentPlanDto> AvailableServices { get; set; } = new(); // قائمة الخدمات المتاحة
+        public List<PriceListItemDto> AvailableServices { get; set; } = new();
         public decimal TotalCost => TreatmentItems.Sum(t => t.LineTotal);
         public decimal DiscountAmount => TotalCost * (DiscountPercentage / 100m);
         public decimal NetTotal => TotalCost - DiscountAmount;
