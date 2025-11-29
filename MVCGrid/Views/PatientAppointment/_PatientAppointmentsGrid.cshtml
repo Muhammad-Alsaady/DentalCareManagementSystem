@@ -2,6 +2,7 @@
 
 @using NonFactors.Mvc.Grid
 @using System.Text
+@using DentalCareManagmentSystem.Application.DTOs
 
 @{
     var grid = new Grid<DentalCareManagmentSystem.Application.DTOs.PatientAppointmentDto>(Model)
@@ -113,14 +114,14 @@
         return $"<span class='badge {badgeClass}'>{status}</span>";
     }
 
-    string GetRemainderDisplay(DentalCareManagmentSystem.Application.DTOs.PatientAppointmentDto m)
+    string GetRemainderDisplay(PatientAppointmentDto m)
     {
         var remainder = m.Remainder;
         var cssClass = remainder > 0 ? "text-danger fw-bold" : "text-success";
         return $"<span class='{cssClass}'>${remainder:N2}</span>";
     }
 
-    string GetButtons(DentalCareManagmentSystem.Application.DTOs.PatientAppointmentDto m)
+    string GetButtons(PatientAppointmentDto m)
     {
         var sb = new StringBuilder();
 
@@ -137,9 +138,6 @@
         }
 
         // Payment button (for InProgress and Completed status, or if there's a remainder)
-        if (m.Status == DentalCareManagmentSystem.Domain.Enums.AppointmentStatus.Completed ||
-            m.Status == DentalCareManagmentSystem.Domain.Enums.AppointmentStatus.InProgress ||
-            m.Remainder > 0)
         {
             var paymentIconClass = m.Remainder > 0 ? "text-warning" : "text-success";
             sb.Append($"<button onclick='showPaymentModal(\"{m.Id}\")' class='btn btn-outline-primary' title='Payment'><i class='fas fa-dollar-sign {paymentIconClass}'></i></button>");

@@ -316,19 +316,102 @@
             UIHelpers.loadModal('@Url.Action("Delete", "PatientAppointment")/' + id, 'Delete Appointment');
         }
 
+        // Show Treatment Plan - Uses Global Modal
+        function showTreatmentPlan(appointmentId) {
+            UIHelpers.loadModal(
+                '@Url.Action("GetTreatmentPlanForm", "Reception")?appointmentId=' + appointmentId,
+                '<i class="fas fa-stethoscope"></i> Create Treatment Plan'
+            );
+        }
+
+        // Show Payment Modal - Uses Global Modal
+        function showPaymentModal(appointmentId) {
+            UIHelpers.loadModal(
+                '@Url.Action("CreateForAppointment", "Payments")/' + appointmentId,
+                '<i class="fas fa-dollar-sign"></i> Process Payment'
+            );
+        }
+
+        // Send to Doctor
+        function sendToDoctor(appointmentId) {
+            if (confirm('Are you sure you want to send this patient to the doctor?')) {
+                $.ajax({
+                    url: '@Url.Action("SendToDoctor", "PatientAppointment")',
+                    type: 'POST',
+                    data: {
+                        id: appointmentId,
+                        __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                    },
+                    success: function (response) {
+                        if (response.success) {
+                            UIHelpers.showNotification(response.message, 'success');
+                            refreshGrid();
+                        } else {
+                            UIHelpers.showNotification(response.message, 'error');
+                        }
+                    },
+                    error: function () {
+                        UIHelpers.showNotification('An error occurred while sending the patient to the doctor.', 'error');
+                    }
+                });
+            }
+        }
+
         // Filter appointments by date
         function filterByDate(selectedDate) {
             UIHelpers.reloadGridPartial(
                 '#gridContainer',
-                '@Url.Action("GetAppointmentsGridByDate", "PatientAppointment")',
+                '@Url.Action("GetAppointmentsGrid", "Home")',
                 { filterDate: selectedDate }
             );
+        }
+
+        // Clear Date Filter
+        function clearDateFilter() {
+            $('#dashboardDate').val('');
+            refreshGrid();
+        }
+
+        // Perform Search
+        function performSearch() {
+            var searchTerm = $('#searchInput').val();
+            var selectedDate = $('#dashboardDate').val();
+            
+            UIHelpers.reloadGridPartial(
+                '#gridContainer',
+                '@Url.Action("GetAppointmentsGrid", "Home")',
+                { 
+                    searchString: searchTerm,
+                    filterDate: selectedDate 
+                }
+            );
+        }
+
+        // Clear Search
+        function clearSearch() {
+            $('#searchInput').val('');
+            refreshGrid();
         }
 
         // Refresh grid
         function refreshGrid() {
             var selectedDate = $('#dashboardDate').val();
-            filterByDate(selectedDate);
+            var searchTerm = $('#searchInput').val();
+            
+            var params = {};
+            if (selectedDate) {
+                params.filterDate = selectedDate;
+            }
+            if (searchTerm) {
+                params.searchString = searchTerm;
+            }
+            
+            UIHelpers.reloadGridPartial(
+                '#gridContainer',
+                '@Url.Action("GetAppointmentsGrid", "Home")',
+                params
+            );
         }
     </script>
+    @Html.AntiForgeryToken()
 }
