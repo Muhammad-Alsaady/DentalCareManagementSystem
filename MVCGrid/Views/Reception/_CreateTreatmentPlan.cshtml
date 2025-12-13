@@ -1,476 +1,239 @@
-﻿@model DentalManagementSystem.Models.TreatmentPlanViewModel
-
-<form class="treatment-form" id="treatmentForm" method="post" action="@Url.Action("CreateTreatmentPlan", "Reception")">
+﻿@using DentalManagementSystem.Models
+@model TreatmentPlanViewModel
+@* 
+<input type="hidden" id="appointmentId" value="@Model.AppointmentId" /> *@
+<form id="treatmentPlanForm" method="post" action="@Url.Action("CreateTreatmentPlan", "Reception")">
     @Html.AntiForgeryToken()
     <input type="hidden" name="AppointmentId" value="@Model.AppointmentId" />
-    <input type="hidden" name="PaidAmount" id="paidAmountHidden" value="0" />
-    <input type="hidden" name="DiscountPercentage" id="discountPercentageHidden" value="0" />
+    <div class="modal-header bg-primary text-white">
+    <h5 class="modal-title">
+        <i class="fas fa-stethoscope"></i>
+        Create Treatment Plan - @Model.PatientName
+    </h5>
+    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+</div>
 
-    <!-- Patient Information -->
-    <div class="row mb-3">
-        <div class="col-md-6">
-            <label class="form-label fw-bold">Patient Name</label>
-            <input type="text" class="form-control" value="@Model.PatientName" readonly />
-        </div>
-        <div class="col-md-6">
-            <label class="form-label fw-bold">Phone Number</label>
-            <input type="text" class="form-control" value="@Model.PhoneNumber" readonly />
+<div class="modal-body">
+
+    <!-- Patient Info -->
+    <div class="card mb-3">
+        <div class="card-body">
+            <strong>@Model.PatientName</strong><br />
+            <small>@Model.PhoneNumber</small>
         </div>
     </div>
 
-    <!-- Available Services Dropdown -->
-    <div class="row mb-3">
-        <div class="col-md-8">
-            <label class="form-label">Select Service</label>
-            <select class="form-select" id="serviceDropdown">
-                <option value="">-- Select a Service --</option>
-                @if (Model.AvailableServices != null && Model.AvailableServices.Any())
-                {
-                    // تجميع الخدمات حسب الفئة
-                    var servicesByCategory = Model.AvailableServices.GroupBy(s => s.Category).OrderBy(g => g.Key);
-                    foreach (var category in servicesByCategory)
-                    {
-                        <optgroup label="@category.Key">
-                            @foreach (var service in category.OrderBy(s => s.Name))
-                            {
-                                <option value="@service.Id" data-price="@service.DefaultPrice" data-name="@service.Name">
-                                    @service.Name - $@service.DefaultPrice.ToString("F2")
-                                </option>
-                            }
-                        </optgroup>
-                    }
-                }
-                else
-                {
-                    <option value="">No services available</option>
-                }
-            </select>
-        </div>
-        <div class="col-md-4 d-flex align-items-end">
-            <button type="button" class="btn btn-primary w-100" onclick="addSelectedService()">
-                <i class="fas fa-plus"></i> Add Service
-            </button>
-        </div>
-    </div>
+    <!-- Services -->
+    <div class="card mb-3">
+        <div class="card-header">Select Services</div>
+        <div class="card-body">
 
-    <!-- Treatment Items Container -->
-    <div id="treatmentItemsContainer">
-        @if (Model.TreatmentItems.Any())
-        {
-            @for (int i = 0; i < Model.TreatmentItems.Count; i++)
-            {
-                <div class="treatment-item row mb-2 border p-2">
-                    <div class="col-md-5">
-                        <label class="form-label small">Service Name</label>
-                        <input type="hidden" name="TreatmentItems[@i].Id" value="@Model.TreatmentItems[i].Id" />
-                        <input name="TreatmentItems[@i].Name"
-                               value="@Model.TreatmentItems[i].Name"
-                               class="form-control form-control-sm service-name"
-                               placeholder="Service Name" required readonly />
-                    </div>
-                    <div class="col-md-2">
-                        <label class="form-label small">Price</label>
-                        <input name="TreatmentItems[@i].Price"
-                               value="@Model.TreatmentItems[i].Price"
-                               class="form-control form-control-sm price-input"
-                               type="number" step="0.01" min="0" required readonly />
-                    </div>
-                    <div class="col-md-2">
-                        <label class="form-label small">Quantity</label>
-                        <input name="TreatmentItems[@i].Quantity"
-                               value="@Model.TreatmentItems[i].Quantity"
-                               class="form-control form-control-sm quantity-input"
-                               type="number" min="1" value="1" required />
-                    </div>
-                    <div class="col-md-2">
-                        <label class="form-label small">Line Total</label>
-                        <input type="text" class="form-control form-control-sm line-total" readonly
-                               value="@(Model.TreatmentItems[i].LineTotal.ToString("F2"))" />
-                    </div>
-                    <div class="col-md-1 d-flex align-items-end">
-                        <button type="button" class="btn btn-danger btn-sm remove-item">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </div>
+            <div class="row mb-3">
+                <div class="col-md-8">
+                    <select id="serviceDropdown" class="form-control">
+                        <option value="">-- Select Service --</option>
+                        @foreach (var s in Model.AvailableServices)
+                        {
+                            <option value="@s.Id"
+                                    data-name="@s.Name"
+                                    data-price="@s.DefaultPrice">
+                                @s.Name - $@s.DefaultPrice
+                            </option>
+                        }
+                    </select>
                 </div>
-            }
-        }
-        else
-        {
-            <div class="text-center text-muted py-3" id="noItemsMessage">
-                <i class="fas fa-info-circle fa-2x mb-2"></i>
-                <br />
-                No services added yet. Please select services from the dropdown above.
-            </div>
-        }
-    </div>
 
-    <!-- Payment Information Section -->
-    <div class="row mt-4">
-        <div class="col-md-12">
-            <hr />
-            <h6><i class="fas fa-dollar-sign"></i> Payment Information</h6>
-        </div>
-    </div>
+                <div class="col-md-2">
+                    <input type="number" id="serviceQuantity" value="1" min="1" class="form-control" />
+                </div>
 
-    <!-- Cost Summary -->
-    <div class="row mb-3">
-        <div class="col-md-3">
-            <label class="form-label">Total Cost</label>
-            <div class="input-group">
-                <span class="input-group-text">$</span>
-                <input type="text" id="totalCostDisplay" class="form-control" readonly value="0.00" />
-            </div>
-        </div>
-        <div class="col-md-3">
-            <label class="form-label">Discount (%)</label>
-            <input type="number" step="0.01" min="0" max="100"
-                   id="discountPercentageInput"
-                   class="form-control" value="0" />
-        </div>
-        <div class="col-md-3">
-            <label class="form-label">Discount Amount</label>
-            <div class="input-group">
-                <span class="input-group-text">$</span>
-                <input type="text" id="discountAmountDisplay" class="form-control" readonly value="0.00" />
-            </div>
-        </div>
-        <div class="col-md-3">
-            <label class="form-label">Net Total</label>
-            <div class="input-group">
-                <span class="input-group-text">$</span>
-                <input type="text" id="netTotalDisplay" class="form-control" readonly value="0.00" />
-            </div>
-        </div>
-    </div>
-
-    <!-- Payment Details -->
-    <div class="row mb-3">
-        <div class="col-md-4">
-            <label class="form-label">Paid Amount</label>
-            <div class="input-group">
-                <span class="input-group-text">$</span>
-                <input type="number" step="0.01" min="0"
-                       id="paidAmountInput"
-                       class="form-control" value="0" />
-            </div>
-        </div>
-        <div class="col-md-4">
-            <label class="form-label">Remaining Balance</label>
-            <div class="input-group">
-                <span class="input-group-text">$</span>
-                <input type="text" id="remainingBalanceDisplay" class="form-control" readonly value="0.00"
-                       style="font-weight: bold;" />
-            </div>
-        </div>
-        <div class="col-md-4">
-            <label class="form-label">Payment Status</label>
-            <input type="text" id="paymentStatus" class="form-control" readonly value="Not Paid" />
-        </div>
-    </div>
-
-    <!-- Summary Card -->
-    <div class="row mt-3">
-        <div class="col-md-12">
-            <div class="card bg-light">
-                <div class="card-body">
-                    <div class="row text-center">
-                        <div class="col-md-3">
-                            <strong>Total Cost</strong>
-                            <div class="h5 text-primary" id="summaryTotalCost">$0.00</div>
-                        </div>
-                        <div class="col-md-3">
-                            <strong>Discount</strong>
-                            <div class="h5 text-warning" id="summaryDiscount">$0.00</div>
-                        </div>
-                        <div class="col-md-3">
-                            <strong>Net Total</strong>
-                            <div class="h5 text-success" id="summaryNetTotal">$0.00</div>
-                        </div>
-                        <div class="col-md-3">
-                            <strong>To Pay</strong>
-                            <div class="h5 text-danger" id="summaryToPay">$0.00</div>
-                        </div>
-                    </div>
+                <div class="col-md-2">
+                    <button type="button" class="btn btn-primary w-100" onclick="addService()">
+                        Add
+                    </button>
                 </div>
             </div>
+
+            <table class="table table-bordered" id="servicesTable" style="display:none">
+                <thead>
+                    <tr>
+                        <th>Service</th>
+                        <th>Price</th>
+                        <th>Qty</th>
+                        <th>Total</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody id="servicesBody"></tbody>
+            </table>
+
+            <div id="noServices" class="alert alert-info">
+                No services added
+            </div>
         </div>
     </div>
 
-    <!-- Footer Buttons -->
-    <div class="d-flex justify-content-end gap-2 mt-4">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-            <i class="fas fa-times"></i> Cancel
-        </button>
+    <!-- Payment -->
+    <div class="card">
+        <div class="card-header">Payment</div>
+        <div class="card-body">
+
+            <div class="row">
+                <div class="col-md-6">
+                    <label>Discount %</label>
+                    <input type="number" id="discount" value="0" min="0" max="100"
+                           class="form-control" oninput="calculate()" />
+
+                    <label class="mt-2">Paid</label>
+                    <input type="number" id="paid" value="0" min="0"
+                           class="form-control" oninput="calculate()" />
+                </div>
+
+                <div class="col-md-6">
+                    <table class="table">
+                        <tr>
+                            <td>Total</td>
+                            <td class="text-end" id="total">$0.00</td>
+                        </tr>
+                        <tr>
+                            <td>Discount</td>
+                            <td class="text-end" id="discountValue">$0.00</td>
+                        </tr>
+                        <tr>
+                            <td>Net</td>
+                            <td class="text-end" id="net">$0.00</td>
+                        </tr>
+                        <tr class="border-top">
+                            <td>Remaining</td>
+                            <td class="text-end fw-bold" id="remaining">$0.00</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+</div>
+
+    <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
         <button type="button" class="btn btn-success" onclick="saveTreatmentPlan()">
             <i class="fas fa-save"></i> Save Treatment Plan
         </button>
     </div>
 </form>
 
-<script>
-    // متغير لتخزين الخدمات المتاحة
-    let availableServices = @Html.Raw(Json.Serialize(Model.AvailableServices));
 
-    $(document).ready(function() {
-        calculateGrandTotal();
-        updatePaymentSummary();
 
-        // تحديث عند تغيير الكمية
-        $(document).on('change', '.quantity-input', function() {
-            calculateLineTotal($(this).closest('.treatment-item'));
-            calculateGrandTotal();
-            updatePaymentSummary();
-        });
 
-        // تحديث عند تغيير الخصم أو المبلغ المدفوع
-        $('#discountPercentageInput, #paidAmountInput').on('input', function() {
-            updatePaymentSummary();
-        });
 
-        // إزالة عنصر العلاج
-        $(document).on('click', '.remove-item', function() {
-            $(this).closest('.treatment-item').remove();
-            reindexItems();
-            calculateGrandTotal();
-            updatePaymentSummary();
-            checkEmptyItems();
-        });
-    });
 
-    // إضافة خدمة محددة
-    function addSelectedService() {
-        const selectedService = $('#serviceDropdown').find(':selected');
-        const serviceId = selectedService.val();
-        const serviceName = selectedService.data('name');
-        const servicePrice = parseFloat(selectedService.data('price'));
+@* <script>
+      console.log('Treatment Plan JS Loaded');
 
-        if (!serviceId) {
-            showNotification('Please select a service from the list.', 'error');
+    let items = [];
+
+    window.addService = function () {
+
+        console.log('Add Service Clicked');
+
+        const ddl = document.getElementById('serviceDropdown');
+        const qtyInput = document.getElementById('serviceQuantity');
+
+        if (!ddl || !ddl.value) {
+            alert('Select service first');
             return;
         }
 
-        // التحقق إذا كانت الخدمة مضافة مسبقاً
-        const existingService = $(`.service-name[value="${serviceName}"]`);
-        if (existingService.length > 0) {
-            showNotification('This service is already added. You can update the quantity.', 'warning');
-            return;
-        }
+        const opt = ddl.options[ddl.selectedIndex];
+        const id = ddl.value;
+        const name = opt.dataset.name;
+        const price = parseFloat(opt.dataset.price);
+        const qty = parseInt(qtyInput.value) || 1;
 
-        addServiceItem(serviceId, serviceName, servicePrice);
-        $('#serviceDropdown').val(''); // إعادة تعيين القائمة
-        checkEmptyItems();
-    }
-
-    // إضافة عنصر خدمة جديد
-    function addServiceItem(serviceId, serviceName, servicePrice) {
-        const index = $('.treatment-item').length;
-        const newItem = `
-            <div class="treatment-item row mb-2 border p-2">
-                <div class="col-md-5">
-                    <label class="form-label small">Service Name</label>
-                    <input type="hidden" name="TreatmentItems[${index}].Id" value="${serviceId}" />
-                    <input name="TreatmentItems[${index}].Name"
-                           value="${serviceName}"
-                           class="form-control form-control-sm service-name"
-                           readonly />
-                </div>
-                <div class="col-md-2">
-                    <label class="form-label small">Price</label>
-                    <input name="TreatmentItems[${index}].Price"
-                           value="${servicePrice.toFixed(2)}"
-                           class="form-control form-control-sm price-input"
-                           type="number" step="0.01" min="0" readonly />
-                </div>
-                <div class="col-md-2">
-                    <label class="form-label small">Quantity</label>
-                    <input name="TreatmentItems[${index}].Quantity"
-                           class="form-control form-control-sm quantity-input"
-                           type="number" min="1" value="1" required />
-                </div>
-                <div class="col-md-2">
-                    <label class="form-label small">Line Total</label>
-                    <input type="text" class="form-control form-control-sm line-total" readonly value="${servicePrice.toFixed(2)}" />
-                </div>
-                <div class="col-md-1 d-flex align-items-end">
-                    <button type="button" class="btn btn-danger btn-sm remove-item">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </div>
-            </div>
-        `;
-
-        // إزالة رسالة عدم وجود عناصر إذا كانت موجودة
-        $('#noItemsMessage').remove();
-
-        $('#treatmentItemsContainer').append(newItem);
-        calculateGrandTotal();
-        updatePaymentSummary();
-    }
-
-    // حساب الإجمالي للعنصر
-    function calculateLineTotal(item) {
-        const price = parseFloat(item.find('.price-input').val()) || 0;
-        const quantity = parseInt(item.find('.quantity-input').val()) || 0;
-        const lineTotal = price * quantity;
-        item.find('.line-total').val(lineTotal.toFixed(2));
-    }
-
-    // حساب الإجمالي الكلي
-    function calculateGrandTotal() {
-        let total = 0;
-        $('.treatment-item').each(function() {
-            const lineTotal = parseFloat($(this).find('.line-total').val()) || 0;
-            total += lineTotal;
-        });
-        return total;
-    }
-
-    // تحديث ملخص الدفع
-    function updatePaymentSummary() {
-        const totalCost = calculateGrandTotal();
-        const discountPercentage = parseFloat($('#discountPercentageInput').val()) || 0;
-        const discountAmount = totalCost * (discountPercentage / 100);
-        const netTotal = totalCost - discountAmount;
-        const paidAmount = parseFloat($('#paidAmountInput').val()) || 0;
-        const remainingBalance = netTotal - paidAmount;
-
-        // تحديث الحقول المخفية
-        $('#paidAmountHidden').val(paidAmount);
-        $('#discountPercentageHidden').val(discountPercentage);
-
-        // تحديث العرض
-        $('#totalCostDisplay').val(totalCost.toFixed(2));
-        $('#discountAmountDisplay').val(discountAmount.toFixed(2));
-        $('#netTotalDisplay').val(netTotal.toFixed(2));
-        $('#remainingBalanceDisplay').val(remainingBalance.toFixed(2));
-
-        // تحديث الملخص
-        $('#summaryTotalCost').text('$' + totalCost.toFixed(2));
-        $('#summaryDiscount').text('$' + discountAmount.toFixed(2));
-        $('#summaryNetTotal').text('$' + netTotal.toFixed(2));
-        $('#summaryToPay').text('$' + remainingBalance.toFixed(2));
-
-        // تحديث حالة الدفع
-        const paymentStatus = $('#paymentStatus');
-        const remainingDisplay = $('#remainingBalanceDisplay');
-
-        if (remainingBalance <= 0) {
-            paymentStatus.val('Fully Paid').removeClass('bg-warning bg-danger').addClass('bg-success text-white');
-            remainingDisplay.removeClass('bg-warning bg-danger').addClass('bg-success text-white');
-        } else if (paidAmount > 0) {
-            paymentStatus.val('Partially Paid').removeClass('bg-success bg-danger').addClass('bg-warning text-dark');
-            remainingDisplay.removeClass('bg-success bg-danger').addClass('bg-warning text-dark');
+        const existing = items.find(x => x.id === id);
+        if (existing) {
+            existing.qty += qty;
         } else {
-            paymentStatus.val('Not Paid').removeClass('bg-success bg-warning').addClass('bg-danger text-white');
-            remainingDisplay.removeClass('bg-success bg-warning').addClass('bg-danger text-white');
-        }
-    }
-
-    // إعادة فهرسة العناصر
-    function reindexItems() {
-        $('.treatment-item').each(function(index) {
-            $(this).find('input[name*="Id"]').attr('name', `TreatmentItems[${index}].Id`);
-            $(this).find('input[name*="Name"]').attr('name', `TreatmentItems[${index}].Name`);
-            $(this).find('input[name*="Price"]').attr('name', `TreatmentItems[${index}].Price`);
-            $(this).find('input[name*="Quantity"]').attr('name', `TreatmentItems[${index}].Quantity`);
-        });
-    }
-
-    // التحقق من العناصر الفارغة
-    function checkEmptyItems() {
-        if ($('.treatment-item').length === 0) {
-            $('#treatmentItemsContainer').html(`
-                <div class="text-center text-muted py-3" id="noItemsMessage">
-                    <i class="fas fa-info-circle fa-2x mb-2"></i>
-                    <br />
-                    No services added yet. Please select services from the dropdown above.
-                </div>
-            `);
-        }
-    }
-
-    // حفظ خطة العلاج
-    function saveTreatmentPlan() {
-        if ($('.treatment-item').length === 0) {
-            showNotification('Please add at least one service.', 'error');
-            return false;
+            items.push({ id, name, price, qty });
         }
 
-        // التحقق من صحة الكميات
-        let valid = true;
-        $('.quantity-input').each(function() {
-            if ($(this).val() < 1) {
-                $(this).addClass('is-invalid');
-                valid = false;
-            } else {
-                $(this).removeClass('is-invalid');
-            }
+        ddl.value = '';
+        qtyInput.value = 1;
+
+        render();
+    };
+
+    window.render = function () {
+
+        const table = document.getElementById('servicesTable');
+        const body = document.getElementById('servicesBody');
+        const noServices = document.getElementById('noServices');
+
+        body.innerHTML = '';
+
+        if (items.length === 0) {
+            table.style.display = 'none';
+            noServices.style.display = 'block';
+            calculate();
+            return;
+        }
+
+        table.style.display = '';
+        noServices.style.display = 'none';
+
+        items.forEach((x, i) => {
+            body.innerHTML += `
+                <tr>
+                    <td>${x.name}</td>
+                    <td>$${x.price.toFixed(2)}</td>
+                    <td>${x.qty}</td>
+                    <td>$${(x.price * x.qty).toFixed(2)}</td>
+                    <td>
+                        <button class="btn btn-danger btn-sm"
+                            onclick="removeItem(${i})">X</button>
+                    </td>
+                </tr>
+            `;
         });
 
-        if (!valid) {
-            showNotification('Please enter valid quantities (minimum 1).', 'error');
-            return false;
+        calculate();
+    };
+
+    window.removeItem = function (i) {
+        items.splice(i, 1);
+        render();
+    };
+
+    window.calculate = function () {
+
+        const total = items.reduce((s, x) => s + x.price * x.qty, 0);
+        const discount = parseFloat(document.getElementById('discount').value) || 0;
+        const paid = parseFloat(document.getElementById('paid').value) || 0;
+
+        const discountValue = total * discount / 100;
+        const net = total - discountValue;
+        const remaining = Math.max(0, net - paid);
+
+        document.getElementById('total').innerText = `$${total.toFixed(2)}`;
+        document.getElementById('discountValue').innerText = `$${discountValue.toFixed(2)}`;
+        document.getElementById('net').innerText = `$${net.toFixed(2)}`;
+        document.getElementById('remaining').innerText = `$${remaining.toFixed(2)}`;
+    };
+     window.saveTreatmentPlan = function () {
+        console.log('Saving treatment plan...');
+
+        if (items.length === 0) {
+            alert('Please add at least one service');
+            return;
         }
 
-        const form = $('#treatmentForm');
-        const formData = form.serialize();
+        // Update hidden fields
+        render();
 
-        console.log('Submitting treatment plan...', formData);
+        // Submit the form
+        document.getElementById('treatmentPlanForm').submit();
+    };
 
-        // إظهار تحميل
-        const submitBtn = $('button[onclick="saveTreatmentPlan()"]');
-        const originalText = submitBtn.html();
-        submitBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Saving...');
-
-        $.ajax({
-            url: form.attr('action'),
-            type: 'POST',
-            data: formData,
-            success: function (response) {
-                if (response.success) {
-                    showNotification(response.message || 'Treatment plan created successfully!', 'success');
-                    setTimeout(function () {
-                        window.location.href = '@Url.Action("Index", "Reception")';
-                    }, 2000);
-                } else {
-                    showNotification(response.message || 'Error creating treatment plan.', 'error');
-                    submitBtn.prop('disabled', false).html(originalText);
-                }
-            },
-            error: function (xhr) {
-                console.error('Error saving treatment plan:', xhr);
-                showNotification('An error occurred while saving the treatment plan.', 'error');
-                submitBtn.prop('disabled', false).html(originalText);
-            }
-        });
-    }
-
-    // عرض الإشعارات
-    function showNotification(message, type) {
-        const alertClass = type === 'success' ? 'alert-success' :
-                         type === 'warning' ? 'alert-warning' : 'alert-danger';
-        const icon = type === 'success' ? 'fa-check-circle' :
-                    type === 'warning' ? 'fa-exclamation-triangle' : 'fa-exclamation-circle';
-
-        // إزالة أي إشعارات سابقة
-        $('.alert-notification').remove();
-
-        const notification = `
-            <div class="alert ${alertClass} alert-dismissible fade show alert-notification position-fixed"
-                 style="top: 20px; right: 20px; z-index: 9999; min-width: 300px;" role="alert">
-                <i class="fas ${icon} me-2"></i>
-                ${message}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-        `;
-        $('body').append(notification);
-
-        // إخفاء تلقائي بعد 5 ثواني
-        setTimeout(function () {
-            $('.alert-notification').fadeOut('slow', function () {
-                $(this).remove();
-            });
-        }, 5000);
-    }
-</script>
+</script> *@

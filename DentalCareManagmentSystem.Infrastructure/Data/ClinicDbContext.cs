@@ -48,7 +48,7 @@ public class ClinicDbContext : IdentityDbContext<User>
             .HasMany(p => p.TreatmentPlans)
             .WithOne(tp => tp.Patient)
             .HasForeignKey(tp => tp.PatientId);
-        
+
         builder.Entity<Patient>()
             .HasMany(p => p.PaymentTransactions)
             .WithOne(pt => pt.Patient)
@@ -60,6 +60,34 @@ public class ClinicDbContext : IdentityDbContext<User>
             .WithOne(ti => ti.TreatmentPlan)
             .HasForeignKey(ti => ti.TreatmentPlanId);
 
+        // علاقة TreatmentPlan مع PatientAppointment - هذا ما يسبب المشكلة
+        // قم بتعليق هذا السطر أو حذفه
+        // builder.Entity<TreatmentPlan>()
+        //    .HasOne(tp => tp.PatientAppointment)
+        //    .WithMany()
+        //    .HasForeignKey(tp => tp.PatientAppointmentId)
+        //    .OnDelete(DeleteBehavior.NoAction);
+
+        // بدلاً من ذلك، اضبط العلاقة بشكل صحيح:
+        builder.Entity<TreatmentPlan>()
+            .HasOne(tp => tp.PatientAppointment)
+            .WithMany(pa => pa.TreatmentPlans)  // استخدم المجموعة الموجودة في PatientAppointment
+            .HasForeignKey(tp => tp.PatientAppointmentId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // علاقات TreatmentItem
+        builder.Entity<TreatmentItem>()
+            .HasOne(ti => ti.TreatmentPlan)
+            .WithMany(tp => tp.Items)
+            .HasForeignKey(ti => ti.TreatmentPlanId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.Entity<TreatmentItem>()
+            .HasOne(ti => ti.PatientAppointment)
+            .WithMany()
+            .HasForeignKey(ti => ti.PatientAppointmentId)
+            .OnDelete(DeleteBehavior.Restrict);
+
         builder.Entity<TreatmentItem>()
             .Property(ti => ti.PriceSnapshot)
             .HasColumnType("decimal(18,2)");
@@ -67,33 +95,21 @@ public class ClinicDbContext : IdentityDbContext<User>
         builder.Entity<PriceListItem>()
             .Property(pli => pli.DefaultPrice)
             .HasColumnType("decimal(18,2)");
-        
+
         builder.Entity<PaymentTransaction>()
             .Property(pt => pt.Amount)
             .HasColumnType("decimal(18,2)");
-        
+
         builder.Entity<PaymentTransaction>()
             .HasOne(pt => pt.Appointment)
             .WithMany()
             .HasForeignKey(pt => pt.AppointmentId)
             .OnDelete(DeleteBehavior.SetNull);
-        
+
         builder.Entity<PaymentTransaction>()
             .HasOne(pt => pt.CreatedByUser)
             .WithMany()
             .HasForeignKey(pt => pt.CreatedBy)
             .OnDelete(DeleteBehavior.Restrict);
-        builder.Entity<TreatmentPlan>()
-       .HasOne(tp => tp.PatientAppointment)
-       .WithMany()
-       .HasForeignKey(tp => tp.PatientAppointmentId)
-       .OnDelete(DeleteBehavior.NoAction); // أو Use DeleteBehavior.Restrict
-
-        // إذا كان لديك علاقات أخرى، أضيفيها هنا أيضاً
-        builder.Entity<TreatmentItem>()
-            .HasOne(ti => ti.TreatmentPlan)
-            .WithMany(tp => tp.Items)
-            .HasForeignKey(ti => ti.TreatmentPlanId)
-            .OnDelete(DeleteBehavior.Cascade); // هذا عادةً يكون مقبول
     }
 }

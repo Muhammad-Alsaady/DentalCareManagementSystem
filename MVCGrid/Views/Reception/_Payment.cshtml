@@ -1,4 +1,7 @@
-﻿@using DentalCareManagmentSystem.Domain.Entities
+﻿@using DentalManagementSystem.Models
+
+
+@* @using DentalCareManagmentSystem.Domain.Entities
 @using DentalManagementSystem.Models
 @using Microsoft.AspNetCore.Mvc.Localization
 @model PaymentViewModel
@@ -192,3 +195,284 @@
         $.validator.unobtrusive.parse('#paymentForm');
     });
 </script>
+ *@
+@model PaymentViewModel
+
+<div class="modal fade" id="paymentModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">Payment - @Model.PatientName</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+
+            <form id="paymentForm" asp-action="ProcessPaymentWithAudit" method="post">
+                <input type="hidden" asp-for="AppointmentId" />
+
+                <div class="modal-body">
+                    <!-- Summary Section -->
+                    <div class="row mb-4">
+                        <div class="col-md-4">
+                            <div class="card bg-light">
+                                <div class="card-body text-center">
+                                    <h6 class="card-subtitle mb-2 text-muted">Total Cost</h6>
+                                    <h4 class="text-primary">@Model.TotalCost.ToString("C")</h4>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card bg-light">
+                                <div class="card-body text-center">
+                                    <h6 class="card-subtitle mb-2 text-muted">Amount Paid</h6>
+                                    <h4 class="text-success">@Model.AmountPaid.ToString("C")</h4>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card bg-light">
+                                <div class="card-body text-center">
+                                    <h6 class="card-subtitle mb-2 text-muted">Balance Due</h6>
+                                    <h4 class="text-danger">@Model.CurrentRemaining.ToString("C")</h4>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Discount Section -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h6 class="mb-0"><i class="fas fa-tag"></i> Apply Discount</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label>Discount Type</label>
+                                        <select asp-for="DiscountType" class="form-control" id="discountType">
+                                            <option value="0">No Discount</option>
+                                            <option value="1">Percentage %</option>
+                                            <option value="2">Fixed Amount</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label>Discount Value</label>
+                                        <input asp-for="AdditionalDiscount" type="number" step="0.01"
+                                               class="form-control" id="discountValue"
+                                               min="0" value="0" />
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label>Discount Amount</label>
+                                        <input type="text" class="form-control bg-light"
+                                               id="discountAmount" value="0" readonly />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row mt-2">
+                                <div class="col-md-8">
+                                    <div class="alert alert-info">
+                                        <i class="fas fa-info-circle"></i>
+                                        <span id="discountInfo">
+                                            No discount applied
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="col-md-4 text-end">
+                                    <h5>Net Total: <span id="netTotal" class="text-primary">@Model.TotalCost.ToString("C")</span></h5>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Payment Amount Section -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h6 class="mb-0"><i class="fas fa-money-bill-wave"></i> Payment Details</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label asp-for="PaymentAmount">Payment Amount *</label>
+                                        <input asp-for="PaymentAmount" type="number" step="0.01"
+                                               class="form-control" id="paymentAmount"
+                                               min="0" max="@Model.CurrentRemaining"
+                                               required />
+                                        <span asp-validation-for="PaymentAmount" class="text-danger"></span>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label asp-for="PaymentDate">Payment Date</label>
+                                        <input asp-for="PaymentDate" type="datetime-local"
+                                               class="form-control" />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row mt-3">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label asp-for="Notes">Notes (Optional)</label>
+                                        <textarea asp-for="Notes" class="form-control" rows="3"></textarea>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="alert alert-warning">
+                                        <h6>Payment Summary:</h6>
+                                        <p>After Discount: <span id="afterDiscount">@Model.TotalCost.ToString("C")</span></p>
+                                        <p>New Payment: <span id="newPayment">0.00</span></p>
+                                        <p>Remaining After: <span id="remainingAfter">@Model.CurrentRemaining.ToString("C")</span></p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Treatment Items List -->
+                    @if (ViewBag.TreatmentItems != null)
+                    {
+                        <div class="card">
+                            <div class="card-header">
+                                <h6 class="mb-0"><i class="fas fa-list"></i> Treatment Items</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-sm">
+                                        <thead>
+                                            <tr>
+                                                <th>Treatment</th>
+                                                <th>Price</th>
+                                                <th>Qty</th>
+                                                <th>Total</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (var item in ViewBag.TreatmentItems)
+                                            {
+                                                <tr>
+                                                    <td>@item.NameSnapshot</td>
+                                                    <td>@item.PriceSnapshot.ToString("C")</td>
+                                                    <td>@item.Quantity</td>
+                                                    <td>@item.LineTotal.ToString("C")</td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                        <tfoot>
+                                            <tr class="table-active">
+                                                <td colspan="3" class="text-end"><strong>Total:</strong></td>
+                                                <td><strong>@Model.TotalCost.ToString("C")</strong></td>
+                                            </tr>
+                                        </tfoot>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success" id="processPaymentBtn">
+                        <i class="fas fa-check"></i> Process Payment
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            // تحسب الخصم تلقائياً عند التغيير
+            $('#discountType, #discountValue').on('change keyup', calculateDiscount);
+            $('#paymentAmount').on('change keyup', updatePaymentSummary);
+
+            // حساب الخصم
+            function calculateDiscount() {
+                const discountType = parseInt($('#discountType').val());
+                const discountValue = parseFloat($('#discountValue').val()) || 0;
+                const totalCost = @Model.TotalCost;
+
+                let discountAmount = 0;
+                let discountInfo = '';
+
+                if (discountType === 1 && discountValue > 0) {
+                    // نسبة مئوية
+                    discountAmount = totalCost * (discountValue / 100);
+                    discountInfo = `${discountValue}% discount = ${discountAmount.toFixed(2)}`;
+                } else if (discountType === 2 && discountValue > 0) {
+                    // مبلغ ثابت
+                    discountAmount = Math.min(discountValue, totalCost);
+                    discountInfo = `Fixed discount: ${discountAmount.toFixed(2)}`;
+                } else {
+                    discountInfo = 'No discount applied';
+                }
+
+                $('#discountAmount').val(discountAmount.toFixed(2));
+                $('#discountInfo').html(`<i class="fas fa-tag"></i> ${discountInfo}`);
+
+                const netTotal = totalCost - discountAmount;
+                $('#netTotal').text('$' + netTotal.toFixed(2));
+                $('#afterDiscount').text('$' + netTotal.toFixed(2));
+
+                updatePaymentSummary();
+            }
+
+            // تحديث ملخص الدفع
+            function updatePaymentSummary() {
+                const totalCost = @Model.TotalCost;
+                const discountAmount = parseFloat($('#discountAmount').val()) || 0;
+                const netTotal = totalCost - discountAmount;
+                const amountPaid = @Model.AmountPaid;
+                const paymentAmount = parseFloat($('#paymentAmount').val()) || 0;
+
+                $('#newPayment').text('$' + paymentAmount.toFixed(2));
+                $('#remainingAfter').text('$' + (netTotal - amountPaid - paymentAmount).toFixed(2));
+
+                // تفعيل/تعطيل زر الدفع
+                const processBtn = $('#processPaymentBtn');
+                if (paymentAmount > 0 && paymentAmount <= (netTotal - amountPaid)) {
+                    processBtn.prop('disabled', false);
+                } else {
+                    processBtn.prop('disabled', true);
+                }
+            }
+
+            // إرسال النموذج
+            $('#paymentForm').submit(function (e) {
+                e.preventDefault();
+
+                const formData = $(this).serialize();
+
+                $.ajax({
+                    url: $(this).attr('action'),
+                    type: 'POST',
+                    data: formData,
+                    success: function (response) {
+                        if (response.success) {
+                            UIHelpers.showNotification(response.message, 'success');
+                            setTimeout(() => {
+                                $('#paymentModal').modal('hide');
+                                location.reload();
+                            }, 1500);
+                        } else {
+                            UIHelpers.showNotification(response.message, 'error');
+                        }
+                    },
+                    error: function () {
+                        UIHelpers.showNotification('An error occurred while processing payment.', 'error');
+                    }
+                });
+            });
+
+            // حساب الخصم الأولي
+            calculateDiscount();
+        });
+    </script>
+}

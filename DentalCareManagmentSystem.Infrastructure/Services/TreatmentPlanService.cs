@@ -186,7 +186,7 @@ public class TreatmentPlanService : ITreatmentPlanService
             .Select(p => new TreatmentPlanDto
             {
                 Id = p.Id,
-                PatientId = p.PatientId,
+                PatientId = p.PatientAppointmentId,
                 CreatedAt = p.CreatedAt,
                 CreatedBy = p.CreatedBy?.FullName ?? "Unknown",
                 IsCompleted = p.IsCompleted,
@@ -215,7 +215,7 @@ public class TreatmentPlanService : ITreatmentPlanService
             .Select(tp => new TreatmentPlanDto
             {
                 Id = tp.Id,
-                PatientId = tp.PatientId,
+                PatientId = tp.PatientAppointmentId,
                 CreatedAt = tp.CreatedAt,
                 IsCompleted=tp.IsCompleted,
                 CreatedBy = tp.CreatedBy != null ? tp.CreatedBy.FullName : "Unknown",

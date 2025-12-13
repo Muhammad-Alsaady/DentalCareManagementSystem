@@ -3,13 +3,16 @@ using DentalCareManagmentSystem.Application.DTOs;
 using DentalCareManagmentSystem.Application.Interfaces;
 using DentalCareManagmentSystem.Domain.Entities;
 using DentalCareManagmentSystem.Domain.Enums;
+using DentalCareManagmentSystem.Domain.Services;
 using DentalCareManagmentSystem.Infrastructure.Data;
 using DentalCareManagmentSystem.Web.Models;
+using DentalManagementSystem.Models;
 using DentalManagementSystem.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Linq;
+using System.Security.Claims;
 
 namespace DentalCareManagmentSystem.Web.Controllers
 {
@@ -22,7 +25,7 @@ namespace DentalCareManagmentSystem.Web.Controllers
         private readonly ITreatmentPlanService _treatmentPlanService;
         private readonly IPriceListService _priceListService;
         private readonly IMapper _mapper;
-
+        private readonly Guid _anonymousPatientId = new Guid("225B78C3-97F3-4A15-838D-233F1EC4FCD0");
         public ReceptionController(
             ClinicDbContext context,
             IPaymentService paymentService,
@@ -51,7 +54,8 @@ namespace DentalCareManagmentSystem.Web.Controllers
                     PhoneNumber = a.Phone ?? "N/A",
                     AppointmentDate = a.Date,
                     Status = a.Status.ToString(),
-                    Notes = a.Notes ?? ""
+                    Notes = a.Notes ?? "",
+                    HasTreatmentPlan = _context.TreatmentPlans.Any(tp => tp.PatientAppointmentId == a.Id)
                 })
                 .ToListAsync();
 
@@ -69,12 +73,23 @@ namespace DentalCareManagmentSystem.Web.Controllers
                 return NotFound();
             }
 
-            // جلب قائمة الأسعار النشطة مباشرة من قاعدة البيانات
+            // جلب قائمة الأسعار النشطة
             var priceListItems = await _context.PriceListItems
                 .Where(p => p.IsActive)
                 .OrderBy(p => p.Category)
                 .ThenBy(p => p.Name)
                 .ToListAsync();
+
+            // التحويل اليدوي بدلاً من AutoMapper
+            var availableServices = priceListItems.Select(p => new PriceListItemDto
+            {
+                Id = p.Id,
+                Name = p.Name,
+                Category = p.Category,
+                DefaultPrice = p.DefaultPrice,
+                IsActive = p.IsActive
+               
+            }).ToList();
 
             var model = new TreatmentPlanViewModel
             {
@@ -84,12 +99,11 @@ namespace DentalCareManagmentSystem.Web.Controllers
                 TreatmentItems = new List<TreatmentItemViewModel>(),
                 DiscountPercentage = 0,
                 PaidAmount = 0,
-                AvailableServices = _mapper.Map<List<PriceListItemDto>>(priceListItems)
+                AvailableServices = availableServices  // استخدام القائمة المحولة
             };
 
             return PartialView("_CreateTreatmentPlan", model);
         }
-
         [HttpGet]
         public async Task<IActionResult> GetPaymentForm(Guid appointmentId)
         {
@@ -101,7 +115,7 @@ namespace DentalCareManagmentSystem.Web.Controllers
                 return NotFound();
             }
 
-            // حساب التكاليف والمدفوعات - مرتبطة فقط بالـ PatientAppointment
+            // حساب التكاليف والمدفوعات
             var totalCost = await _context.TreatmentItems
                 .Where(t => t.PatientAppointmentId == appointmentId)
                 .SumAsync(t => t.LineTotal);
@@ -114,11 +128,11 @@ namespace DentalCareManagmentSystem.Web.Controllers
             {
                 AppointmentId = appointmentId,
                 PatientName = appointment.FullName ?? "Unknown",
-                //PhoneNumber = appointment.Phone ?? "N/A",
                 TotalCost = totalCost,
                 AmountPaid = totalPaid,
                 PaymentAmount = 0,
-                DiscountPercentage = 0,
+                AdditionalDiscount = 0, // استبدل DiscountPercentage
+                DiscountType = DiscountType.None,
                 PaymentDate = DateTime.Now
             };
 
@@ -160,7 +174,6 @@ namespace DentalCareManagmentSystem.Web.Controllers
             return PartialView("_AppointmentDetails", appointmentDto);
         }
 
-        // صفحة إضافة خطة العلاج
         [HttpGet]
         public async Task<IActionResult> CreateTreatmentPlan(Guid appointmentId)
         {
@@ -183,7 +196,7 @@ namespace DentalCareManagmentSystem.Web.Controllers
                 return RedirectToAction("Payment", new { appointmentId = appointmentId });
             }
 
-            // جلب قائمة الأسعار النشطة مباشرة من قاعدة البيانات
+            // جلب قائمة الأسعار النشطة
             var priceListItems = await _context.PriceListItems
                 .Where(p => p.IsActive)
                 .OrderBy(p => p.Category)
@@ -203,26 +216,13 @@ namespace DentalCareManagmentSystem.Web.Controllers
 
             return View(model);
         }
-
-        // حفظ خطة العلاج - التعامل مع PatientAppointment فقط
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> CreateTreatmentPlan(TreatmentPlanViewModel model)
         {
-            Console.WriteLine($"Received TreatmentPlan - AppointmentId: {model.AppointmentId}");
-
-            if (model.TreatmentItems != null)
-            {
-                foreach (var item in model.TreatmentItems)
-                {
-                    Console.WriteLine($"Item: {item.Name}, Price: {item.Price}, Quantity: {item.Quantity}");
-                }
-            }
-
             if (!ModelState.IsValid)
             {
                 var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage);
-                Console.WriteLine($"ModelState Errors: {string.Join(", ", errors)}");
                 return Json(new { success = false, message = "Validation failed: " + string.Join(", ", errors) });
             }
 
@@ -252,19 +252,28 @@ namespace DentalCareManagmentSystem.Web.Controllers
                     return Json(new { success = false, message = "Treatment plan already exists for this appointment" });
                 }
 
-                // إنشاء خطة العلاج - مرتبطة فقط بالـ PatientAppointment
+                // جلب UserId الصحيح من Identity
+                var userId = User.FindFirstValue(ClaimTypes.NameIdentifier); // Id من AspNetUsers
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return Json(new { success = false, message = "Unable to determine the current user." });
+                }
+
+                // إنشاء خطة العلاج
                 var treatmentPlan = new TreatmentPlan
                 {
                     Id = Guid.NewGuid(),
                     PatientAppointmentId = model.AppointmentId,
+                    // استخدم Guid.Parse أو Guid.TryParse
+                    PatientId = Guid.Parse("225B78C3-97F3-4A15-838D-233F1EC4FCD0"),
                     CreatedAt = DateTime.UtcNow,
-                    CreatedById = User.Identity?.Name ?? "System",
+                    CreatedById = userId, // استخدام الـ UserId الصحيح
                     IsCompleted = false
                 };
 
                 _context.TreatmentPlans.Add(treatmentPlan);
 
-                // إضافة عناصر العلاج - مرتبطة فقط بالـ PatientAppointment
+                // إضافة عناصر العلاج
                 foreach (var item in model.TreatmentItems.Where(t => !string.IsNullOrWhiteSpace(t.Name)))
                 {
                     var treatmentItem = new TreatmentItem
@@ -280,7 +289,7 @@ namespace DentalCareManagmentSystem.Web.Controllers
                     _context.TreatmentItems.Add(treatmentItem);
                 }
 
-                // إذا كان هناك مبلغ مدفوع، إنشاء معاملة دفع - مرتبطة فقط بالـ PatientAppointment
+                // إذا كان هناك مبلغ مدفوع، إنشاء معاملة دفع
                 if (model.PaidAmount > 0)
                 {
                     var payment = new PaymentTransaction
@@ -291,13 +300,13 @@ namespace DentalCareManagmentSystem.Web.Controllers
                         PaymentDate = DateTime.UtcNow,
                         Notes = $"Initial payment with treatment plan - Discount: {model.DiscountPercentage}%",
                         CreatedAt = DateTime.UtcNow,
-                        CreatedBy = User.Identity?.Name ?? "Reception"
+                        CreatedBy = userId
                     };
                     _context.PaymentTransactions.Add(payment);
                 }
 
                 // تحديث حالة الموعد
-              //  appointment.Status = AppointmentStatus.UnderTreatment;
+                appointment.Status = AppointmentStatus.UnderTreatment;
 
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
@@ -307,11 +316,23 @@ namespace DentalCareManagmentSystem.Web.Controllers
             catch (Exception ex)
             {
                 await transaction.RollbackAsync();
-                Console.WriteLine($"Error: {ex.Message}");
-                Console.WriteLine($"Stack Trace: {ex.StackTrace}");
-                return Json(new { success = false, message = $"Error creating treatment plan: {ex.Message}" });
+
+                // طباعة كل التفاصيل للـ inner exception
+                var inner = ex;
+                while (inner.InnerException != null)
+                {
+                    inner = inner.InnerException;
+                }
+
+                return Json(new
+                {
+                    success = false,
+                    message = $"Error creating treatment plan: {inner.Message}"
+                });
             }
+
         }
+
 
         [HttpGet]
         public async Task<IActionResult> Payment(Guid appointmentId)
@@ -336,11 +357,11 @@ namespace DentalCareManagmentSystem.Web.Controllers
             {
                 AppointmentId = appointmentId,
                 PatientName = appointment.FullName ?? "Unknown",
-               // PhoneNumber = appointment.Phone ?? "N/A",
                 TotalCost = totalCost,
                 AmountPaid = totalPaid,
                 PaymentAmount = 0,
-                DiscountPercentage = 0,
+                AdditionalDiscount = 0,
+                DiscountType = DiscountType.None,
                 PaymentDate = DateTime.Now
             };
 
@@ -380,11 +401,11 @@ namespace DentalCareManagmentSystem.Web.Controllers
             {
                 AppointmentId = appointmentId,
                 PatientName = appointment.FullName ?? "Unknown",
-               // PhoneNumber = appointment.Phone ?? "N/A",
                 TotalCost = totalCost,
                 AmountPaid = totalPaid,
                 PaymentAmount = 0,
-                DiscountPercentage = 0,
+                AdditionalDiscount = 0,
+                DiscountType = DiscountType.None,
                 PaymentDate = DateTime.Now
             };
 
@@ -422,21 +443,21 @@ namespace DentalCareManagmentSystem.Web.Controllers
                     return Json(new { success = false, message = "Appointment not found." });
                 }
 
-                // Create payment transaction - مرتبطة فقط بالـ PatientAppointment
+                // إنشاء معاملة الدفع
                 var payment = new PaymentTransaction
                 {
                     Id = Guid.NewGuid(),
                     PatientAppointmentId = model.AppointmentId,
                     Amount = model.PaymentAmount,
                     PaymentDate = model.PaymentDate,
-                    Notes = $"Discount: {model.DiscountPercentage}% | {model.Notes}",
+                    Notes = $"Discount: {(model.DiscountType != DiscountType.None ? $"{model.AdditionalDiscount}{(model.DiscountType == DiscountType.Percentage ? "%" : " fixed")}" : "None")} | {model.Notes}",
                     CreatedAt = DateTime.UtcNow,
                     CreatedBy = User.Identity?.Name ?? "Reception"
                 };
 
                 _context.PaymentTransactions.Add(payment);
 
-                // Create audit log
+                // إنشاء سجل التدقيق
                 var auditLog = new AuditLog
                 {
                     Id = Guid.NewGuid(),
@@ -444,8 +465,9 @@ namespace DentalCareManagmentSystem.Web.Controllers
                     EntityName = "PaymentTransaction",
                     EntityId = payment.Id.ToString(),
                     PatientAppointmentId = model.AppointmentId,
-                    Changes = $"Payment: {model.PaymentAmount:C}, Discount: {model.DiscountPercentage}%, " +
-                             $"Total: {model.TotalCost:C}, After Discount: {model.TotalCost - model.DiscountAmount:C}, " +
+                    Changes = $"Payment: {model.PaymentAmount:C}, " +
+                             $"Discount: {model.DiscountAmount:C} ({model.AdditionalDiscount}{(model.DiscountType == DiscountType.Percentage ? "%" : " fixed")}), " +
+                             $"Total: {model.TotalCost:C}, After Discount: {model.NetTotal:C}, " +
                              $"Paid: {model.AmountPaid + model.PaymentAmount:C}, Remaining: {model.RemainingBalance:C}",
                     UserId = User.Identity?.Name ?? "System",
                     Timestamp = DateTime.UtcNow
@@ -453,13 +475,12 @@ namespace DentalCareManagmentSystem.Web.Controllers
 
                 _context.AuditLogs.Add(auditLog);
 
-                // Check if fully paid
-                var totalCost = model.TotalCost - model.DiscountAmount;
+                // التحقق من اكتمال الدفع
                 var totalPaid = await _context.PaymentTransactions
                     .Where(p => p.PatientAppointmentId == model.AppointmentId)
                     .SumAsync(p => p.Amount) + model.PaymentAmount;
 
-                if (totalPaid >= totalCost)
+                if (totalPaid >= model.NetTotal)
                 {
                     appointment.Status = AppointmentStatus.Completed;
 
@@ -471,6 +492,10 @@ namespace DentalCareManagmentSystem.Web.Controllers
                         treatmentPlan.IsCompleted = true;
                     }
                 }
+                else
+                {
+                    appointment.Status = AppointmentStatus.UnderTreatment;
+                }
 
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
@@ -479,8 +504,8 @@ namespace DentalCareManagmentSystem.Web.Controllers
                 {
                     success = true,
                     message = $"Payment of {model.PaymentAmount:C} processed successfully!",
-                    newBalance = totalCost - totalPaid,
-                    isFullyPaid = totalPaid >= totalCost
+                    newBalance = Math.Max(0, model.NetTotal - totalPaid),
+                    isFullyPaid = totalPaid >= model.NetTotal
                 });
             }
             catch (Exception ex)
@@ -536,16 +561,15 @@ namespace DentalCareManagmentSystem.Web.Controllers
                 .Where(pa => pa.Phone == appointment.Phone)
                 .ToListAsync();
 
-            // الحصول على قائمة IDs للمواعيد وتحويلها إلى List
             var appointmentIds = appointments.Select(a => a.Id).ToList();
 
-            // جلب خطط العلاج المرتبطة بالمواعيد
+            // جلب خطط العلاج
             var treatmentPlans = await _context.TreatmentPlans
                 .Include(tp => tp.Items)
                 .Where(tp => appointmentIds.Contains(tp.PatientAppointmentId))
                 .ToListAsync();
 
-            // جلب المدفوعات المرتبطة بالمواعيد
+            // جلب المدفوعات
             var payments = await _context.PaymentTransactions
                 .Where(p => appointmentIds.Contains((Guid)p.PatientAppointmentId))
                 .ToListAsync();
@@ -557,7 +581,7 @@ namespace DentalCareManagmentSystem.Web.Controllers
             {
                 Patient = new PatientDto
                 {
-                    Id = Guid.Empty, // ليس لدينا Patient ID
+                    Id = Guid.Empty,
                     FullName = appointment.FullName ?? "Unknown",
                     Phone = appointment.Phone ?? "N/A",
                     Age = appointment.Age,

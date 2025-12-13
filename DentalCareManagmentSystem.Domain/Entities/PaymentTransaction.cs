@@ -9,7 +9,7 @@ public class PaymentTransaction
 {
     public Guid Id { get; set; }
     
-    public Guid PatientId { get; set; }
+    public Guid? PatientId { get; set; }
     
     public Guid? AppointmentId { get; set; }
     public Guid? PatientAppointmentId { get; set; }

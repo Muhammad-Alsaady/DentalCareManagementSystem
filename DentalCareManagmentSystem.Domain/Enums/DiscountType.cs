@@ -8,7 +8,8 @@ namespace DentalCareManagmentSystem.Domain.Enums
 {
     public enum DiscountType
     {
-        Percentage = 1,    
-        FixedAmount = 2   
+        None = 0,
+        Percentage = 1,
+        FixedAmount = 2
     }
 }

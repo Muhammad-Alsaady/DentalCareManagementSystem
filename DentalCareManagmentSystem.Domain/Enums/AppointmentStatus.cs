@@ -7,5 +7,6 @@ public enum AppointmentStatus
     InProgress,
     Completed,
     NoShow,
-    Cancelled
+    Cancelled,
+    UnderTreatment
 }

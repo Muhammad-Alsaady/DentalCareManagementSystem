@@ -1,4 +1,4 @@
-
+﻿
 namespace DentalCareManagmentSystem.Web.Models
 {
     public class CreateAppointmentPaymentViewModel
@@ -12,4 +12,5 @@ namespace DentalCareManagmentSystem.Web.Models
         public decimal AmountToPay { get; set; }
         public string Notes { get; set; }
     }
+   
 }
