@@ -52,7 +52,7 @@
 }
 
 .brand i {
-    font-size: 1.5rem;
+    font-size: 1.3rem;
 }
 
 .brand-text {
@@ -145,7 +145,7 @@
     width: 22px;
     margin-right: 12px;
     text-align: center;
-    font-size: 1.1rem;
+    font-size: 0.9rem;
 }
 
 .nav-link span {
@@ -197,7 +197,7 @@
 .submenu-link i {
     width: 18px;
     margin-right: 10px;
-    font-size: 0.9rem;
+    font-size: 0.7rem;
 }
 
 .badge {

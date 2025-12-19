@@ -93,7 +93,15 @@
     grid.Pager = new GridPager<DentalCareManagmentSystem.Application.DTOs.PatientAppointmentDto>(grid)
     {
         PartialViewName = "MvcGrid/_Pager",
-        RowsPerPage = 20
+        PageSizes = new Dictionary<int, string> {
+            { 10, "10 rows" },
+            { 20, "20 rows" },
+            { 50, "50 rows" },
+            { 100, "100 rows" }
+        },
+        ShowPageSizes = true,
+        RowsPerPage = 20,
+        PagesToDisplay = 5
     };
 }
 
@@ -156,6 +164,8 @@
     }
 }
 
+@await Html.PartialAsync("MvcGrid/_Grid", grid)
+
 <style>
     /* Column Width Distribution */
     .mvc-grid table {
@@ -203,7 +213,3 @@
         width: 13%;
     }
 </style>
-
-@await Html.PartialAsync("MvcGrid/_Grid", grid)
-
-<!-- No inline script needed - functions defined in parent Index.cshtml -->

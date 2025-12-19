@@ -103,6 +103,12 @@
 
 @section Scripts {
     <script>
+        // Please add the mvc-grid.js file to the wwwroot/js/ directory
+        // and uncomment the following line.
+        // <script src="~/js/mvc-grid.js"></script>
+        document.querySelectorAll('.mvc-grid').forEach(element => new MvcGrid(element));
+    </script>
+    <script>
         const texts = {
             addButton: '@Localizer["AddButton"]',
             editButton: '@Localizer["EditButton"]',

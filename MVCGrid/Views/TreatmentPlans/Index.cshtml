@@ -18,7 +18,7 @@
                     @if (Model.Any())
                     {
                         <div class="table-responsive">
-                            <table class="table table-hover table-striped">
+                            <table class="table table-hover table-striped treatment-plans-table">
                                 <thead>
                                     <tr>
                                         <th>Patient Name</th>
@@ -33,9 +33,9 @@
                                 <tbody>
                                     @foreach (var plan in Model.OrderByDescending(p => p.CreatedAt))
                                     {
-                                        <tr>
+                                        <tr class="treatment-plan-row @(plan.IsCompleted ? "completed-row" : "active-row")">
                                             <td>
-                                                <a asp-controller="Patients" asp-action="Details" asp-route-id="@plan.PatientId">
+                                                <a asp-controller="Patients" asp-action="Details" asp-route-id="@plan.PatientId" class="patient-link">
                                                     @plan.PatientName
                                                 </a>
                                             </td>
@@ -112,6 +112,134 @@
         </div>
     </div>
 </div>
+
+@section Styles {
+    <style>
+        /* Treatment Plans Table Styling */
+        .treatment-plans-table {
+            background-color: white;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+
+        .treatment-plans-table thead th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-weight: 600;
+            padding: 12px 8px;
+            border: none;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .treatment-plans-table tbody tr {
+            transition: all 0.2s ease;
+            background-color: white;
+            cursor: pointer;
+        }
+
+        /* Active row styling */
+        .treatment-plans-table tbody tr.active-row {
+            background-color: #ffffff;
+            opacity: 1;
+        }
+
+        /* Completed row styling */
+        .treatment-plans-table tbody tr.completed-row {
+            background-color: #f8f9fa;
+        }
+
+        /* Striped rows */
+        .treatment-plans-table tbody tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+
+        .treatment-plans-table tbody tr.active-row:nth-child(even) {
+            background-color: #f0f7ff;
+        }
+
+        /* Hover effect - make it very clear it's interactive */
+        .treatment-plans-table tbody tr:hover {
+            background-color: #e3f2fd !important;
+            transform: scale(1.01);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            opacity: 1 !important;
+        }
+
+        .treatment-plans-table tbody td {
+            padding: 12px 8px;
+            border-bottom: 1px solid #e9ecef;
+            vertical-align: middle;
+            color: #212529;
+            font-weight: 500;
+        }
+
+        /* Patient link styling */
+        .patient-link {
+            color: #667eea;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.2s ease;
+        }
+
+        .patient-link:hover {
+            color: #764ba2;
+            text-decoration: underline;
+        }
+
+        /* Button styling */
+        .treatment-plans-table .btn {
+            margin: 2px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .treatment-plans-table .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        /* Badge styling */
+        .treatment-plans-table .badge {
+            font-size: 0.85rem;
+            padding: 6px 12px;
+            font-weight: 600;
+        }
+
+        /* Footer styling */
+        .treatment-plans-table tfoot td {
+            background-color: #f8f9fa;
+            font-weight: 700;
+            padding: 12px 8px;
+            border-top: 2px solid #667eea;
+        }
+
+        /* Card styling */
+        .card {
+            border-radius: 0.5rem;
+            box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.075);
+            border: none;
+        }
+
+        .card-body {
+            padding: 1.5rem;
+        }
+
+        /* Responsive adjustments */
+        @@media (max-width: 768px) {
+            .treatment-plans-table tbody td {
+                font-size: 0.9rem;
+                padding: 8px 4px;
+            }
+
+            .treatment-plans-table .btn {
+                font-size: 0.75rem;
+                padding: 4px 8px;
+            }
+        }
+    </style>
+}
 
 @section Scripts {
     <script>
@@ -194,4 +322,3 @@
         });
     </script>
 }
-

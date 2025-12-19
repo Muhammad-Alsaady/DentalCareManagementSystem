@@ -1,0 +1,153 @@
+/* ========================================
+   ACTIVE GRID STYLES
+   ======================================== */
+
+.mvc-grid table {
+    border-collapse: separate;
+    border-spacing: 0;
+    width: 100%;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+}
+
+.mvc-grid th,
+.mvc-grid td {
+    padding: 14px 16px;
+    text-align: left;
+    vertical-align: middle;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.mvc-grid thead {
+    background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+    color: #334155;
+}
+
+.mvc-grid th {
+    font-weight: 600;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.mvc-grid tbody tr {
+    background-color: #fff;
+    transition: background-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.mvc-grid tbody tr:hover {
+    background-color: #f7fafc;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    cursor: pointer;
+}
+
+.mvc-grid .grid-row:nth-child(even) {
+    background-color: #fdfdff;
+}
+
+.mvc-grid .grid-row:nth-child(even):hover {
+    background-color: #f1f5f9;
+}
+
+.mvc-grid .grid-cell {
+    font-size: 0.95rem;
+    color: #475569;
+}
+
+/* Filters */
+.mvc-grid-filter {
+    display: block;
+    width: 100%;
+    padding: 8px 10px;
+    font-size: 0.9rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    background-color: #fff;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.mvc-grid-filter:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+    outline: none;
+}
+
+/* Pager */
+.mvc-grid-pager {
+    padding: 20px 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.9rem;
+}
+
+.mvc-grid-pager .pagination {
+    margin: 0;
+}
+
+.mvc-grid-pager .page-item .page-link {
+    color: #3b82f6;
+    border-radius: 6px;
+    margin: 0 3px;
+    border: 1px solid #e2e8f0;
+    transition: all 0.2s;
+}
+
+.mvc-grid-pager .page-item .page-link:hover {
+    background-color: #eff6ff;
+    border-color: #93c5fd;
+}
+
+.mvc-grid-pager .page-item.active .page-link {
+    background-color: #3b82f6;
+    border-color: #3b82f6;
+    color: white;
+    box-shadow: 0 2px 5px rgba(59, 130, 246, 0.3);
+}
+
+.mvc-grid-pager .pager-rows-per-page {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.mvc-grid-pager .pager-rows-per-page select {
+    padding: 6px 10px;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+}
+
+/* Sorting */
+.sortable .grid-header-title {
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.sortable .grid-header-title:hover {
+    color: #3b82f6;
+}
+
+.sortable .grid-sort {
+    opacity: 0.6;
+    transition: opacity 0.2s;
+}
+
+.sortable:hover .grid-sort {
+    opacity: 1;
+}
+
+.sortable.asc .grid-sort,
+.sortable.desc .grid-sort {
+    opacity: 1;
+    color: #3b82f6;
+}
+
+/* Badge Styling */
+.badge {
+    padding: 5px 10px;
+    font-size: 0.8rem;
+    border-radius: 12px;
+    font-weight: 600;
+    text-transform: capitalize;
+}
