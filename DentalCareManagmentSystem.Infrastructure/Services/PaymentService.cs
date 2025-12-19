@@ -239,7 +239,7 @@ public class PaymentService : IPaymentService
             await _context.SaveChangesAsync();
 
             // Recalculate all payment totals for this patient
-            await RecalculatePaymentTotalsAsync(patientId);
+          //  await RecalculatePaymentTotalsAsync(patientId);
 
             // Add audit log entry
             var auditLog = new AuditLog
@@ -504,7 +504,7 @@ public class PaymentService : IPaymentService
         return new PaymentTransactionDto
         {
             Id = payment.Id,
-            PatientId = payment.PatientId,
+           // PatientId = payment.PatientId,
             PatientName = payment.Patient?.FullName,
             AppointmentId = payment.AppointmentId,
             Amount = payment.Amount,

@@ -342,7 +342,7 @@ public class TreatmentPaymentWorkflowService : ITreatmentPaymentWorkflowService
             var dto = new TreatmentPlanDto
             {
                 Id = treatmentPlan.Id,
-                PatientId = treatmentPlan.PatientId,
+                PatientId = treatmentPlan.PatientAppointmentId,
                 CreatedAt = treatmentPlan.CreatedAt,
                 IsCompleted = treatmentPlan.IsCompleted,
                 Items = treatmentPlan.Items.Select(i => new DentalCareManagmentSystem.Application.DTOs.TreatmentItemDto

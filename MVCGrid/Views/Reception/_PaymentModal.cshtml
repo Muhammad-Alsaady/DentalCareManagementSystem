@@ -1,4 +1,5 @@
-﻿@model DentalManagementSystem.Models.PaymentViewModel
+﻿@using DentalManagementSystem.Models
+@model PaymentViewModel
 @{
     var treatmentItems = ViewBag.TreatmentItems as List<DentalCareManagmentSystem.Domain.Entities.TreatmentItem> ?? new List<DentalCareManagmentSystem.Domain.Entities.TreatmentItem>();
     var paymentHistory = ViewBag.PaymentHistory as List<DentalCareManagmentSystem.Domain.Entities.PaymentTransaction> ?? new List<DentalCareManagmentSystem.Domain.Entities.PaymentTransaction>();
@@ -91,7 +92,6 @@
         <input type="hidden" name="AppointmentId" value="@Model.AppointmentId" />
         <input type="hidden" name="TotalCost" value="@Model.TotalCost" />
         <input type="hidden" name="AmountPaid" value="@Model.AmountPaid" />
-        <input type="hidden" name="DiscountPercentage" value="@Model.DiscountPercentage" />
 
         <div class="card mb-3">
             <div class="card-header bg-success text-white">

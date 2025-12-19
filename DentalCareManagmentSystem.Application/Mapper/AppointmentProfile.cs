@@ -29,7 +29,12 @@ namespace DentalCareManagmentSystem.Application.Mapper
            .ForMember(dest => dest.Status, opt => opt.Ignore());
             CreateMap<PatientAppointment, EditPatientAppointmentDto>();
 
-
+            CreateMap<PriceListItem, PriceListItemDto>()
+                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
+                .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.Name))
+                .ForMember(dest => dest.Category, opt => opt.MapFrom(src => src.Category))
+                .ForMember(dest => dest.DefaultPrice, opt => opt.MapFrom(src => src.DefaultPrice))
+                .ForMember(dest => dest.IsActive, opt => opt.MapFrom(src => src.IsActive));
         }
     }
 
